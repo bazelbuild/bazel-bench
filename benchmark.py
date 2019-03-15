@@ -251,19 +251,22 @@ def _run_benchmark(bazel_binary_path,
 
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
-flags.DEFINE_list('bazel_commits', ['latest'],
-    'The commits at which bazel is built.')
-flags.DEFINE_string(
-    'bazel_source', 'https://github.com/bazelbuild/bazel.git',
-    'Either a path to the local Bazel repo or a https url to a GitHub repository.')
+flags.DEFINE_list('bazel_commits',
+                  ['latest'],
+                  'The commits at which bazel is built.')
+flags.DEFINE_string('bazel_source',
+                    'https://github.com/bazelbuild/bazel.git',
+                    'Either a path to the local Bazel repo or a https url to ' \
+                    'a GitHub repository.')
 
 # Flags for the project to be built.
-flags.DEFINE_string(
-    'project_source', None,
-    'Either a path to the local git project to be built or a https url to a GitHub repository.')
-flags.DEFINE_list(
-    'project_commits', ['latest'],
-    'The commits from the git project to be benchmarked.')
+flags.DEFINE_string('project_source',
+                    None,
+                    'Either a path to the local git project to be built or ' \
+                    'a https url to a GitHub repository.')
+flags.DEFINE_list('project_commits',
+                  ['latest'],
+                  'The commits from the git project to be benchmarked.')
 
 # Execution options.
 flags.DEFINE_integer('runs', 3, 'The number of benchmark runs.')
@@ -278,12 +281,11 @@ flags.DEFINE_boolean('prefetch_ext_deps', True,
                      'Whether to do an initial run to pre-fetch external dependencies.')
 
 # Output storage flags.
-flags.DEFINE_string(
-    'data_directory', None,
-    'The directory in which the csv files should be stored (including the trailing "/"), \
-    turns on memory collection.')
-flags.DEFINE_boolean('upload_data', False,
-                     'Whether to upload the result to a remote storage.')
+flags.DEFINE_string('data_directory', None,
+                    'The directory in which the csv files should be stored ' \
+                    '(including the trailing "/") turns on memory collection.')
+flags.DEFINE_string('upload_data', False,
+                    'Whether to upload the result to a remote storage.')
 
 
 def _flag_checks():
