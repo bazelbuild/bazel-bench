@@ -283,7 +283,7 @@ flags.DEFINE_boolean('prefetch_ext_deps', True,
 flags.DEFINE_string('data_directory', None,
                     'The directory in which the csv files should be stored ' \
                     '(including the trailing "/") turns on memory collection.')
-flags.DEFINE_string('upload_results_cfg', None,
+flags.DEFINE_string('upload_data_to', None,
                     'The configuration of the bigQuery tbale to upload ' \
                     'results to: <dataset_id>:<table_id>:<location>')
 
@@ -296,9 +296,9 @@ def _flag_checks():
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
-  if FLAGS.upload_results_cfg:
-    if not re.match('^[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_results_cfg):
-      raise ValueError('--upload_results_cfg need to follow the pattern '
+  if FLAGS.upload_data_to:
+    if not re.match('^[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_data_to):
+      raise ValueError('--upload_data_to should follow the pattern '
                        '<dataset_id>:<table_id>:<location>')
 
     if ('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ or
@@ -376,11 +376,11 @@ def main(argv):
              values.stddev(), pval))
     last_collected = collected
 
-  if FLAGS.data_directory or FLAGS.upload_results_cfg:
+  if FLAGS.data_directory or FLAGS.upload_data_to:
     data_directory = FLAGS.data_directory or DEFAULT_OUT_BASE_PATH
     csv_file_path = export_csv(data_directory, csv_data, FLAGS.project_source)
-    if FLAGS.upload_results_cfg:
-      upload_csv(csv_file_path)
+    if FLAGS.upload_data_to:
+      upload_csv(csv_file_path, FLAGS.upload_data_to)
 
   logger.log('Done.')
 

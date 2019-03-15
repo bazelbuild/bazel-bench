@@ -192,19 +192,19 @@ class BenchmarkFlagsTest(absltest.TestCase):
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
-  @flagsaver.flagsaver(upload_results_cfg='wrong_pattern')
-  def test_upload_results_cfg_wrong_pattern(self):
+  @flagsaver.flagsaver(upload_data_to='wrong_pattern')
+  def test_upload_data_to_wrong_pattern(self):
     with self.assertRaises(ValueError) as context:
       benchmark._flag_checks()
     value_err = context.exception
     self.assertEqual(
         value_err.message,
-        '--upload_results_cfg need to follow the pattern ' \
+        '--upload_data_to should follow the pattern ' \
         '<dataset_id>:<table_id>:<location>')
 
-  @flagsaver.flagsaver(upload_results_cfg='correct:flag:pattern')
+  @flagsaver.flagsaver(upload_data_to='correct:flag:pattern')
   @mock.patch.object(benchmark.os, 'environ', return_value={})
-  def test_upload_results_cfg_no_credentials(self, _):
+  def test_upload_data_to_no_credentials(self, _):
     with self.assertRaises(ValueError) as context:
       benchmark._flag_checks()
     value_err = context.exception
