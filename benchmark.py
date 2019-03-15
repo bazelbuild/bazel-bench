@@ -297,13 +297,13 @@ def _flag_checks():
     )
 
   if FLAGS.upload_results_cfg:
-    if not re.match('^[\w-]+:[\w-]+:[\w-]+$']', FLAGS.upload_results_cfg)):
+    if not re.match('^[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_results_cfg):
       raise ValueError('--upload_results_cfg need to follow the pattern '
                        '<dataset_id>:<table_id>:<location>')
 
     if ('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ or
         not os.environ['GOOGLE_APPLICATION_CREDENTIALS']):
-      raise ValueError('You have to set GOOGLE_APPLICATION_CREDENTIALS to '
+      raise ValueError('GOOGLE_APPLICATION_CREDENTIALS is required to '
                        'upload data to bigquery.')
 
 def main(argv):
