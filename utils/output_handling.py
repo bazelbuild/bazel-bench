@@ -60,22 +60,19 @@ def export_csv(data_directory, data, project_source):
   return csv_file_path
 
 
-def upload_csv(csv_file_path):
+def upload_csv(csv_file_path, bigquery_cfg):
   """Uploads the csv file to BigQuery.
 
   Takes the configuration from config.json.
 
   Args:
     csv_file_path: the path to the csv to be uploaded.
+    bigquery_cfg: The string representing the BigQuery table config. Comes in
+      the form <dataset_id>:<table_id>:<location>
   """
-
-  from config import bigquery_cfg
-
   logger.log('Uploading the data to bigquery.')
   client = bigquery.Client()
-  dataset_id = bigquery_cfg['DATASET_ID']
-  table_id = bigquery_cfg['TABLE_ID']
-  location = bigquery_cfg['LOCATION']
+  dataset_id, table_id, location = bigquery_cfg.split(':')
 
   dataset_ref = client.dataset(dataset_id)
   table_ref = dataset_ref.table(table_id)
