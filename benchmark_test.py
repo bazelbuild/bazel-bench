@@ -192,16 +192,25 @@ class BenchmarkFlagsTest(absltest.TestCase):
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
-  @flagsaver.flagsaver(upload_data=True)
-  @mock.patch.object(benchmark.os.path, 'exists', return_value=False)
-  def test_upload_data(self, _):
+  @flagsaver.flagsaver(upload_results_cfg='wrong_pattern')
+  def test_upload_results_cfg_wrong_pattern(self):
     with self.assertRaises(ValueError) as context:
       benchmark._flag_checks()
     value_err = context.exception
     self.assertEqual(
         value_err.message,
-        '--upload_data specified without a present utils/config.py.')
+        '--upload_results_cfg need to follow the pattern ' \
+        '<dataset_id>:<table_id>:<location>')
 
+  @flagsaver.flagsaver(upload_results_cfg='correct:flag:pattern')
+  @mock.patch.object(benchmark.os, 'environ', return_value={})
+  def test_upload_results_cfg_no_credentials(self, _):
+    with self.assertRaises(ValueError) as context:
+      benchmark._flag_checks()
+    value_err = context.exception
+    self.assertEqual(
+        value_err.message,
+        'GOOGLE_APPLICATION_CREDENTIALS is required to upload data to bigquery.')
 
 if __name__ == '__main__':
   absltest.main()
