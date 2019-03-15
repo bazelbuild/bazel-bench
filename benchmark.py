@@ -14,6 +14,7 @@
 import os
 import subprocess
 import hashlib
+import re
 import shutil
 import collections
 import utils.logger as logger
@@ -251,8 +252,7 @@ def _run_benchmark(bazel_binary_path,
 
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
-flags.DEFINE_list('bazel_commits',
-                  ['latest'],
+flags.DEFINE_list('bazel_commits', ['latest'],
                   'The commits at which bazel is built.')
 flags.DEFINE_string('bazel_source',
                     'https://github.com/bazelbuild/bazel.git',
@@ -260,12 +260,10 @@ flags.DEFINE_string('bazel_source',
                     'a GitHub repository.')
 
 # Flags for the project to be built.
-flags.DEFINE_string('project_source',
-                    None,
+flags.DEFINE_string('project_source', None,
                     'Either a path to the local git project to be built or ' \
                     'a https url to a GitHub repository.')
-flags.DEFINE_list('project_commits',
-                  ['latest'],
+flags.DEFINE_list('project_commits', ['latest'],
                   'The commits from the git project to be benchmarked.')
 
 # Execution options.
@@ -278,27 +276,35 @@ flags.DEFINE_boolean('verbose', False,
 flags.DEFINE_boolean('collect_memory', False,
                      'Whether to collect used heap sizes.')
 flags.DEFINE_boolean('prefetch_ext_deps', True,
-                     'Whether to do an initial run to pre-fetch external dependencies.')
+                     'Whether to do an initial run to pre-fetch external ' \
+                     'dependencies.')
 
 # Output storage flags.
 flags.DEFINE_string('data_directory', None,
                     'The directory in which the csv files should be stored ' \
                     '(including the trailing "/") turns on memory collection.')
-flags.DEFINE_string('upload_data', False,
-                    'Whether to upload the result to a remote storage.')
+flags.DEFINE_string('upload_results_cfg', None,
+                    'The configuration of the bigQuery tbale to upload ' \
+                    'results to: <dataset_id>:<table_id>:<location>')
 
 
 def _flag_checks():
   """Verify flags requirements."""
-  if FLAGS.bazel_commits and FLAGS.project_commits \
-    and len(FLAGS.bazel_commits) > 1 and len(FLAGS.project_commits) > 1:
+  if (FLAGS.bazel_commits and FLAGS.project_commits and
+      len(FLAGS.bazel_commits) > 1 and len(FLAGS.project_commits) > 1):
     raise ValueError(
         'Either --bazel_commits or --project_commits should be a single element.'
     )
-  if FLAGS.upload_data and not os.path.exists('utils/config.py'):
-    raise ValueError(
-        '--upload_data specified without a present utils/config.py.')
 
+  if FLAGS.upload_results_cfg:
+    if not re.match('^[\w-]+:[\w-]+:[\w-]+$']', FLAGS.upload_results_cfg)):
+      raise ValueError('--upload_results_cfg need to follow the pattern '
+                       '<dataset_id>:<table_id>:<location>')
+
+    if ('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ or
+        not os.environ['GOOGLE_APPLICATION_CREDENTIALS']):
+      raise ValueError('You have to set GOOGLE_APPLICATION_CREDENTIALS to '
+                       'upload data to bigquery.')
 
 def main(argv):
   _flag_checks()
@@ -370,10 +376,10 @@ def main(argv):
              values.stddev(), pval))
     last_collected = collected
 
-  if FLAGS.data_directory or FLAGS.upload_data:
+  if FLAGS.data_directory or FLAGS.upload_results_cfg:
     data_directory = FLAGS.data_directory or DEFAULT_OUT_BASE_PATH
     csv_file_path = export_csv(data_directory, csv_data, FLAGS.project_source)
-    if FLAGS.upload_data:
+    if FLAGS.upload_results_cfg:
       upload_csv(csv_file_path)
 
   logger.log('Done.')
