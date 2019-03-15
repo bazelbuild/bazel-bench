@@ -75,34 +75,34 @@ $ python benchmark.py --helpshort
 flags:
 
 benchmark.py:
-  --bazel_commits: The commits at which bazel is built.;
-    repeat this option to specify a list of values
-    (default: "['latest']")
+  --bazel_commits: The commits at which bazel is built.
+    (default: 'latest')
+    (a comma separated list)
   --bazel_source: Either a path to the local Bazel repo or a https url to a GitHub repository.
     (default: 'https://github.com/bazelbuild/bazel.git')
   --bazelrc: The path to a .blazerc file.
   --[no]collect_memory: Whether to collect used heap sizes.
     (default: 'false')
-  --data_directory: The directory in which the csv files should be stored (including the trailing "/"),     turns on memory collection.
+  --data_directory: The directory in which the csv files should be stored (including the trailing "/") turns on memory collection.
   --[no]prefetch_ext_deps: Whether to do an initial run to pre-fetch external dependencies.
     (default: 'true')
-  --project_commits: The commits from the git project to be benchmarked.;
-    repeat this option to specify a list of values
-    (default: "['latest']")
+  --project_commits: The commits from the git project to be benchmarked.
+    (default: 'latest')
+    (a comma separated list)
   --project_source: Either a path to the local git project to be built or a https url to a GitHub repository.
   --runs: The number of benchmark runs.
     (default: '3')
     (an integer)
-  --[no]upload_data: Whether to upload the result to a remote storage.
-    (default: 'false')
+  --upload_data_to: The details of the BigQuery table to upload results to: <dataset_id>:<table_id>:<location>
   --[no]verbose: Whether to include git/Bazel stdout logs.
     (default: 'false')
+
 
 ```
 
 ## Uploading to BigQuery
 
-To upload the output to BigQuery, you'll need the GCP credentials. Please contact leba@google.com.
+To upload the output to BigQuery, you'll need the GCP credentials and the table details. Please contact leba@google.com.
 
 ## Tests
 

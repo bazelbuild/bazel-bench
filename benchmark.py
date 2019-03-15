@@ -284,7 +284,7 @@ flags.DEFINE_string('data_directory', None,
                     'The directory in which the csv files should be stored ' \
                     '(including the trailing "/") turns on memory collection.')
 flags.DEFINE_string('upload_data_to', None,
-                    'The configuration of the bigQuery tbale to upload ' \
+                    'The details of the BigQuery table to upload ' \
                     'results to: <dataset_id>:<table_id>:<location>')
 
 
