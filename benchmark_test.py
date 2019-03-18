@@ -100,8 +100,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
       benchmark._single_run(
           'bazel_binary_path',
           'build',
-          expressions=['//:all'],
-          options=[],
+          args=['//:all'],
           bazelrc=None,
           collect_memory=False)
 
@@ -152,8 +151,8 @@ class BenchmarkFunctionTests(absltest.TestCase):
           prefetch_ext_deps=True)
 
     self.assertEqual(''.join([
-        'Pre-fetching external dependencies & exporting build env json to /tmp/.bazel-bench/out/build_env.json...',
-        'Executing Bazel command: bazel build //:all --build_event_json_file=/tmp/.bazel-bench/out/build_env.json',
+        'Pre-fetching external dependencies & exporting build event json to /tmp/.bazel-bench/out/build_env.json...',
+        'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=/tmp/.bazel-bench/out/build_env.json',
         'Executing Bazel command: bazel clean --color=no',
         'Executing Bazel command: bazel shutdown ',
         'Starting benchmark run 1/2:',
