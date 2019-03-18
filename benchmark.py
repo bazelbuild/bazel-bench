@@ -170,7 +170,7 @@ def _single_run(bazel_binary_path,
             ['--nostamp', '--noshow_progress', '--color=no']))
     options = default_options + options
 
-  times = bazel.command(
+  measurements = bazel.command(
       command_name=command,
       args=options + expressions,
       collect_memory=collect_memory)
@@ -178,7 +178,7 @@ def _single_run(bazel_binary_path,
   # Get back to a clean state.
   bazel.command('clean', ['--color=no'])
   bazel.command('shutdown')
-  return times
+  return measurements
 
 
 def _run_benchmark(bazel_binary_path,
