@@ -17,6 +17,7 @@ import hashlib
 import re
 import shutil
 import collections
+import git
 import utils.logger as logger
 import utils.bazel_args_parser as args_parser
 
@@ -58,45 +59,44 @@ def _exec_command(args, shell=False, fail_if_nonzero=True):
 def _setup_project_repo(repo_path, project_source):
   """Returns a path to the cloned repository.
 
+  If the repo_path exists, perform a `git pull` to update the content.
+  Else, clone the project to repo_path.
+
   Args:
     repo_path: the path to clone the repository to.
     project_source: the source to clone the repository from. Could be a local
       path or an URL.
 
   Returns:
-    The path to the cloned repository.
-    If the repo_path exists, perform a `git pull` to update the content.
-    Else, clone the project to repo_path.
+    A git.Repo object of the cloned repository.
   """
   if os.path.exists(repo_path):
-    os.chdir(repo_path)
     logger.log('Path %s exists. Updating...' % repo_path)
-    _exec_command(['git', 'checkout', 'master'])
-    _exec_command(['git', '-C', repo_path, 'pull', 'origin', 'master'])
+    repo = git.Repo(repo_path)
+    repo.git.checkout('master')
+    repo.git.pull('origin', 'master')
   else:
     logger.log('Cloning %s to %s...' % (project_source, repo_path))
-    _exec_command(['git', 'clone', project_source, repo_path])
-    os.chdir(repo_path)
+    repo = git.Repo.clone_from(project_source, repo_path)
 
-  return repo_path
+  return repo
 
 
-def _checkout_project_commit(commit, project_path):
+def _checkout_project_commit(commit, repo):
   """Checks out the project at the specified commit.
 
   Do nothing if commit is set to 'latest'.
 
   Args:
     commit: the commit hash to check out.
-    project_path: the path to the cloned repository.
+    repo: the git.Repo instance of the cloned repository.
   """
-  os.chdir(project_path)
   if commit == 'latest':
     return
-  _exec_command(['git', 'checkout', '-f', commit])
+  repo.git.checkout('-f', commit)
 
 
-def _build_bazel_binary(commit, repo_path, outroot):
+def _build_bazel_binary(commit, repo, outroot):
   """Builds bazel at the specified commit and copy the output binary to outroot.
 
   If the binary for this commit already exists at the destination path, simply
@@ -104,7 +104,7 @@ def _build_bazel_binary(commit, repo_path, outroot):
 
   Args:
     commit: the Bazel commit.
-    repo_path: the path to the Bazel repository.
+    repo: the git.Repo instance of the Bazel clone.
     outroot: the directory inwhich the resulting binary is copied to.
 
   Returns:
@@ -115,11 +115,11 @@ def _build_bazel_binary(commit, repo_path, outroot):
     logger.log('Binary exists at %s, reusing...' % destination)
     return destination
 
-  _checkout_project_commit(commit, repo_path)
+  _checkout_project_commit(commit, repo)
   _exec_command(['bazel', 'build', '//src:bazel'])
 
   # Copy to another location
-  binary_out = '%s/bazel-bin/src/bazel' % repo_path
+  binary_out = '%s/bazel-bin/src/bazel' % repo.working_dir
   destination = outroot + commit
 
   if not os.path.exists(outroot):
@@ -319,11 +319,11 @@ def main(argv):
   bazel_binaries = []
   logger.log('Preparing bazelbuild/bazel repository.')
   bazel_source = FLAGS.bazel_source if FLAGS.bazel_source else BAZEL_GITHUB_URL
-  bazel_clone_path = _setup_project_repo(BAZEL_CLONE_PATH, bazel_source)
+  bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH, bazel_source)
 
   # Set up project repo
   logger.log('Preparing %s clone.' % FLAGS.project_source)
-  project_clone_path = _setup_project_repo(
+  project_clone_repo = _setup_project_repo(
       PROJECT_CLONE_BASE_PATH + _get_clone_subdir(FLAGS.project_source),
       FLAGS.project_source)
 
@@ -333,12 +333,16 @@ def main(argv):
   csv_data = {}
   for bazel_commit in FLAGS.bazel_commits:
     for project_commit in FLAGS.project_commits:
-      bazel_binary_path = _build_bazel_binary(bazel_commit, bazel_clone_path,
+      bazel_binary_path = _build_bazel_binary(bazel_commit, bazel_clone_repo,
                                               BAZEL_BINARY_BASE_PATH)
-      _checkout_project_commit(project_commit, project_clone_path)
-      results, args = _run_benchmark(bazel_binary_path, project_clone_path,
-                               FLAGS.runs, FLAGS.collect_memory or FLAGS.data_directory,
-                               bazel_args, FLAGS.bazelrc, FLAGS.prefetch_ext_deps)
+      _checkout_project_commit(project_commit, project_clone_repo)
+      results, args = _run_benchmark(bazel_binary_path,
+                                     project_clone_repo.working_dir,
+                                     FLAGS.runs,
+                                     FLAGS.collect_memory or FLAGS.data_directory,
+                                     bazel_args,
+                                     FLAGS.bazelrc,
+                                     FLAGS.prefetch_ext_deps)
       collected = {}
       for benchmarking_result in results:
         for metric, value in benchmarking_result.items():
