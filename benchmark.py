@@ -154,6 +154,8 @@ def _single_run(bazel_binary_path,
       'cpu': 1.000,
       'system': 1.000,
       'memory': 1.000,
+      'exit_status': 0,
+      'started_at': datetime.datetime(2019, 1, 1, 0, 0, 0, 000000),
     }
   """
   bazel = Bazel(bazel_binary_path, bazelrc)
@@ -170,7 +172,7 @@ def _single_run(bazel_binary_path,
             ['--nostamp', '--noshow_progress', '--color=no']))
     options = default_options + options
 
-  times = bazel.command(
+  measurements = bazel.command(
       command_name=command,
       args=options + expressions,
       collect_memory=collect_memory)
@@ -178,7 +180,7 @@ def _single_run(bazel_binary_path,
   # Get back to a clean state.
   bazel.command('clean', ['--color=no'])
   bazel.command('shutdown')
-  return times
+  return measurements
 
 
 def _run_benchmark(bazel_binary_path,
@@ -358,7 +360,7 @@ def main(argv):
     print('Bazel commit: %s, Project commit: %s, Project source: %s' %
           (bazel_commit, project_commit, FLAGS.project_source))
     for metric, values in sorted(collected.items()):
-      if metric == 'exit_status':
+      if metric in ['exit_status', 'started_at']:
         continue
       if last_collected:
         base = last_collected[metric]

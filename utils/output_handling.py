@@ -46,7 +46,7 @@ def export_csv(data_directory, data, project_source):
     csv_writer.writerow([
         'project_source', 'project_commit', 'bazel_commit', 'run', 'cpu',
         'wall', 'system', 'memory', 'command', 'expressions', 'hostname',
-        'username', 'options', 'exit_status'
+        'username', 'options', 'exit_status', 'started_at'
     ])
 
     for (bazel_commit, project_commit), results_and_args in sorted(data.items()):
@@ -55,7 +55,8 @@ def export_csv(data_directory, data, project_source):
         csv_writer.writerow([
             project_source, project_commit, bazel_commit, idx, run['cpu'],
             run['wall'], run['system'], run['memory'], command, expressions,
-            hostname, username, options, run['exit_status']
+            hostname, username, options, run['exit_status'],
+            run['started_at']
         ])
   return csv_file_path
 
