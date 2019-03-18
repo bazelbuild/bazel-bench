@@ -59,7 +59,6 @@ class Bazel(object):
         'Executing Bazel command: bazel %s %s' % (command_name, ' '.join(args)))
 
     result = dict()
-    # Use UTC.
     result['started_at'] = datetime.datetime.utcnow()
 
     before_times = self._get_times()
