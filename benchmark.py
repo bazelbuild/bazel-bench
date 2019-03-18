@@ -82,20 +82,6 @@ def _setup_project_repo(repo_path, project_source):
   return repo
 
 
-def _checkout_project_commit(commit, repo):
-  """Checks out the project at the specified commit.
-
-  Do nothing if commit is set to 'latest'.
-
-  Args:
-    commit: the commit hash to check out.
-    repo: the git.Repo instance of the cloned repository.
-  """
-  if commit == 'latest':
-    return
-  repo.git.checkout('-f', commit)
-
-
 def _build_bazel_binary(commit, repo, outroot):
   """Builds bazel at the specified commit and copy the output binary to outroot.
 
@@ -115,7 +101,9 @@ def _build_bazel_binary(commit, repo, outroot):
     logger.log('Binary exists at %s, reusing...' % destination)
     return destination
 
-  _checkout_project_commit(commit, repo)
+  if commit != 'latest':
+    repo.git.checkout('-f', commit)
+
   _exec_command(['bazel', 'build', '//src:bazel'])
 
   # Copy to another location
@@ -335,7 +323,9 @@ def main(argv):
     for project_commit in FLAGS.project_commits:
       bazel_binary_path = _build_bazel_binary(bazel_commit, bazel_clone_repo,
                                               BAZEL_BINARY_BASE_PATH)
-      _checkout_project_commit(project_commit, project_clone_repo)
+      if project_commit != 'latest':
+        project_clone_repo.git.checkout('-f', project_commit)
+
       results, args = _run_benchmark(bazel_binary_path,
                                      project_clone_repo.working_dir,
                                      FLAGS.runs,
