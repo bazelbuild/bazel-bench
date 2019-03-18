@@ -58,19 +58,6 @@ class BenchmarkFunctionTests(absltest.TestCase):
         "['git', 'clone', 'project_source', 'repo_path']"]),
         mock_stderr.getvalue())
 
-  @mock.patch.object(benchmark.os, 'chdir')
-  def test_checkout_project_commit_latest(self, _):
-    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
-      benchmark._checkout_project_commit('latest', 'project_path')
-    self.assertTrue(len(mock_stderr.getvalue()) == 0)
-
-  @mock.patch.object(benchmark.os, 'chdir')
-  def test_checkout_project_commit_hash(self, _):
-    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
-      benchmark._checkout_project_commit('some_hash', 'project_path')
-    self.assertEqual("['git', 'checkout', '-f', 'some_hash']",
-                     mock_stderr.getvalue())
-
   @mock.patch.object(benchmark.os.path, 'exists', return_value=True)
   @mock.patch.object(benchmark.os, 'makedirs')
   def test_build_bazel_binary_exists(self, unused_chdir_mock,

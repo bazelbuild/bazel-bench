@@ -56,11 +56,36 @@ def _exec_command(args, shell=False, fail_if_nonzero=True):
       args, shell=shell, stdout=fd_devnull, stderr=fd_devnull)
 
 
+def _get_commits(commits_list, repo, flag_name):
+  """Returns a list of commits.
+
+  If the input commits_list is empty, fetch the latest commit from repo.
+
+  Args:
+    commits_list: a list of string of commit SHA digest.
+    repo: the git.Repo instance of the repository.
+    flag_name: the flag that is supposed to specify commits_list.
+
+  Returns:
+    A list of string of commit SHA digests.
+  """
+  if commits_list:
+    return commits_list
+
+  # If no commit specified: take the repo's latest commit.
+  latest_commit_sha = repo.commit().hexsha
+  logger.log(
+      'No %s specified, using the latest one: %s' % (flag_name, latest_commit_sha))
+  return [latest_commit_sha]
+
+
 def _setup_project_repo(repo_path, project_source):
   """Returns a path to the cloned repository.
 
   If the repo_path exists, perform a `git pull` to update the content.
   Else, clone the project to repo_path.
+
+  The cloned repository is guaranteed to be at the latest commit.
 
   Args:
     repo_path: the path to clone the repository to.
@@ -74,7 +99,7 @@ def _setup_project_repo(repo_path, project_source):
     logger.log('Path %s exists. Updating...' % repo_path)
     repo = git.Repo(repo_path)
     repo.git.checkout('master')
-    repo.git.pull('origin', 'master')
+    repo.git.pull('-f', 'origin', 'master')
   else:
     logger.log('Cloning %s to %s...' % (project_source, repo_path))
     repo = git.Repo.clone_from(project_source, repo_path)
@@ -89,7 +114,7 @@ def _build_bazel_binary(commit, repo, outroot):
   return the path without re-building.
 
   Args:
-    commit: the Bazel commit.
+    commit: the Bazel commit SHA.
     repo: the git.Repo instance of the Bazel clone.
     outroot: the directory inwhich the resulting binary is copied to.
 
@@ -101,8 +126,8 @@ def _build_bazel_binary(commit, repo, outroot):
     logger.log('Binary exists at %s, reusing...' % destination)
     return destination
 
-  if commit != 'latest':
-    repo.git.checkout('-f', commit)
+  logger.log('Building Bazel binary at commit %s' % commit)
+  repo.git.checkout('-f', commit)
 
   _exec_command(['bazel', 'build', '//src:bazel'])
 
@@ -241,7 +266,7 @@ def _run_benchmark(bazel_binary_path,
 
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
-flags.DEFINE_list('bazel_commits', ['latest'],
+flags.DEFINE_list('bazel_commits', None,
                   'The commits at which bazel is built.')
 flags.DEFINE_string('bazel_source',
                     'https://github.com/bazelbuild/bazel.git',
@@ -252,7 +277,7 @@ flags.DEFINE_string('bazel_source',
 flags.DEFINE_string('project_source', None,
                     'Either a path to the local git project to be built or ' \
                     'a https url to a GitHub repository.')
-flags.DEFINE_list('project_commits', ['latest'],
+flags.DEFINE_list('project_commits', None,
                   'The commits from the git project to be benchmarked.')
 
 # Execution options.
@@ -309,22 +334,30 @@ def main(argv):
   bazel_source = FLAGS.bazel_source if FLAGS.bazel_source else BAZEL_GITHUB_URL
   bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH, bazel_source)
 
+  bazel_commits = _get_commits(FLAGS.bazel_commits,
+                               bazel_clone_repo,
+                               'bazel_commits')
+
   # Set up project repo
   logger.log('Preparing %s clone.' % FLAGS.project_source)
   project_clone_repo = _setup_project_repo(
       PROJECT_CLONE_BASE_PATH + _get_clone_subdir(FLAGS.project_source),
       FLAGS.project_source)
 
+  project_commits = _get_commits(FLAGS.project_commits,
+                                 project_clone_repo,
+                                 'project_commits')
+
   # A dictionary that maps a (bazel_commit, project_commit) tuple
   # to its benchmarking result.
   data = {}
   csv_data = {}
-  for bazel_commit in FLAGS.bazel_commits:
-    for project_commit in FLAGS.project_commits:
+
+  for bazel_commit in bazel_commits:
+    for project_commit in project_commits:
       bazel_binary_path = _build_bazel_binary(bazel_commit, bazel_clone_repo,
                                               BAZEL_BINARY_BASE_PATH)
-      if project_commit != 'latest':
-        project_clone_repo.git.checkout('-f', project_commit)
+      project_clone_repo.git.checkout('-f', project_commit)
 
       results, args = _run_benchmark(bazel_binary_path,
                                      project_clone_repo.working_dir,
