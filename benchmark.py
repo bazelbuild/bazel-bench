@@ -133,8 +133,7 @@ def _build_bazel_binary(commit, repo_path, outroot):
 
 def _single_run(bazel_binary_path,
                 command,
-                expressions,
-                options,
+                args,
                 bazelrc=None,
                 collect_memory=False):
   """Runs the benchmarking for a combination of (bazel version, project version).
@@ -142,8 +141,8 @@ def _single_run(bazel_binary_path,
   Args:
     bazel_binary_path: the path to the bazel binary to be run.
     command: the command to be run with Bazel.
-    expressions: the list of command-specific expressions.
-    options: the list of non-startup options.
+    args: the list of arguments (options and expressions) to pass to the Bazel
+      command.
     bazelrc: the path to a .bazelrc file.
     collect_memory: whether the benchmarking should collect memory info.
 
@@ -165,16 +164,16 @@ def _single_run(bazel_binary_path,
   # Prepend some default options if the command is 'build'.
   # The order in which the options appear matters.
   if command == 'build':
-    options_set = set(options)
+    args_set = set(args)
     default_options = list(
         filter(
-            lambda x: x not in options_set,
+            lambda x: x not in args,
             ['--nostamp', '--noshow_progress', '--color=no']))
-    options = default_options + options
+    args = default_options + args
 
   measurements = bazel.command(
       command_name=command,
-      args=options + expressions,
+      args=args,
       collect_memory=collect_memory)
 
   # Get back to a clean state.
@@ -210,8 +209,6 @@ def _run_benchmark(bazel_binary_path,
   """
   collected = []
 
-  bazel = Bazel(bazel_binary_path, bazelrc)
-
   # Runs the command once to make sure external dependencies are fetched.
   # If prefetch_ext_deps, run the command with --build_event_json_file to get the
   # command arguments.
@@ -223,30 +220,32 @@ def _run_benchmark(bazel_binary_path,
     bep_json_path = bep_json_dir + 'build_env.json'
     os.chdir(project_path)
 
-    logger.log('Pre-fetching external dependencies & exporting build env json ' \
+    logger.log('Pre-fetching external dependencies & exporting build event json ' \
         'to %s...' % bep_json_path)
 
+    # The command is guaranteed to be the first element since we don't support
+    # startup options.
     command = bazel_args[0]
-    command_args = bazel_args[1:]
+
     # It's important to have --build_event_json_file as the last argument, since
     # we exclude this injected flag when parsing command options by simply
     # discarding the last argument.
-    bazel.command(
-        command,
-        command_args + ['--build_event_json_file=%s' % bep_json_path])
+    command_args = bazel_args[1:] + ['--build_event_json_file=%s' % bep_json_path]
+
+    _single_run(bazel_binary_path, command,
+                command_args,
+                bazelrc, collect_memory)
     command, expressions, options = args_parser.parse_bazel_args_from_build_event(bep_json_path)
-    # Get back to a clean state.
-    bazel.command('clean', ['--color=no'])
-    bazel.command('shutdown')
   else:
     logger.log('Parsing arguments from command line...')
     command, expressions, options = args_parser.parse_bazel_args_from_canonical_str(bazel_args)
 
+  parsed_args = options + expressions
   for i in range(runs):
     logger.log('Starting benchmark run %s/%s:' % ((i + 1), runs))
     collected.append(
         _single_run(bazel_binary_path, command,
-                    expressions, options, bazelrc,
+                    parsed_args, bazelrc,
                     collect_memory))
 
   return collected, (command, expressions, options)
