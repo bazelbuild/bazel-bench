@@ -17,6 +17,7 @@ import os
 import time
 import psutil
 import logger
+import datetime
 
 
 class Bazel(object):
@@ -49,12 +50,17 @@ class Bazel(object):
 
     Returns:
       A dict containing collected metrics (wall, cpu, system times and
-      optionally memory) and the exit_status of the Blaze invocation.
+      optionally memory), the exit_status of the Bazel invocation, and the
+      start datetime (in UTC).
       Returns None instead if the command equals 'shutdown'.
     """
     args = args or []
     logger.log(
         'Executing Bazel command: bazel %s %s' % (command_name, ' '.join(args)))
+
+    result = dict()
+    # Use UTC.
+    result['started_at'] = datetime.datetime.utcnow()
 
     before_times = self._get_times()
     dev_null = open(os.devnull, 'w')
@@ -67,7 +73,6 @@ class Bazel(object):
       return None
     after_times = self._get_times()
 
-    result = dict()
     for kind in ['wall', 'cpu', 'system']:
       result[kind] = after_times[kind] - before_times[kind]
     result['exit_status'] = exit_status
