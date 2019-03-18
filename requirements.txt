@@ -5,6 +5,7 @@ chardet==3.0.4
 enum34==1.1.6
 funcsigs==1.0.2
 futures==3.2.0
+GitPython==2.1.11
 google-api-core==1.8.0
 google-auth==1.6.3
 google-cloud-bigquery==1.9.0
