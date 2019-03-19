@@ -55,10 +55,10 @@ class BenchmarkFunctionTests(absltest.TestCase):
                                          unused_exists_mock):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
       mock.patch('benchmark.git.Repo') as mock_repo_class:
-        mock_repo = mock_repo_class.return_value
         benchmark._setup_project_repo('repo_path', 'project_source')
 
-
+    mock_repo_class.clone_from.assert_called_once_with('project_source',
+                                                       'repo_path')
     self.assertEqual("Cloning project_source to repo_path...",
                      mock_stderr.getvalue())
 
