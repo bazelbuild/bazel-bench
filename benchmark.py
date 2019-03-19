@@ -17,6 +17,7 @@ import hashlib
 import re
 import shutil
 import collections
+import tempfile
 import utils.logger as logger
 import utils.bazel_args_parser as args_parser
 
@@ -28,15 +29,25 @@ from utils.values import Values
 from utils.bazel import Bazel
 from utils.output_handling import export_csv, upload_csv
 
+# TMP has different values, depending on the platform.
+TMP = tempfile.gettempdir()
+
+def _platform_path_str(posix_path):
+  """Converts the path to the appropriate format for platform."""
+  if os.name == 'nt':
+    return posix_path.replace('/', '\\')
+  return posix_path
+
 # The path to the cloned bazelbuild/bazel repo.
-BAZEL_CLONE_PATH = '/tmp/.bazel-bench/bazel'
+BAZEL_CLONE_PATH = _platform_path_str('%s/.bazel-bench/bazel' % TMP)
 # The path to the clone of the project to be built with Bazel.
-PROJECT_CLONE_BASE_PATH = '/tmp/.bazel-bench/project-clones/'
+PROJECT_CLONE_BASE_PATH = _platform_path_str(
+    '%s/.bazel-bench/project-clones/' % TMP)
 BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 # The path to the directory that stores the bazel binaries.
-BAZEL_BINARY_BASE_PATH = '/tmp/.bazel-bench/bazel-bin/'
+BAZEL_BINARY_BASE_PATH = _platform_path_str('%s/.bazel-bench/bazel-bin/' % TMP)
 # The path to the directory that stores the output csv (If required).
-DEFAULT_OUT_BASE_PATH = '/tmp/.bazel-bench/out/'
+DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/tmp/.bazel-bench/out/' % TMP)
 
 
 def _get_clone_subdir(project_source):
