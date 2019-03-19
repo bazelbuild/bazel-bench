@@ -20,7 +20,6 @@ import mock
 import sys
 import benchmark
 import six
-import git
 
 from absl.testing import absltest
 from absl.testing import flagsaver
