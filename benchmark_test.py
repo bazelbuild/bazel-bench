@@ -20,6 +20,7 @@ import mock
 import sys
 import benchmark
 import six
+import git
 
 from absl.testing import absltest
 from absl.testing import flagsaver
@@ -39,24 +40,28 @@ class BenchmarkFunctionTests(absltest.TestCase):
   @mock.patch.object(benchmark.os, 'chdir')
   def test_setup_project_repo_exists(self, unused_chdir_mock,
                                      unused_exists_mock):
-    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
-      benchmark._setup_project_repo('repo_path', 'project_source')
-    self.assertEqual(''.join([
-        "Path repo_path exists. Updating...",
-        "['git', 'checkout', 'master']",
-        "['git', '-C', 'repo_path', 'pull', 'origin', 'master']"]),
-        mock_stderr.getvalue())
+    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
+      mock.patch('benchmark.git.Repo') as mock_repo_class:
+        mock_repo = mock_repo_class.return_value
+        benchmark._setup_project_repo('repo_path', 'project_source')
+
+    mock_repo.git.checkout.assert_called_once_with('master')
+    mock_repo.git.pull.assert_called_once_with('-f', 'origin', 'master')
+    self.assertEqual("Path repo_path exists. Updating...",
+                     mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os.path, 'exists', return_value=False)
   @mock.patch.object(benchmark.os, 'chdir')
   def test_setup_project_repo_not_exists(self, unused_chdir_mock,
                                          unused_exists_mock):
-    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
-      benchmark._setup_project_repo('repo_path', 'project_source')
-    self.assertEqual(''.join([
-        "Cloning project_source to repo_path...",
-        "['git', 'clone', 'project_source', 'repo_path']"]),
-        mock_stderr.getvalue())
+    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
+      mock.patch('benchmark.git.Repo') as mock_repo_class:
+        mock_repo = mock_repo_class.return_value
+        benchmark._setup_project_repo('repo_path', 'project_source')
+
+
+    self.assertEqual("Cloning project_source to repo_path...",
+                     mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os.path, 'exists', return_value=True)
   @mock.patch.object(benchmark.os, 'makedirs')
@@ -74,10 +79,14 @@ class BenchmarkFunctionTests(absltest.TestCase):
   def test_build_bazel_binary_not_exists(
       self, unused_shutil_mock, unused_chdir_mock, unused_makedirs_mock,
       unused_exists_mock):
-    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
-      benchmark._build_bazel_binary('commit', 'repo_path', 'outroot/')
+    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
+      mock.patch('benchmark.git.Repo') as mock_repo_class:
+        mock_repo = mock_repo_class.return_value
+        benchmark._build_bazel_binary('commit', mock_repo, 'outroot/')
+
+    mock_repo.git.checkout.assert_called_once_with('-f', 'commit')
     self.assertEqual(''.join([
-        "['git', 'checkout', '-f', 'commit']",
+        "Building Bazel binary at commit commit",
         "['bazel', 'build', '//src:bazel']",
         'Copying bazel binary to outroot/commit',
         "['chmod', '+x', 'outroot/commit']"]), mock_stderr.getvalue())
