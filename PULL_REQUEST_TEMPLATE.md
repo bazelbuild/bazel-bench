@@ -9,3 +9,7 @@
 **Special notes for reviewer:**
 
 > Replace this line with your answer.
+
+**Does this require a change in the script's interface or the BigQuery's table structure?**
+
+> Replace this line with your answer.
