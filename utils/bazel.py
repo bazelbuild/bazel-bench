@@ -98,7 +98,7 @@ class Bazel(object):
   def _get_times(self):
     """Retrieves and returns the used times."""
     # TODO(twerth): Getting the pid have the side effect of starting up the
-    # Blaze server. There are benchmarks where we don't want this, so we
+    # Bazel server. There are benchmarks where we don't want this, so we
     # probably should make it configurable.
     process_data = psutil.Process(pid=self._get_pid())
     cpu_times = process_data.cpu_times()

@@ -269,7 +269,7 @@ flags.DEFINE_list('project_commits', ['latest'],
 
 # Execution options.
 flags.DEFINE_integer('runs', 3, 'The number of benchmark runs.')
-flags.DEFINE_string('bazelrc', None, 'The path to a .blazerc file.')
+flags.DEFINE_string('bazelrc', None, 'The path to a .bazelrc file.')
 
 # Miscellaneous flags.
 flags.DEFINE_boolean('verbose', False,
