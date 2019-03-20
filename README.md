@@ -4,15 +4,16 @@
 
 # Setup
 
-Pre-requisites: `pip`, `git`, `bazel`
+This script works for `Python 2.7` and `3.x`.
+
+Pre-requisites: `python`, `pip`, `git`, `bazel`
 
 To do a test run:
 
 1.  The use of `virtualenv` is strongly recommended. Do this before you carry on
-    with step 2.
-2.  Install the dependencies: `$ pip install -r requirements.txt`
-3.  Run the following command (with `--project_path` flag filled with the
-    appropriate value):
+    with step 2. An installation guide can be found [here](https://gist.github.com/Geoyi/d9fab4f609e9f75941946be45000632b).
+2.  In your virtual environment, install the dependencies: `$ pip install -r requirements.txt`
+3.  Run the following command (if you're on Windows, populate `--data_directory` with an appropriate Windows-style path):
     ```
     $ python benchmark.py \
     --bazel_commits=b8468a6b68a405e1a5767894426d3ea9a1a2f22f,ad503849e78b98d762f03168de5a336904280150 \
@@ -20,6 +21,8 @@ To do a test run:
     --data_directory=/tmp/out.csv \
     -- build //:all
     ```
+
+The above command would print a result table on the terminal and outputs a csv file to the specified `--data_directory`.
 
 ## Syntax
 
@@ -39,13 +42,13 @@ $ python benchmark.py \
 -- build --nobuild //:all
 ```
 
-You can pass any arguments that you would normally run on Bazel to the script. The performance of commands other than `build` can also be benchmarked e.g. `query`, ...
+Note the double-dash `--` before the command arguments. You can pass any arguments that you would normally run on Bazel to the script. The performance of commands other than `build` can also be benchmarked e.g. `query`, ...
 
 ### Bazel Arguments Interpretation
 
 Bazel arguments are interpreted with [Build Event Protocol](https://docs.bazel.build/versions/master/build-event-protocol.html). This happens during the first pre-run of each Bazel binary to pre-fetch the external dependencies.
 
-In case of `--noprefetch_external_deps`, Bazel arguments are parsed manually. It is _crucial_ that the supplied arguments in the command line strictly follows the canonical form:
+In case of `--noprefetch_external_deps`, Bazel arguments are parsed manually. It is _important_ that the supplied arguments in the command line strictly follows the canonical form:
 
 ```
 <command> <canonical options> <expressions>
@@ -106,4 +109,8 @@ To upload the output to BigQuery, you'll need the GCP credentials and the table 
 
 ## Tests
 
-The tests for each module are found in the same directory.
+The tests for each module are found in the same directory. To run the test, simply:
+
+```
+$ python <some-test>.py
+```
