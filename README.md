@@ -80,7 +80,7 @@ benchmark.py:
     (a comma separated list)
   --bazel_source: Either a path to the local Bazel repo or a https url to a GitHub repository.
     (default: 'https://github.com/bazelbuild/bazel.git')
-  --bazelrc: The path to a .blazerc file.
+  --bazelrc: The path to a .bazelrc file.
   --[no]collect_memory: Whether to collect used heap sizes.
     (default: 'false')
   --data_directory: The directory in which the csv files should be stored (including the trailing "/") turns on memory collection.
