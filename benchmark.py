@@ -59,7 +59,8 @@ def _exec_command(args, shell=False, fail_if_nonzero=True):
 def _get_commits(commits_list, repo, flag_name):
   """Returns a list of commits.
 
-  If the input commits_list is empty, fetch the latest commit from repo.
+  If the input commits_list is empty, fetch the latest commit on branch 'master'
+  of the repo.
 
   Args:
     commits_list: a list of string of commit SHA digest.
