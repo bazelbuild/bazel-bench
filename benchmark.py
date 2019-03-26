@@ -82,7 +82,7 @@ def _get_commits_topological(commits_sha_list, repo, flag_name):
     flag_name: the flag that is supposed to specify commits_list.
 
   Returns:
-    A list of string of commit SHA digests, sorted by commit topological order.
+    A list of string of commit SHA digests, sorted by topological commit order.
   """
   if commits_sha_list:
     commits_sha_set = set(commits_sha_list)
