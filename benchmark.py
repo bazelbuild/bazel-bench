@@ -48,7 +48,7 @@ BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 # The path to the directory that stores the bazel binaries.
 BAZEL_BINARY_BASE_PATH = _platform_path_str('%s/.bazel-bench/bazel-bin/' % TMP)
 # The path to the directory that stores the output csv (If required).
-DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/tmp/.bazel-bench/out/' % TMP)
+DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/.bazel-bench/out/' % TMP)
 
 
 def _get_clone_subdir(project_source):
