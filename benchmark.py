@@ -13,6 +13,7 @@
 # limitations under the License.
 import os
 import subprocess
+import datetime
 import hashlib
 import re
 import shutil
@@ -67,28 +68,28 @@ def _exec_command(args, shell=False, fail_if_nonzero=True):
       args, shell=shell, stdout=fd_devnull, stderr=fd_devnull)
 
 
-def _get_commits(commits_list, repo, flag_name):
+def _get_commits(commits_sha_list, repo, flag_name):
   """Returns a list of commits.
 
   If the input commits_list is empty, fetch the latest commit on branch 'master'
   of the repo.
 
   Args:
-    commits_list: a list of string of commit SHA digest.
+    commits_sha_list: a list of string of commit SHA digest.
     repo: the git.Repo instance of the repository.
     flag_name: the flag that is supposed to specify commits_list.
 
   Returns:
-    A list of string of commit SHA digests.
+    A list of git.Commit objects.
   """
-  if commits_list:
-    return commits_list
+  if commits_sha_list:
+    return [repo.commit(sha) for sha in commits_sha_list]
 
   # If no commit specified: take the repo's latest commit.
   latest_commit_sha = repo.commit().hexsha
   logger.log(
       'No %s specified, using the latest one: %s' % (flag_name, latest_commit_sha))
-  return [latest_commit_sha]
+  return [repo.commit(latest_commit_sha)]
 
 
 def _setup_project_repo(repo_path, project_source):
@@ -367,9 +368,11 @@ def main(argv):
 
   for bazel_commit in bazel_commits:
     for project_commit in project_commits:
-      bazel_binary_path = _build_bazel_binary(bazel_commit, bazel_clone_repo,
+      bazel_commit_sha = bazel_commit.hexsha
+      project_commit_sha = project_commit.hexsha
+      bazel_binary_path = _build_bazel_binary(bazel_commit_sha, bazel_clone_repo,
                                               BAZEL_BINARY_BASE_PATH)
-      project_clone_repo.git.checkout('-f', project_commit)
+      project_clone_repo.git.checkout('-f', project_commit_sha)
 
       results, args = _run_benchmark(bazel_binary_path,
                                      project_clone_repo.working_dir,
@@ -385,10 +388,14 @@ def main(argv):
             collected[metric] = Values()
           collected[metric].add(value)
 
-      data[(bazel_commit, project_commit)] = collected
-      csv_data[(bazel_commit, project_commit)] = {
+      data[(bazel_commit_sha, project_commit_sha)] = collected
+      # TODO(leba): Make the commit time more general when we support benchmarking
+      # non-git projects.
+      csv_data[(bazel_commit_sha, project_commit_sha)] = {
         'results': results,
-        'args': args
+        'args': args,
+        'bazel_commit_time': datetime.datetime.fromtimestamp(bazel_commit.committed_date),
+        'project_commit_time': datetime.datetime.fromtimestamp(project_commit.committed_date)
       }
 
 
