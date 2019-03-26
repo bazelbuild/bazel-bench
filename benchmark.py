@@ -86,8 +86,7 @@ def _get_commits_topological(commits_sha_list, repo, flag_name):
   """
   if commits_sha_list:
     commits_sha_set = set(commits_sha_list)
-    return list(
-        reversed([c.hexsha for c in repo.iter_commits if c.hexsha in commits_sha_set]))
+    return [c.hexsha for c in reversed(list(repo.iter_commits())) if c.hexsha in commits_sha_set]
 
   # If no commit specified: take the repo's latest commit.
   latest_commit_sha = repo.commit().hexsha
