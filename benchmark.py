@@ -86,10 +86,10 @@ def _get_commits(commits_sha_list, repo, flag_name):
     return [repo.commit(sha) for sha in commits_sha_list]
 
   # If no commit specified: take the repo's latest commit.
-  latest_commit_sha = repo.commit().hexsha
+  latest_commit = repo.commit()
   logger.log(
-      'No %s specified, using the latest one: %s' % (flag_name, latest_commit_sha))
-  return [repo.commit(latest_commit_sha)]
+      'No %s specified, using the latest one: %s' % (flag_name, latest_commit.hexsha))
+  return [latest_commit]
 
 
 def _setup_project_repo(repo_path, project_source):
