@@ -67,22 +67,27 @@ def _exec_command(args, shell=False, fail_if_nonzero=True):
       args, shell=shell, stdout=fd_devnull, stderr=fd_devnull)
 
 
-def _get_commits(commits_list, repo, flag_name):
-  """Returns a list of commits.
+def _get_commits_topological(commits_sha_list, repo, flag_name):
+  """Returns a list of commits, sorted by topological order.
 
-  If the input commits_list is empty, fetch the latest commit on branch 'master'
+  e.g. for a commit history A -> B -> C -> D, commits_sha_list = [C, B]
+  Output: [B, C]
+
+  If the input commits_sha_list is empty, fetch the latest commit on branch 'master'
   of the repo.
 
   Args:
-    commits_list: a list of string of commit SHA digest.
+    commits_sha_list: a list of string of commit SHA digest.
     repo: the git.Repo instance of the repository.
     flag_name: the flag that is supposed to specify commits_list.
 
   Returns:
-    A list of string of commit SHA digests.
+    A list of string of commit SHA digests, sorted by commit topological order.
   """
-  if commits_list:
-    return commits_list
+  if commits_sha_list:
+    commits_sha_set = set(commits_sha_list)
+    return list(
+        reversed([c.hexsha for c in repo.iter_commits if c.hexsha in commits_sha_set]))
 
   # If no commit specified: take the repo's latest commit.
   latest_commit_sha = repo.commit().hexsha
@@ -346,7 +351,7 @@ def main(argv):
   bazel_source = FLAGS.bazel_source if FLAGS.bazel_source else BAZEL_GITHUB_URL
   bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH, bazel_source)
 
-  bazel_commits = _get_commits(FLAGS.bazel_commits,
+  bazel_commits = _get_commits_topological(FLAGS.bazel_commits,
                                bazel_clone_repo,
                                'bazel_commits')
 
@@ -356,7 +361,7 @@ def main(argv):
       PROJECT_CLONE_BASE_PATH + _get_clone_subdir(FLAGS.project_source),
       FLAGS.project_source)
 
-  project_commits = _get_commits(FLAGS.project_commits,
+  project_commits = _get_commits_topological(FLAGS.project_commits,
                                  project_clone_repo,
                                  'project_commits')
 

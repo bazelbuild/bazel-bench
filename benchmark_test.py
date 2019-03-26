@@ -62,6 +62,22 @@ class BenchmarkFunctionTests(absltest.TestCase):
     self.assertEqual("Cloning project_source to repo_path...",
                      mock_stderr.getvalue())
 
+  def test_get_commits_topological(self):
+    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
+      mock.patch('benchmark.git.Repo') as mock_repo_class, \
+      mock.patch('benchmark.git.Commit') as mock_commit_class:
+        mock_repo = mock_repo_class.return_value
+        mock_A = mock_commit_class.return_value
+        mock_A.hexsha = 'A'
+        mock_B = mock_commit_class.return_value
+        mock_B.hexsha = 'B'
+        mock_C = mock_commit_class.return_value
+        mock_C.hexsha = 'C'
+        mock_repo.iter_commits = [mock_A, mock_B, mock_C]
+        result = benchmark._get_commits_topological(
+            ['B', 'A'], mock_repo, 'flag_name')
+
+        self.assertEqual(['A', 'B'], result)
   @mock.patch.object(benchmark.os.path, 'exists', return_value=True)
   @mock.patch.object(benchmark.os, 'makedirs')
   def test_build_bazel_binary_exists(self, unused_chdir_mock,
