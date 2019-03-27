@@ -49,7 +49,7 @@ def export_csv(data_directory, data, project_source):
         'username', 'options', 'exit_status', 'started_at'
     ])
 
-    for (bazel_commit, project_commit), results_and_args in sorted(data.items()):
+    for (bazel_commit, project_commit), results_and_args in data.items():
       command, expressions, options = results_and_args['args']
       for idx, run in enumerate(results_and_args['results'], start=1):
         csv_writer.writerow([

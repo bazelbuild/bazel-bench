@@ -398,10 +398,10 @@ def main(argv):
 
   print('\nRESULTS:')
   last_collected = None
-  for (bazel_commit, project_commit), collected in sorted(data.items()):
+  for (bazel_commit, project_commit), collected in data.items():
     print('Bazel commit: %s, Project commit: %s, Project source: %s' %
           (bazel_commit, project_commit, FLAGS.project_source))
-    for metric, values in sorted(collected.items()):
+    for metric, values in collected.items():
       if metric in ['exit_status', 'started_at']:
         continue
       if last_collected:
