@@ -20,7 +20,7 @@ def fake_log(text):
   sys.stderr.write(text)
 
 
-def fake_exec_command(args, shell=False, fail_if_nonzero=True):
+def fake_exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
   """Fakes the _exec_command function."""
   fake_log(args)
 

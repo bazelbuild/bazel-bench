@@ -71,7 +71,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
         mock_B.hexsha = 'B'
         mock_C = mock.MagicMock()
         mock_C.hexsha = 'C'
-        mock_repo.iter_commits = [mock_C, mock_B, mock_A]
+        mock_repo.iter_commits.return_value = [mock_C, mock_B, mock_A]
         result = benchmark._get_commits_topological(
             ['B', 'A'], mock_repo, 'flag_name')
 
