@@ -6,7 +6,6 @@ py_binary(
     deps = [
         "//utils:utils",
       	requirement('absl-py'),
-        requirement('gitdb'),
         requirement('GitPython'),
     ],
     legacy_create_init = 0
