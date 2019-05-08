@@ -56,14 +56,15 @@ def _get_clone_subdir(project_source):
   return hashlib.md5(project_source).hexdigest()
 
 
-def _exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
+def _exec_command(args, shell=False, fail_if_nonzero=True):
   logger.log('Executing: %s' % ' '.join(args))
+
   if FLAGS.verbose:
-    return subprocess.call(args, shell=shell, cwd=cwd)
+    return subprocess.call(args, shell=shell)
 
   fd_devnull = open(os.devnull, 'w')
   return subprocess.call(
-      args, shell=shell, stdout=fd_devnull, stderr=fd_devnull, cwd=cwd)
+      args, shell=shell, stdout=fd_devnull, stderr=fd_devnull)
 
 
 def _get_commits_topological(commits_sha_list, repo, flag_name):
@@ -144,7 +145,7 @@ def _build_bazel_binary(commit, repo, outroot):
   logger.log('Building Bazel binary at commit %s' % commit)
   repo.git.checkout('-f', commit)
 
-  _exec_command(['bazel', 'build', '//src:bazel'], cwd=repo.working_dir)
+  _exec_command(['bazel', 'build', '//src:bazel'])
 
   # Copy to another location
   binary_out = '%s/bazel-bin/src/bazel' % repo.working_dir
