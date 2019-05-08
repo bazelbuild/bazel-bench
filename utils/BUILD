@@ -3,7 +3,10 @@ package(default_visibility = ["//visibility:public"])
 
 filegroup(
   name = "utils-srcs",
-  srcs = glob(["*.py"])
+  srcs = glob(
+      ["*.py"],
+      exclude = ["*_test.py"]
+  )
 )
 
 py_library(
@@ -23,7 +26,6 @@ py_library(
       requirement('google-resumable-media'),
       requirement('googleapis-common-protos'),
       requirement('idna'),
-      requirement('mock'),
       requirement('numpy'),
       requirement('pbr'),
       requirement('protobuf'),
@@ -36,5 +38,35 @@ py_library(
       requirement('scipy'),
       requirement('six'),
       requirement('urllib3')
+  ]
+)
+
+py_test(
+  name = "bazel_args_parser_test",
+  size = "small",
+  srcs = ["bazel_args_parser_test.py"],
+  deps = [
+    ":utils",
+    requirement('mock'),
+  ]
+)
+
+py_test(
+  name = "bazel_test",
+  size = "small",
+  srcs = ["bazel_test.py"],
+  deps = [
+    ":utils",
+    requirement('mock'),
+  ]
+)
+
+py_test(
+  name = "values_test",
+  size = "small",
+  srcs = ["values_test.py"],
+  deps = [
+    ":utils",
+    requirement('mock'),
   ]
 )

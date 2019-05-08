@@ -11,3 +11,11 @@ py_binary(
     ],
     legacy_create_init = 0
 )
+
+py_test(
+    name = "benchmark_test",
+    srcs = ["benchmark_test.py"],
+    deps = [
+      "//testutils:testutils",
+    ]
+)
