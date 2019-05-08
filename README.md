@@ -11,9 +11,24 @@ Pre-requisites: `python`, `pip`, `git`, `bazel`
 To do a test run:
 
 1.  The use of `virtualenv` is strongly recommended. Do this before you carry on
-    with step 2. An installation guide can be found [here](https://gist.github.com/Geoyi/d9fab4f609e9f75941946be45000632b).
-2.  In your virtual environment, install the dependencies: `$ pip install -r requirements.txt`
-3.  Run the following command (if you're on Windows, populate `--data_directory` with an appropriate Windows-style path):
+    with step 2. An installation guide can be found [here](https://gist.github.com/Geoyi/d9fab4f609e9f75941946be45000632b). For this guide, we'll set up our virtual environment in the directory `~/.virtualenv`.
+
+    ```
+    $ mkdir ~/.virtualenv
+    $ virtualenv ~/.virtualenv/bazel_bench_env
+    ```
+
+2. Start your virtual environment:
+    ```
+    $ source ~/.virtualenv/bazel_bench_env
+    ```
+
+3.  In your virtual environment, install the dependencies:
+    ```
+    $ pip install -r third_party/requirements.txt`
+    ```
+
+4.  Run the following command (if you're on Windows, populate `--data_directory` with an appropriate Windows-style path):
     ```
     $ bazel run :benchmark \
     -- \
@@ -24,6 +39,8 @@ To do a test run:
     ```
 
 The above command would print a result table on the terminal and outputs a csv file to the specified `--data_directory`.
+
+Note that every `bazel` command below is to be executed in your virtual environment.
 
 ## Syntax
 
