@@ -62,6 +62,35 @@ class BenchmarkFunctionTests(absltest.TestCase):
     self.assertEqual("Cloning project_source to repo_path...",
                      mock_stderr.getvalue())
 
+  def test_get_commits_topological(self):
+    with mock.patch('benchmark.git.Repo') as mock_repo_class:
+        mock_repo = mock_repo_class.return_value
+        mock_A = mock.MagicMock()
+        mock_A.hexsha = 'A'
+        mock_B = mock.MagicMock()
+        mock_B.hexsha = 'B'
+        mock_C = mock.MagicMock()
+        mock_C.hexsha = 'C'
+        mock_repo.iter_commits = [mock_C, mock_B, mock_A]
+        result = benchmark._get_commits_topological(
+            ['B', 'A'], mock_repo, 'flag_name')
+
+        self.assertEqual(['A', 'B'], result)
+
+  def test_get_commits_topological_latest(self):
+    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
+      mock.patch('benchmark.git.Repo') as mock_repo_class:
+        mock_repo = mock_repo_class.return_value
+        mock_commit = mock.MagicMock()
+        mock_repo.commit.return_value = mock_commit
+        mock_commit.hexsha = 'A'
+        result = benchmark._get_commits_topological(None, mock_repo, 'bazel_commits')
+
+    self.assertEqual(['A'], result)
+    self.assertEqual('No bazel_commits specified, using the latest one: A',
+                     mock_stderr.getvalue())
+
+
   @mock.patch.object(benchmark.os.path, 'exists', return_value=True)
   @mock.patch.object(benchmark.os, 'makedirs')
   def test_build_bazel_binary_exists(self, unused_chdir_mock,

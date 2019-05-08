@@ -48,7 +48,7 @@ BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 # The path to the directory that stores the bazel binaries.
 BAZEL_BINARY_BASE_PATH = _platform_path_str('%s/.bazel-bench/bazel-bin/' % TMP)
 # The path to the directory that stores the output csv (If required).
-DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/tmp/.bazel-bench/out/' % TMP)
+DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/.bazel-bench/out/' % TMP)
 
 
 def _get_clone_subdir(project_source):
@@ -67,22 +67,26 @@ def _exec_command(args, shell=False, fail_if_nonzero=True):
       args, shell=shell, stdout=fd_devnull, stderr=fd_devnull)
 
 
-def _get_commits(commits_list, repo, flag_name):
-  """Returns a list of commits.
+def _get_commits_topological(commits_sha_list, repo, flag_name):
+  """Returns a list of commits, sorted by topological order.
 
-  If the input commits_list is empty, fetch the latest commit on branch 'master'
+  e.g. for a commit history A -> B -> C -> D, commits_sha_list = [C, B]
+  Output: [B, C]
+
+  If the input commits_sha_list is empty, fetch the latest commit on branch 'master'
   of the repo.
 
   Args:
-    commits_list: a list of string of commit SHA digest.
+    commits_sha_list: a list of string of commit SHA digest.
     repo: the git.Repo instance of the repository.
     flag_name: the flag that is supposed to specify commits_list.
 
   Returns:
-    A list of string of commit SHA digests.
+    A list of string of commit SHA digests, sorted by topological commit order.
   """
-  if commits_list:
-    return commits_list
+  if commits_sha_list:
+    commits_sha_set = set(commits_sha_list)
+    return [c.hexsha for c in reversed(list(repo.iter_commits())) if c.hexsha in commits_sha_set]
 
   # If no commit specified: take the repo's latest commit.
   latest_commit_sha = repo.commit().hexsha
@@ -346,7 +350,7 @@ def main(argv):
   bazel_source = FLAGS.bazel_source if FLAGS.bazel_source else BAZEL_GITHUB_URL
   bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH, bazel_source)
 
-  bazel_commits = _get_commits(FLAGS.bazel_commits,
+  bazel_commits = _get_commits_topological(FLAGS.bazel_commits,
                                bazel_clone_repo,
                                'bazel_commits')
 
@@ -356,7 +360,7 @@ def main(argv):
       PROJECT_CLONE_BASE_PATH + _get_clone_subdir(FLAGS.project_source),
       FLAGS.project_source)
 
-  project_commits = _get_commits(FLAGS.project_commits,
+  project_commits = _get_commits_topological(FLAGS.project_commits,
                                  project_clone_repo,
                                  'project_commits')
 
@@ -394,10 +398,10 @@ def main(argv):
 
   print('\nRESULTS:')
   last_collected = None
-  for (bazel_commit, project_commit), collected in sorted(data.items()):
+  for (bazel_commit, project_commit), collected in data.items():
     print('Bazel commit: %s, Project commit: %s, Project source: %s' %
           (bazel_commit, project_commit, FLAGS.project_source))
-    for metric, values in sorted(collected.items()):
+    for metric, values in collected.items():
       if metric in ['exit_status', 'started_at']:
         continue
       if last_collected:
