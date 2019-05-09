@@ -20,7 +20,7 @@ py_library(
         requirement('enum34'),
         requirement('funcsigs'),
         requirement('futures'),
-        # This is a workaround for https://github.com/bazelbuild/rules_python/issues/65,
+        # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-bigquery must be listed first.
         requirement('google-cloud-bigquery'),
         requirement('google-api-core'),
