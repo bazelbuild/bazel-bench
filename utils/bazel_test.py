@@ -57,8 +57,9 @@ class BazelTest(unittest.TestCase):
   @mock.patch.object(bazel.Bazel, '_get_heap_size')
   @mock.patch.object(bazel.Bazel, '_get_times')
   @mock.patch.object(bazel.subprocess, 'Popen')
-  def test_command(self, subprocess_mock, get_times_mock, get_heap_size_mock,
-                   _):
+  @mock.patch('datetime.datetime')
+  def test_command(self, datetime_mock, subprocess_mock, get_times_mock,
+                   get_heap_size_mock, _):
     get_times_mock.side_effect = [
         {
             'wall': 42,
@@ -74,6 +75,7 @@ class BazelTest(unittest.TestCase):
     get_heap_size_mock.side_effect = [700, 666, 668, 670, 667]
     process_mock = subprocess_mock.return_value
     process_mock.wait.return_value = 23
+    datetime_mock.utcnow.return_value = 'fake_date'
 
     b = bazel.Bazel('foo', None)
     self.assertEqual({
@@ -81,7 +83,8 @@ class BazelTest(unittest.TestCase):
         'cpu': 26.8,
         'system': 2.0,
         'memory': 666,
-        'exit_status': 23
+        'exit_status': 23,
+        'started_at': 'fake_date'
     }, b.command(
         command_name='build', args=['bar', 'zoo'], collect_memory=True))
     subprocess_mock.assert_called_with(
