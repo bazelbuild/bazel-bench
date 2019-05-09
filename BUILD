@@ -7,14 +7,16 @@ py_binary(
         "//utils:utils",
         requirement('absl-py'),
         requirement('GitPython'),
+        requirement('gitdb2')
     ],
-    legacy_create_init = 0
 )
 
 py_test(
     name = "benchmark_test",
     srcs = ["benchmark_test.py"],
     deps = [
+        ":benchmark",
         "//testutils:testutils",
+        requirement('mock')
     ]
 )

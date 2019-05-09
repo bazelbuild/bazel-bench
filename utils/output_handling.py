@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from google.cloud import bigquery
 import sys
 import os
 import csv
@@ -71,6 +70,8 @@ def upload_csv(csv_file_path, bigquery_cfg):
     bigquery_cfg: The string representing the BigQuery table config. Comes in
       the form <dataset_id>:<table_id>:<location>
   """
+  from google.cloud import bigquery
+
   logger.log('Uploading the data to bigquery.')
   client = bigquery.Client()
   dataset_id, table_id, location = bigquery_cfg.split(':')
