@@ -6,16 +6,12 @@
 
 This script works for `Python 2.7` and `3.x`.
 
-Pre-requisites: `python`, `pip`, `git`, `bazel`
+Pre-requisites: `python`, `git`, `bazel`
 
-To do a test run:
-
-1.  The use of `virtualenv` is strongly recommended. Do this before you carry on
-    with step 2. An installation guide can be found [here](https://gist.github.com/Geoyi/d9fab4f609e9f75941946be45000632b).
-2.  In your virtual environment, install the dependencies: `$ pip install -r requirements.txt`
-3.  Run the following command (if you're on Windows, populate `--data_directory` with an appropriate Windows-style path):
+To do a test run, run the following command (if you're on Windows, populate `--data_directory` with an appropriate Windows-style path):
     ```
-    $ python benchmark.py \
+    $ bazel run :benchmark \
+    -- \
     --bazel_commits=b8468a6b68a405e1a5767894426d3ea9a1a2f22f,ad503849e78b98d762f03168de5a336904280150 \
     --project_source=https://github.com/bazelbuild/rules_cc.git \
     --data_directory=/tmp/out.csv \
@@ -29,14 +25,15 @@ The above command would print a result table on the terminal and outputs a csv f
 Bazel-bench has the following syntax:
 
 ```
-$ python benchmark.py <bazel-bench-flags> -- <args to pass to bazel binary>
+$ bazel run :benchmark -- <bazel-bench-flags> -- <args to pass to bazel binary>
 
 ```
 
 For example, to benchmark the performance of 2 bazel commits A and B on the same command `bazel build --nobuild //:all` of `rules_cc` project, you'd do:
 
 ```
-$ python benchmark.py \
+$ bazel run :benchmark \
+-- \
 --bazel_commits=A,B \
 --project_source=https://github.com/bazelbuild/rules_cc.git \
 -- build --nobuild //:all
@@ -72,12 +69,12 @@ BAD: (wrong order)
 To show all the available flags:
 
 ```
-$ python benchmark.py --helpshort
+$ bazel run :benchmark -- --helpshort
+```
 
-       USAGE: benchmark.py [flags]
-flags:
+Some useful flags are:
 
-benchmark.py:
+```
   --bazel_commits: The commits at which bazel is built.
     (default: 'latest')
     (a comma separated list)
@@ -99,8 +96,6 @@ benchmark.py:
   --upload_data_to: The details of the BigQuery table to upload results to: <dataset_id>:<table_id>:<location>
   --[no]verbose: Whether to include git/Bazel stdout logs.
     (default: 'false')
-
-
 ```
 
 ## Uploading to BigQuery
@@ -112,5 +107,5 @@ To upload the output to BigQuery, you'll need the GCP credentials and the table 
 The tests for each module are found in the same directory. To run the test, simply:
 
 ```
-$ python <some-test>.py
+$ bazel test ...
 ```
