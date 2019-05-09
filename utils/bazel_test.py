@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for utils.bazel."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import collections
 import mock
 import unittest
@@ -58,8 +54,8 @@ class BazelTest(unittest.TestCase):
   @mock.patch.object(bazel.Bazel, '_get_times')
   @mock.patch.object(bazel.subprocess, 'Popen')
   @mock.patch('datetime.datetime')
-  def test_command(self, datetime_mock, subprocess_mock, get_times_mock, get_heap_size_mock,
-                   _):
+  def test_command(self, datetime_mock, subprocess_mock, get_times_mock,
+                   get_heap_size_mock, _):
     get_times_mock.side_effect = [
         {
             'wall': 42,
