@@ -74,15 +74,17 @@ class BazelTest(unittest.TestCase):
     datetime_mock.utcnow.return_value = 'fake_date'
 
     b = bazel.Bazel('foo', None)
-    self.assertEqual({
-        'wall': 39.5,
-        'cpu': 26.8,
-        'system': 2.0,
-        'memory': 666,
-        'exit_status': 23,
-        'started_at': 'fake_date'
-    }, b.command(
-        command_name='build', args=['bar', 'zoo'], collect_memory=True))
+    self.assertEqual(
+        {
+            'wall': 39.5,
+            'cpu': 26.8,
+            'system': 2.0,
+            'memory': 666,
+            'exit_status': 23,
+            'started_at': 'fake_date'
+        },
+        b.command(
+            command_name='build', args=['bar', 'zoo'], collect_memory=True))
     subprocess_mock.assert_called_with(
         ['foo', '--bazelrc=/dev/null', 'build', 'bar', 'zoo'], stdout=mock.ANY)
 

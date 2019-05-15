@@ -24,6 +24,7 @@ parse_bazel_args_from_canonical_str.
 import json
 import logger
 
+
 def _to_str_list(unicode_str_list):
   """Converts a unicode string list to a string list."""
   return list(map(str, unicode_str_list))
@@ -43,17 +44,14 @@ def _get_section_content(events, section_label):
   # commandLineLabel == 'canonical'
   structuredCommandLine = list(
       filter(
-          lambda x: 'structuredCommandLine' in x
-              and 'commandLineLabel' in x['structuredCommandLine']
-              and x['structuredCommandLine']['commandLineLabel'] == 'canonical',
-          events))[0]
+          lambda x: 'structuredCommandLine' in x and 'commandLineLabel' in x[
+              'structuredCommandLine'] and x['structuredCommandLine'][
+                  'commandLineLabel'] == 'canonical', events))[0]
 
   sections = list(
       filter(
-          lambda x: 'sectionLabel' in x
-              and x['sectionLabel'] == section_label,
-          structuredCommandLine['structuredCommandLine']['sections'])
-          )
+          lambda x: 'sectionLabel' in x and x['sectionLabel'] == section_label,
+          structuredCommandLine['structuredCommandLine']['sections']))
 
   if not sections:
     return []
@@ -95,7 +93,8 @@ def parse_bazel_args_from_build_event(build_event_json_path):
   with open(build_event_json_path, 'r') as f:
     for line in f:
       events.append(json.loads(line))
-  return _extract_command(events), _extract_residual_expressions(events), _extract_options(events)
+  return _extract_command(events), _extract_residual_expressions(
+      events), _extract_options(events)
 
 
 def parse_bazel_args_from_canonical_str(args):
@@ -107,12 +106,13 @@ def parse_bazel_args_from_canonical_str(args):
   separate flag.
 
   Args:
-    args: the concatenated string of arguments to be passed to bazel binary.
-      Has to be in canonical form.
+    args: the concatenated string of arguments to be passed to bazel binary. Has
+      to be in canonical form.
   """
-  logger.log_warn('Warning: Disabling prefetch_ext_deps requires the command to be in ' \
-      'canonical form: <command> [<canonical options>] [<expressions>]. ' \
-      'E.g. build --compilation_mode=opt -- //:all')
+  logger.log_warn(('Warning: Disabling prefetch_ext_deps requires the command '
+      'to be in canonical form: '
+      '<command> [<canonical options>] [<expressions>]. '
+      'E.g. build --compilation_mode=opt -- //:all'))
 
   # The command is always the first element.
   command = args[0]

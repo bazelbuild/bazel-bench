@@ -35,17 +35,19 @@ from utils.output_handling import export_csv, upload_csv
 # TMP has different values, depending on the platform.
 TMP = tempfile.gettempdir()
 
+
 def _platform_path_str(posix_path):
   """Converts the path to the appropriate format for platform."""
   if os.name == 'nt':
     return posix_path.replace('/', '\\')
   return posix_path
 
+
 # The path to the cloned bazelbuild/bazel repo.
 BAZEL_CLONE_PATH = _platform_path_str('%s/.bazel-bench/bazel' % TMP)
 # The path to the clone of the project to be built with Bazel.
-PROJECT_CLONE_BASE_PATH = _platform_path_str(
-    '%s/.bazel-bench/project-clones/' % TMP)
+PROJECT_CLONE_BASE_PATH = _platform_path_str('%s/.bazel-bench/project-clones/' %
+                                             TMP)
 BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 # The path to the directory that stores the bazel binaries.
 BAZEL_BINARY_BASE_PATH = _platform_path_str('%s/.bazel-bench/bazel-bin/' % TMP)
@@ -74,7 +76,8 @@ def _get_commits_topological(commits_sha_list, repo, flag_name):
   e.g. for a commit history A -> B -> C -> D, commits_sha_list = [C, B]
   Output: [B, C]
 
-  If the input commits_sha_list is empty, fetch the latest commit on branch 'master'
+  If the input commits_sha_list is empty, fetch the latest commit on branch
+  'master'
   of the repo.
 
   Args:
@@ -87,12 +90,16 @@ def _get_commits_topological(commits_sha_list, repo, flag_name):
   """
   if commits_sha_list:
     commits_sha_set = set(commits_sha_list)
-    return [c.hexsha for c in reversed(list(repo.iter_commits())) if c.hexsha in commits_sha_set]
+    return [
+        c.hexsha
+        for c in reversed(list(repo.iter_commits()))
+        if c.hexsha in commits_sha_set
+    ]
 
   # If no commit specified: take the repo's latest commit.
   latest_commit_sha = repo.commit().hexsha
-  logger.log(
-      'No %s specified, using the latest one: %s' % (flag_name, latest_commit_sha))
+  logger.log('No %s specified, using the latest one: %s' %
+             (flag_name, latest_commit_sha))
   return [latest_commit_sha]
 
 
@@ -196,15 +203,12 @@ def _single_run(bazel_binary_path,
   if command == 'build':
     args_set = set(args)
     default_options = list(
-        filter(
-            lambda x: x not in args,
-            ['--nostamp', '--noshow_progress', '--color=no']))
+        filter(lambda x: x not in args,
+               ['--nostamp', '--noshow_progress', '--color=no']))
     args = default_options + args
 
   measurements = bazel.command(
-      command_name=command,
-      args=args,
-      collect_memory=collect_memory)
+      command_name=command, args=args, collect_memory=collect_memory)
 
   # Get back to a clean state.
   bazel.command('clean', ['--color=no'])
@@ -260,22 +264,24 @@ def _run_benchmark(bazel_binary_path,
     # It's important to have --build_event_json_file as the last argument, since
     # we exclude this injected flag when parsing command options by simply
     # discarding the last argument.
-    command_args = bazel_args[1:] + ['--build_event_json_file=%s' % bep_json_path]
+    command_args = bazel_args[1:] + [
+        '--build_event_json_file=%s' % bep_json_path
+    ]
 
-    _single_run(bazel_binary_path, command,
-                command_args,
-                bazelrc, collect_memory)
-    command, expressions, options = args_parser.parse_bazel_args_from_build_event(bep_json_path)
+    _single_run(bazel_binary_path, command, command_args, bazelrc,
+                collect_memory)
+    command, expressions, options = args_parser.parse_bazel_args_from_build_event(
+        bep_json_path)
   else:
     logger.log('Parsing arguments from command line...')
-    command, expressions, options = args_parser.parse_bazel_args_from_canonical_str(bazel_args)
+    command, expressions, options = args_parser.parse_bazel_args_from_canonical_str(
+        bazel_args)
 
   parsed_args = options + expressions
   for i in range(runs):
     logger.log('Starting benchmark run %s/%s:' % ((i + 1), runs))
     collected.append(
-        _single_run(bazel_binary_path, command,
-                    parsed_args, bazelrc,
+        _single_run(bazel_binary_path, command, parsed_args, bazelrc,
                     collect_memory))
 
   return collected, (command, expressions, options)
@@ -283,8 +289,7 @@ def _run_benchmark(bazel_binary_path,
 
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
-flags.DEFINE_list('bazel_commits', None,
-                  'The commits at which bazel is built.')
+flags.DEFINE_list('bazel_commits', None, 'The commits at which bazel is built.')
 flags.DEFINE_string('bazel_source',
                     'https://github.com/bazelbuild/bazel.git',
                     'Either a path to the local Bazel repo or a https url to ' \
@@ -337,6 +342,7 @@ def _flag_checks():
       raise ValueError('GOOGLE_APPLICATION_CREDENTIALS is required to '
                        'upload data to bigquery.')
 
+
 def main(argv):
   _flag_checks()
 
@@ -352,8 +358,7 @@ def main(argv):
   bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH, bazel_source)
 
   bazel_commits = _get_commits_topological(FLAGS.bazel_commits,
-                               bazel_clone_repo,
-                               'bazel_commits')
+                                           bazel_clone_repo, 'bazel_commits')
 
   # Set up project repo
   logger.log('Preparing %s clone.' % FLAGS.project_source)
@@ -362,8 +367,8 @@ def main(argv):
       FLAGS.project_source)
 
   project_commits = _get_commits_topological(FLAGS.project_commits,
-                                 project_clone_repo,
-                                 'project_commits')
+                                             project_clone_repo,
+                                             'project_commits')
 
   # A dictionary that maps a (bazel_commit, project_commit) tuple
   # to its benchmarking result.
@@ -376,13 +381,10 @@ def main(argv):
                                               BAZEL_BINARY_BASE_PATH)
       project_clone_repo.git.checkout('-f', project_commit)
 
-      results, args = _run_benchmark(bazel_binary_path,
-                                     project_clone_repo.working_dir,
-                                     FLAGS.runs,
-                                     FLAGS.collect_memory or FLAGS.data_directory,
-                                     bazel_args,
-                                     FLAGS.bazelrc,
-                                     FLAGS.prefetch_ext_deps)
+      results, args = _run_benchmark(
+          bazel_binary_path, project_clone_repo.working_dir, FLAGS.runs,
+          FLAGS.collect_memory or FLAGS.data_directory, bazel_args,
+          FLAGS.bazelrc, FLAGS.prefetch_ext_deps)
       collected = {}
       for benchmarking_result in results:
         for metric, value in benchmarking_result.items():
@@ -392,10 +394,9 @@ def main(argv):
 
       data[(bazel_commit, project_commit)] = collected
       csv_data[(bazel_commit, project_commit)] = {
-        'results': results,
-        'args': args
+          'results': results,
+          'args': args
       }
-
 
   print('\nRESULTS:')
   last_collected = None

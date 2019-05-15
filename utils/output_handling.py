@@ -56,8 +56,7 @@ def export_csv(data_directory, data, project_source):
         csv_writer.writerow([
             project_source, project_commit, bazel_commit, idx, run['cpu'],
             run['wall'], run['system'], run['memory'], command, expressions,
-            hostname, username, options, run['exit_status'],
-            run['started_at']
+            hostname, username, options, run['exit_status'], run['started_at']
         ])
   return csv_file_path
 
