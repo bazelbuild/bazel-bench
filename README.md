@@ -9,11 +9,15 @@ This script works for `Python 2.7` and `3.x`.
 Pre-requisites: `python`, `git`, `bazel`
 
 To do a test run, run the following command (if you're on Windows, populate
-`--data_directory` with an appropriate Windows-style path): `$ bazel
+`--data_directory` with an appropriate Windows-style path):
+
+```
+$ bazel
 run :benchmark \ -- \
 --bazel_commits=b8468a6b68a405e1a5767894426d3ea9a1a2f22f,ad503849e78b98d762f03168de5a336904280150
 \ --project_source=https://github.com/bazelbuild/rules_cc.git \
---data_directory=/tmp/out.csv \ -- build //:all`
+--data_directory=/tmp/out.csv \ -- build //:all
+```
 
 The above command would print a result table on the terminal and outputs a csv
 file to the specified `--data_directory`.
