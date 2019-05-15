@@ -37,12 +37,12 @@ class BenchmarkFunctionTests(absltest.TestCase):
                                      unused_exists_mock):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
       mock.patch('benchmark.git.Repo') as mock_repo_class:
-        mock_repo = mock_repo_class.return_value
-        benchmark._setup_project_repo('repo_path', 'project_source')
+      mock_repo = mock_repo_class.return_value
+      benchmark._setup_project_repo('repo_path', 'project_source')
 
     mock_repo.git.checkout.assert_called_once_with('master')
     mock_repo.git.pull.assert_called_once_with('-f', 'origin', 'master')
-    self.assertEqual("Path repo_path exists. Updating...",
+    self.assertEqual('Path repo_path exists. Updating...',
                      mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os.path, 'exists', return_value=False)
@@ -51,41 +51,41 @@ class BenchmarkFunctionTests(absltest.TestCase):
                                          unused_exists_mock):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
       mock.patch('benchmark.git.Repo') as mock_repo_class:
-        benchmark._setup_project_repo('repo_path', 'project_source')
+      benchmark._setup_project_repo('repo_path', 'project_source')
 
     mock_repo_class.clone_from.assert_called_once_with('project_source',
                                                        'repo_path')
-    self.assertEqual("Cloning project_source to repo_path...",
+    self.assertEqual('Cloning project_source to repo_path...',
                      mock_stderr.getvalue())
 
   def test_get_commits_topological(self):
     with mock.patch('benchmark.git.Repo') as mock_repo_class:
-        mock_repo = mock_repo_class.return_value
-        mock_A = mock.MagicMock()
-        mock_A.hexsha = 'A'
-        mock_B = mock.MagicMock()
-        mock_B.hexsha = 'B'
-        mock_C = mock.MagicMock()
-        mock_C.hexsha = 'C'
-        mock_repo.iter_commits.return_value = [mock_C, mock_B, mock_A]
-        result = benchmark._get_commits_topological(
-            ['B', 'A'], mock_repo, 'flag_name')
+      mock_repo = mock_repo_class.return_value
+      mock_A = mock.MagicMock()
+      mock_A.hexsha = 'A'
+      mock_B = mock.MagicMock()
+      mock_B.hexsha = 'B'
+      mock_C = mock.MagicMock()
+      mock_C.hexsha = 'C'
+      mock_repo.iter_commits.return_value = [mock_C, mock_B, mock_A]
+      result = benchmark._get_commits_topological(['B', 'A'], mock_repo,
+                                                  'flag_name')
 
-        self.assertEqual(['A', 'B'], result)
+      self.assertEqual(['A', 'B'], result)
 
   def test_get_commits_topological_latest(self):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
       mock.patch('benchmark.git.Repo') as mock_repo_class:
-        mock_repo = mock_repo_class.return_value
-        mock_commit = mock.MagicMock()
-        mock_repo.commit.return_value = mock_commit
-        mock_commit.hexsha = 'A'
-        result = benchmark._get_commits_topological(None, mock_repo, 'bazel_commits')
+      mock_repo = mock_repo_class.return_value
+      mock_commit = mock.MagicMock()
+      mock_repo.commit.return_value = mock_commit
+      mock_commit.hexsha = 'A'
+      result = benchmark._get_commits_topological(None, mock_repo,
+                                                  'bazel_commits')
 
     self.assertEqual(['A'], result)
     self.assertEqual('No bazel_commits specified, using the latest one: A',
                      mock_stderr.getvalue())
-
 
   @mock.patch.object(benchmark.os.path, 'exists', return_value=True)
   @mock.patch.object(benchmark.os, 'makedirs')
@@ -100,20 +100,23 @@ class BenchmarkFunctionTests(absltest.TestCase):
   @mock.patch.object(benchmark.os, 'makedirs')
   @mock.patch.object(benchmark.os, 'chdir')
   @mock.patch.object(benchmark.shutil, 'copyfile')
-  def test_build_bazel_binary_not_exists(
-      self, unused_shutil_mock, unused_chdir_mock, unused_makedirs_mock,
-      unused_exists_mock):
+  def test_build_bazel_binary_not_exists(self, unused_shutil_mock,
+                                         unused_chdir_mock,
+                                         unused_makedirs_mock,
+                                         unused_exists_mock):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
       mock.patch('benchmark.git.Repo') as mock_repo_class:
-        mock_repo = mock_repo_class.return_value
-        benchmark._build_bazel_binary('commit', mock_repo, 'outroot/')
+      mock_repo = mock_repo_class.return_value
+      benchmark._build_bazel_binary('commit', mock_repo, 'outroot/')
 
     mock_repo.git.checkout.assert_called_once_with('-f', 'commit')
-    self.assertEqual(''.join([
-        "Building Bazel binary at commit commit",
-        "['bazel', 'build', '//src:bazel']",
-        'Copying bazel binary to outroot/commit',
-        "['chmod', '+x', 'outroot/commit']"]), mock_stderr.getvalue())
+    self.assertEqual(
+        ''.join([
+            'Building Bazel binary at commit commit',
+            "['bazel', 'build', '//src:bazel']",
+            'Copying bazel binary to outroot/commit',
+            "['chmod', '+x', 'outroot/commit']"
+        ]), mock_stderr.getvalue())
 
   def test_single_run(self):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
@@ -124,13 +127,16 @@ class BenchmarkFunctionTests(absltest.TestCase):
           bazelrc=None,
           collect_memory=False)
 
-    self.assertEqual(''.join([
-        'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
-        'Executing Bazel command: bazel clean --color=no',
-        'Executing Bazel command: bazel shutdown ']), mock_stderr.getvalue())
+    self.assertEqual(
+        ''.join([
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel clean --color=no',
+            'Executing Bazel command: bazel shutdown '
+        ]), mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os, 'chdir')
-  @mock.patch.object(benchmark.args_parser, 'parse_bazel_args_from_canonical_str')
+  @mock.patch.object(benchmark.args_parser,
+                     'parse_bazel_args_from_canonical_str')
   def test_run_benchmark_no_prefetch(self, args_parser_mock, _):
     runs = 2
     args_parser_mock.return_value = ('build', [], ['//:all'])
@@ -144,16 +150,18 @@ class BenchmarkFunctionTests(absltest.TestCase):
           bazelrc=None,
           prefetch_ext_deps=False)
 
-    self.assertEqual(''.join([
-        'Parsing arguments from command line...',
-        'Starting benchmark run 1/2:',
-        'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
-        'Executing Bazel command: bazel clean --color=no',
-        'Executing Bazel command: bazel shutdown ',
-        'Starting benchmark run 2/2:',
-        'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
-        'Executing Bazel command: bazel clean --color=no',
-        'Executing Bazel command: bazel shutdown ']), mock_stderr.getvalue())
+    self.assertEqual(
+        ''.join([
+            'Parsing arguments from command line...',
+            'Starting benchmark run 1/2:',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel clean --color=no',
+            'Executing Bazel command: bazel shutdown ',
+            'Starting benchmark run 2/2:',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel clean --color=no',
+            'Executing Bazel command: bazel shutdown '
+        ]), mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os, 'chdir')
   @mock.patch.object(benchmark.args_parser, 'parse_bazel_args_from_build_event')
@@ -170,19 +178,21 @@ class BenchmarkFunctionTests(absltest.TestCase):
           bazelrc=None,
           prefetch_ext_deps=True)
 
-    self.assertEqual(''.join([
-        'Pre-fetching external dependencies & exporting build event json to /tmp/.bazel-bench/out/build_env.json...',
-        'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=/tmp/.bazel-bench/out/build_env.json',
-        'Executing Bazel command: bazel clean --color=no',
-        'Executing Bazel command: bazel shutdown ',
-        'Starting benchmark run 1/2:',
-        'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
-        'Executing Bazel command: bazel clean --color=no',
-        'Executing Bazel command: bazel shutdown ',
-        'Starting benchmark run 2/2:',
-        'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
-        'Executing Bazel command: bazel clean --color=no',
-        'Executing Bazel command: bazel shutdown ']), mock_stderr.getvalue())
+    self.assertEqual(
+        ''.join([
+            'Pre-fetching external dependencies & exporting build event json to /tmp/.bazel-bench/out/build_env.json...',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=/tmp/.bazel-bench/out/build_env.json',
+            'Executing Bazel command: bazel clean --color=no',
+            'Executing Bazel command: bazel shutdown ',
+            'Starting benchmark run 1/2:',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel clean --color=no',
+            'Executing Bazel command: bazel shutdown ',
+            'Starting benchmark run 2/2:',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel clean --color=no',
+            'Executing Bazel command: bazel shutdown '
+        ]), mock_stderr.getvalue())
 
 
 class BenchmarkFlagsTest(absltest.TestCase):
@@ -196,10 +206,11 @@ class BenchmarkFlagsTest(absltest.TestCase):
         sys, 'stderr', new=mock_stdio_type()) as mock_stderr, self.assertRaises(
             SystemExit) as context:
       benchmark.app.run(benchmark.main)
-    self.assertIn(''.join([
-        'FATAL Flags parsing error: flag --project_source=None: ',
-        'Flag --project_source must have a value other than None.']),
-        mock_stderr.getvalue())
+    self.assertIn(
+        ''.join([
+            'FATAL Flags parsing error: flag --project_source=None: ',
+            'Flag --project_source must have a value other than None.'
+        ]), mock_stderr.getvalue())
 
   @flagsaver.flagsaver(bazel_commits=['a', 'b'], project_commits=['c', 'd'])
   def test_either_bazel_commits_project_commits_single_element(self):
@@ -229,7 +240,9 @@ class BenchmarkFlagsTest(absltest.TestCase):
     value_err = context.exception
     self.assertEqual(
         value_err.message,
-        'GOOGLE_APPLICATION_CREDENTIALS is required to upload data to bigquery.')
+        'GOOGLE_APPLICATION_CREDENTIALS is required to upload data to bigquery.'
+    )
+
 
 if __name__ == '__main__':
   absltest.main()

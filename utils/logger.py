@@ -16,9 +16,11 @@ import sys
 from absl import logging
 
 _COLOR_TMPL = {
-  'info': '\033[32m%s\033[0m', # Green
-  'warn': '\033[33m%s\033[0m', # Yellow
+    'info': '\033[32m%s\033[0m',  # Green
+    'warn': '\033[33m%s\033[0m',  # Yellow
 }
+
+
 def _maybe_colorize_text(text, color):
   """Colorize the text if running on a terminal."""
   if not sys.stdout.isatty():
@@ -29,6 +31,7 @@ def _maybe_colorize_text(text, color):
 def log(text):
   """Logs a message using the logger singleton."""
   logging.info(_maybe_colorize_text(text, 'info'))
+
 
 def log_warn(text):
   """Logs a warning message using the logger singleton."""

@@ -55,8 +55,8 @@ class Bazel(object):
       Returns None instead if the command equals 'shutdown'.
     """
     args = args or []
-    logger.log(
-        'Executing Bazel command: bazel %s %s' % (command_name, ' '.join(args)))
+    logger.log('Executing Bazel command: bazel %s %s' %
+               (command_name, ' '.join(args)))
 
     result = dict()
     result['started_at'] = datetime.datetime.utcnow()
