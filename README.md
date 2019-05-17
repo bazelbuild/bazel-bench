@@ -109,7 +109,12 @@ Some useful flags are:
   --upload_data_to: The details of the BigQuery table to upload results to: <dataset_id>:<table_id>:<location>
   --[no]verbose: Whether to include git/Bazel stdout logs.
     (default: 'false')
+  --[no]collect_json_profile: Whether to collect JSON profile for each run.
+    (default: 'false')
 ```
+## Collecting JSON Profile
+
+[Bazel's JSON Profile](https://docs.bazel.build/versions/master/skylark/performance.html#json-profile) is a useful tool to investigate the performance of Bazel. You can configure `bazel-bench` to export these JSON profiles on runs using the `--collect_json_profile` flag.
 
 ## Uploading to BigQuery
 
