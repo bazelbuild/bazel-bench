@@ -37,7 +37,7 @@ def export_csv(data_directory, data, project_source):
   """
   if not os.path.exists(data_directory):
     os.makedirs(data_directory)
-  csv_file_path = data_directory + str(uuid.uuid4()) + '.csv'
+  csv_file_path = '%s/%s.csv' % (data_directory, str(uuid.uuid4()))
   logger.log('Writing raw data into csv file: %s' % str(csv_file_path))
 
   with open(csv_file_path, 'w') as csv_file:
