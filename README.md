@@ -17,7 +17,7 @@ run :benchmark \
 -- \
 --bazel_commits=b8468a6b68a405e1a5767894426d3ea9a1a2f22f,ad503849e78b98d762f03168de5a336904280150\
 --project_source=https://github.com/bazelbuild/rules_cc.git \
---data_directory=/tmp/out.csv \
+--data_directory=/tmp/bazel-bench-data \
 -- build //:all
 ```
 
@@ -96,7 +96,7 @@ Some useful flags are:
   --bazelrc: The path to a .bazelrc file.
   --[no]collect_memory: Whether to collect used heap sizes.
     (default: 'false')
-  --data_directory: The directory in which the csv files should be stored (including the trailing "/"). Turns on memory collection.
+  --data_directory: The directory in which the csv files should be stored. Turns on memory collection.
   --[no]prefetch_ext_deps: Whether to do an initial run to pre-fetch external dependencies.
     (default: 'true')
   --project_commits: The commits from the git project to be benchmarked.
