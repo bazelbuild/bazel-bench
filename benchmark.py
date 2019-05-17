@@ -13,6 +13,7 @@
 # limitations under the License.
 from __future__ import print_function
 
+import datetime
 import os
 import subprocess
 import hashlib
@@ -168,6 +169,23 @@ def _build_bazel_binary(commit, repo, outroot):
   return destination
 
 
+def _construct_json_profile_flags(out_file_path):
+  """Constructs the flags used to collect JSON profiles.
+
+  Args:
+    out_file_path: The path to output the profile to.
+
+  Returns:
+    A list of string representing the flags.
+  """
+  return [
+      "--experimental_generate_json_trace_profile",
+      "--experimental_profile_cpu_usage",
+      "--experimental_json_trace_compression",
+      "--profile={}".format(out_file_path)
+  ]
+
+
 def _single_run(bazel_binary_path,
                 command,
                 args,
@@ -201,12 +219,10 @@ def _single_run(bazel_binary_path,
   # Prepend some default options if the command is 'build'.
   # The order in which the options appear matters.
   if command == 'build':
-    args_set = set(args)
     default_options = list(
         filter(lambda x: x not in args,
                ['--nostamp', '--noshow_progress', '--color=no']))
     args = default_options + args
-
   measurements = bazel.command(
       command_name=command, args=args, collect_memory=collect_memory)
 
@@ -223,7 +239,12 @@ def _run_benchmark(bazel_binary_path,
                    bazel_args,
                    bazelrc,
                    prefetch_ext_deps,
-                   bep_json_dir=None):
+                   bazel_bench_uid,
+                   bep_json_dir=None,
+                   data_directory=None,
+                   collect_json_profile=False,
+                   bazel_commit=None,
+                   project_commit=None):
   """Runs the benchmarking for a combination of (bazel version, project version).
 
   Args:
@@ -235,8 +256,16 @@ def _run_benchmark(bazel_binary_path,
     bazelrc: the path to a .bazelrc file.
     prefetch_ext_deps: whether to do a first non-benchmarked run to fetch the
       external dependencies.
+    bazel_bench_uid: a unique string identifier of this entire bazel-bench run.
     bep_json_dir: absolute path to the directory to write the build event json
       file to.
+    collect_json_profile: whether to collect JSON profile for each run.
+    data_directory: the path to the directory to store run data.
+      Required if collect_json_profile.
+    bazel_commit: the commit hash of the bazel commit.
+      Required if collect_json_profile.
+    project_commit: the commit hash of the project commit.
+      Required if collect_json_profile.
 
   Returns:
     A list of result objects from each _single_run.
@@ -268,8 +297,8 @@ def _run_benchmark(bazel_binary_path,
         '--build_event_json_file=%s' % bep_json_path
     ]
 
-    _single_run(bazel_binary_path, command, command_args, bazelrc,
-                collect_memory)
+    _single_run(
+        bazel_binary_path, command, command_args, bazelrc, collect_memory)
     command, expressions, options = args_parser.parse_bazel_args_from_build_event(
         bep_json_path)
   else:
@@ -277,9 +306,27 @@ def _run_benchmark(bazel_binary_path,
     command, expressions, options = args_parser.parse_bazel_args_from_canonical_str(
         bazel_args)
 
-  parsed_args = options + expressions
+  if collect_json_profile:
+    assert data_directory
+    if not os.path.exists(data_directory):
+      os.makedirs(data_directory)
+
   for i in range(runs):
     logger.log('Starting benchmark run %s/%s:' % ((i + 1), runs))
+
+    maybe_include_json_profile_flags = options[:]
+    if collect_json_profile:
+      assert bazel_commit
+      assert project_commit
+      maybe_include_json_profile_flags += _construct_json_profile_flags(
+          '%s/%s_%s_%s_%s_of_%s.profile.gz' % (
+              data_directory,
+              bazel_bench_uid,
+              bazel_commit,
+              project_commit,
+              i + 1,
+              runs))
+    parsed_args = maybe_include_json_profile_flags + expressions
     collected.append(
         _single_run(bazel_binary_path, command, parsed_args, bazelrc,
                     collect_memory))
@@ -314,6 +361,8 @@ flags.DEFINE_boolean('collect_memory', False,
 flags.DEFINE_boolean('prefetch_ext_deps', True,
                      'Whether to do an initial run to pre-fetch external ' \
                      'dependencies.')
+flags.DEFINE_boolean('collect_json_profile', False,
+                     'Whether to collect JSON profile for each run.')
 
 # Output storage flags.
 flags.DEFINE_string('data_directory', None,
@@ -374,6 +423,10 @@ def main(argv):
   # to its benchmarking result.
   data = {}
   csv_data = {}
+  data_directory = FLAGS.data_directory or DEFAULT_OUT_BASE_PATH
+
+  # We use the start time as a unique identifier of this bazel-bench run.
+  bazel_bench_uid = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
 
   for bazel_commit in bazel_commits:
     for project_commit in project_commits:
@@ -382,9 +435,18 @@ def main(argv):
       project_clone_repo.git.checkout('-f', project_commit)
 
       results, args = _run_benchmark(
-          bazel_binary_path, project_clone_repo.working_dir, FLAGS.runs,
-          FLAGS.collect_memory or FLAGS.data_directory, bazel_args,
-          FLAGS.bazelrc, FLAGS.prefetch_ext_deps)
+          bazel_binary_path=bazel_binary_path,
+          project_path=project_clone_repo.working_dir,
+          runs=FLAGS.runs,
+          collect_memory=FLAGS.collect_memory or FLAGS.data_directory,
+          bazel_args=bazel_args,
+          bazelrc=FLAGS.bazelrc,
+          prefetch_ext_deps=FLAGS.prefetch_ext_deps,
+          bazel_bench_uid=bazel_bench_uid,
+          collect_json_profile=FLAGS.collect_json_profile,
+          data_directory=data_directory,
+          bazel_commit=bazel_commit,
+          project_commit=project_commit)
       collected = {}
       for benchmarking_result in results:
         for metric, value in benchmarking_result.items():
@@ -423,8 +485,8 @@ def main(argv):
     last_collected = collected
 
   if FLAGS.data_directory or FLAGS.upload_data_to:
-    data_directory = FLAGS.data_directory or DEFAULT_OUT_BASE_PATH
-    csv_file_path = export_csv(data_directory, csv_data, FLAGS.project_source)
+    csv_file_path = export_csv(
+        data_directory, bazel_bench_uid, csv_data, FLAGS.project_source)
     if FLAGS.upload_data_to:
       upload_csv(csv_file_path, FLAGS.upload_data_to)
 
