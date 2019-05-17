@@ -242,6 +242,7 @@ def _run_benchmark(bazel_binary_path,
     A list of result objects from each _single_run.
   """
   collected = []
+  os.chdir(project_path)
 
   # Runs the command once to make sure external dependencies are fetched.
   # If prefetch_ext_deps, run the command with --build_event_json_file to get the
@@ -252,7 +253,6 @@ def _run_benchmark(bazel_binary_path,
     if not os.path.exists(bep_json_dir):
       os.makedirs(bep_json_dir)
     bep_json_path = bep_json_dir + 'build_env.json'
-    os.chdir(project_path)
 
     logger.log('Pre-fetching external dependencies & exporting build event json ' \
         'to %s...' % bep_json_path)
