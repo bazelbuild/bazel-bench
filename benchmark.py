@@ -317,8 +317,8 @@ flags.DEFINE_boolean('prefetch_ext_deps', True,
 
 # Output storage flags.
 flags.DEFINE_string('data_directory', None,
-                    'The directory in which the csv files should be stored ' \
-                    '(excluding the trailing "/"). Turns on memory collection.')
+                    'The directory in which the csv files should be stored. ' \
+                    'Turns on memory collection.')
 flags.DEFINE_string('upload_data_to', None,
                     'The details of the BigQuery table to upload ' \
                     'results to: <dataset_id>:<table_id>:<location>')

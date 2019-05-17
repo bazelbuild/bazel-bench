@@ -96,7 +96,7 @@ Some useful flags are:
   --bazelrc: The path to a .bazelrc file.
   --[no]collect_memory: Whether to collect used heap sizes.
     (default: 'false')
-  --data_directory: The directory in which the csv files should be stored (excluding the trailing "/"). Turns on memory collection.
+  --data_directory: The directory in which the csv files should be stored. Turns on memory collection.
   --[no]prefetch_ext_deps: Whether to do an initial run to pre-fetch external dependencies.
     (default: 'true')
   --project_commits: The commits from the git project to be benchmarked.
