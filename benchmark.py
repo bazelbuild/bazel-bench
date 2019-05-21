@@ -361,7 +361,7 @@ flags.DEFINE_boolean('prefetch_ext_deps', True,
                      'Whether to do an initial run to pre-fetch external ' \
                      'dependencies.')
 flags.DEFINE_boolean('collect_json_profile', False,
-                     'Whether to collect JSON profile for each run. Requires' \
+                     'Whether to collect JSON profile for each run. Requires ' \
                      '--data_directory to be set.')
 
 # Output storage flags.
