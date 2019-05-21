@@ -307,24 +307,23 @@ def _run_benchmark(bazel_binary_path,
         bazel_args)
 
   if collect_json_profile:
-    assert data_directory
     if not os.path.exists(data_directory):
       os.makedirs(data_directory)
 
-  for i in range(runs):
-    logger.log('Starting benchmark run %s/%s:' % ((i + 1), runs))
+  for i in range(1, runs + 1):
+    logger.log('Starting benchmark run %s/%s:' % (i, runs))
 
     maybe_include_json_profile_flags = options[:]
     if collect_json_profile:
-      assert bazel_commit
-      assert project_commit
+      assert bazel_commit, 'bazel_commit is required when collect_json_profile'
+      assert project_commit, 'project_commit is required when collect_json_profile'
       maybe_include_json_profile_flags += _construct_json_profile_flags(
           '%s/%s_%s_%s_%s_of_%s.profile.gz' % (
               data_directory,
               bazel_bench_uid,
               bazel_commit,
               project_commit,
-              i + 1,
+              i,
               runs))
     parsed_args = maybe_include_json_profile_flags + expressions
     collected.append(
@@ -362,7 +361,8 @@ flags.DEFINE_boolean('prefetch_ext_deps', True,
                      'Whether to do an initial run to pre-fetch external ' \
                      'dependencies.')
 flags.DEFINE_boolean('collect_json_profile', False,
-                     'Whether to collect JSON profile for each run.')
+                     'Whether to collect JSON profile for each run. Requires' \
+                     '--data_directory to be set.')
 
 # Output storage flags.
 flags.DEFINE_string('data_directory', None,
@@ -390,6 +390,9 @@ def _flag_checks():
         not os.environ['GOOGLE_APPLICATION_CREDENTIALS']):
       raise ValueError('GOOGLE_APPLICATION_CREDENTIALS is required to '
                        'upload data to bigquery.')
+    if FLAGS.collect_json_profile and not FLAGS.data_directory:
+      raise ValueError('--collect_json_profile requires '
+                       '--data_directory to be set')
 
 
 def main(argv):

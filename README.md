@@ -110,6 +110,7 @@ Some useful flags are:
   --[no]verbose: Whether to include git/Bazel stdout logs.
     (default: 'false')
   --[no]collect_json_profile: Whether to collect JSON profile for each run.
+    Requires --data_directory to be set.
     (default: 'false')
 ```
 ## Collecting JSON Profile
