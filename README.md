@@ -1,5 +1,7 @@
 # Bazel Performance Benchmarking
 
+[![Build Status](https://badge.buildkite.com/1499c911d1faf665b9f6ba28d0a61e64c26a8586321b9d63a8.svg)](https://buildkite.com/bazel/bazel-bench)
+
 **Status**: WIP
 
 # Setup
