@@ -18,16 +18,16 @@ import os
 import csv
 import socket
 import getpass
-import uuid
 
 import logger
 
 
-def export_csv(data_directory, data, project_source):
+def export_csv(data_directory, filename, data, project_source):
   """Exports the content of data to a csv file in data_directory
 
   Args:
     data_directory: the directory to store the csv file.
+    filename: the name of the .csv file.
     data: the collected data to be exported.
     project_source: either a path to the local git project to be built or a
       https url to a GitHub repository.
@@ -37,7 +37,7 @@ def export_csv(data_directory, data, project_source):
   """
   if not os.path.exists(data_directory):
     os.makedirs(data_directory)
-  csv_file_path = '%s/%s.csv' % (data_directory, str(uuid.uuid4()))
+  csv_file_path = '%s/%s.csv' % (data_directory, filename)
   logger.log('Writing raw data into csv file: %s' % str(csv_file_path))
 
   with open(csv_file_path, 'w') as csv_file:

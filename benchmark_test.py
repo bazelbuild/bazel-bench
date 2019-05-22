@@ -138,13 +138,13 @@ class BenchmarkFunctionTests(absltest.TestCase):
   @mock.patch.object(benchmark.args_parser,
                      'parse_bazel_args_from_canonical_str')
   def test_run_benchmark_no_prefetch(self, args_parser_mock, _):
-    runs = 2
-    args_parser_mock.return_value = ('build', [], ['//:all'])
+    args_parser_mock.return_value = ('build', ['//:all'], [])
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._run_benchmark(
           'bazel_binary_path',
           'project_path',
-          runs,
+          runs=2,
+          bazel_bench_uid='fake_uid',
           collect_memory=False,
           bazel_args=['build', '//:all'],
           bazelrc=None,
@@ -166,13 +166,13 @@ class BenchmarkFunctionTests(absltest.TestCase):
   @mock.patch.object(benchmark.os, 'chdir')
   @mock.patch.object(benchmark.args_parser, 'parse_bazel_args_from_build_event')
   def test_run_benchmark_prefetch(self, args_parser_mock, _):
-    runs = 2
-    args_parser_mock.return_value = ('build', [], ['//:all'])
+    args_parser_mock.return_value = ('build', ['//:all'], [])
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._run_benchmark(
           'bazel_binary_path',
           'project_path',
-          runs,
+          runs=2,
+          bazel_bench_uid='fake_uid',
           collect_memory=False,
           bazel_args=['build', '//:all'],
           bazelrc=None,
@@ -190,6 +190,41 @@ class BenchmarkFunctionTests(absltest.TestCase):
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 2/2:',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel clean --color=no',
+            'Executing Bazel command: bazel shutdown '
+        ]), mock_stderr.getvalue())
+
+  @mock.patch.object(benchmark.os, 'chdir')
+  @mock.patch.object(benchmark.args_parser, 'parse_bazel_args_from_build_event')
+  def test_run_benchmark_collect_json_profile(self, args_parser_mock, _):
+    args_parser_mock.return_value = ('build', ['//:all'], [])
+    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
+      benchmark._run_benchmark(
+          'bazel_binary_path',
+          'project_path',
+          runs=2,
+          bazel_bench_uid='fake_uid',
+          collect_memory=False,
+          bazel_args=['build', '//:all'],
+          bazelrc=None,
+          prefetch_ext_deps=True,
+          collect_json_profile=True,
+          data_directory='fake_dir',
+          bazel_commit='fake_bazel_commit',
+          project_commit='fake_project_commit')
+
+    self.assertEqual(
+        ''.join([
+            'Pre-fetching external dependencies & exporting build event json to /tmp/.bazel-bench/out/build_env.json...',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=/tmp/.bazel-bench/out/build_env.json',
+            'Executing Bazel command: bazel clean --color=no',
+            'Executing Bazel command: bazel shutdown ',
+            'Starting benchmark run 1/2:',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_fake_project_commit_1_of_2.profile.gz //:all',
+            'Executing Bazel command: bazel clean --color=no',
+            'Executing Bazel command: bazel shutdown ',
+            'Starting benchmark run 2/2:',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_fake_project_commit_2_of_2.profile.gz //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown '
         ]), mock_stderr.getvalue())
