@@ -375,7 +375,7 @@ flags.DEFINE_string('data_directory', None,
                     'Turns on memory collection.')
 flags.DEFINE_string('upload_data_to', None,
                     'The details of the BigQuery table to upload ' \
-                    'results to: <dataset_id>:<table_id>:<location>')
+                    'results to: <project_id>:<dataset_id>:<table_id>:<location>')
 
 
 def _flag_checks():
@@ -387,9 +387,9 @@ def _flag_checks():
     )
 
   if FLAGS.upload_data_to:
-    if not re.match('^[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_data_to):
+    if not re.match('^[\w-]+:[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_data_to):
       raise ValueError('--upload_data_to should follow the pattern '
-                       '<dataset_id>:<table_id>:<location>')
+                       '<project_id>:<dataset_id>:<table_id>:<location>')
 
     if ('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ or
         not os.environ['GOOGLE_APPLICATION_CREDENTIALS']):
