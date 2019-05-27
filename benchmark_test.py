@@ -265,9 +265,9 @@ class BenchmarkFlagsTest(absltest.TestCase):
     self.assertEqual(
         value_err.message,
         '--upload_data_to should follow the pattern ' \
-        '<dataset_id>:<table_id>:<location>')
+            '<project_id>:<dataset_id>:<table_id>:<location>')
 
-  @flagsaver.flagsaver(upload_data_to='correct:flag:pattern')
+  @flagsaver.flagsaver(upload_data_to='project:correct:flag:pattern')
   @mock.patch.object(benchmark.os, 'environ', return_value={})
   def test_upload_data_to_no_credentials(self, _):
     with self.assertRaises(ValueError) as context:
