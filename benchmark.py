@@ -391,10 +391,10 @@ def _flag_checks():
       raise ValueError('--upload_data_to should follow the pattern '
                        '<project_id>:<dataset_id>:<table_id>:<location>')
 
-    if ('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ or
-        not os.environ['GOOGLE_APPLICATION_CREDENTIALS']):
-      raise ValueError('GOOGLE_APPLICATION_CREDENTIALS is required to '
-                       'upload data to bigquery.')
+#   if ('GOOGLE_APPLICATION_CREDENTIALS' not in os.environ or
+#       not os.environ['GOOGLE_APPLICATION_CREDENTIALS']):
+#     raise ValueError('GOOGLE_APPLICATION_CREDENTIALS is required to '
+#                      'upload data to bigquery.')
     if FLAGS.collect_json_profile and not FLAGS.data_directory:
       raise ValueError('--collect_json_profile requires '
                        '--data_directory to be set')
