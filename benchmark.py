@@ -351,6 +351,11 @@ flags.DEFINE_list('project_commits', None,
 # Execution options.
 flags.DEFINE_integer('runs', 3, 'The number of benchmark runs.')
 flags.DEFINE_string('bazelrc', None, 'The path to a .bazelrc file.')
+flags.DEFINE_string('platform',
+                    None,
+                    ('The platform on which bazel-bench is run. This is just '
+                     'to categorize data and has no impact on the actual '
+                     'script execution.'))
 
 # Miscellaneous flags.
 flags.DEFINE_boolean('verbose', False,
@@ -489,7 +494,11 @@ def main(argv):
 
   if FLAGS.data_directory or FLAGS.upload_data_to:
     csv_file_path = export_csv(
-        data_directory, bazel_bench_uid, csv_data, FLAGS.project_source)
+        data_directory,
+        bazel_bench_uid,
+        csv_data,
+        FLAGS.project_source,
+        FLAGS.platform)
     if FLAGS.upload_data_to:
       upload_csv(csv_file_path, FLAGS.upload_data_to)
 
