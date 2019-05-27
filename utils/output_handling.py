@@ -22,7 +22,7 @@ import getpass
 import logger
 
 
-def export_csv(data_directory, filename, data, project_source):
+def export_csv(data_directory, filename, data, project_source, platform):
   """Exports the content of data to a csv file in data_directory
 
   Args:
@@ -31,6 +31,7 @@ def export_csv(data_directory, filename, data, project_source):
     data: the collected data to be exported.
     project_source: either a path to the local git project to be built or a
       https url to a GitHub repository.
+    platform: the platform on which benchmarking was run.
 
   Returns:
     The path to the newly created csv file.
@@ -47,7 +48,7 @@ def export_csv(data_directory, filename, data, project_source):
     csv_writer.writerow([
         'project_source', 'project_commit', 'bazel_commit', 'run', 'cpu',
         'wall', 'system', 'memory', 'command', 'expressions', 'hostname',
-        'username', 'options', 'exit_status', 'started_at'
+        'username', 'options', 'exit_status', 'started_at', 'platform'
     ])
 
     for (bazel_commit, project_commit), results_and_args in data.items():
@@ -56,7 +57,8 @@ def export_csv(data_directory, filename, data, project_source):
         csv_writer.writerow([
             project_source, project_commit, bazel_commit, idx, run['cpu'],
             run['wall'], run['system'], run['memory'], command, expressions,
-            hostname, username, options, run['exit_status'], run['started_at']
+            hostname, username, options, run['exit_status'], run['started_at'],
+            platform
         ])
   return csv_file_path
 
