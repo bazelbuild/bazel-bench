@@ -47,13 +47,13 @@ def _platform_path_str(posix_path):
 # The path to the cloned bazelbuild/bazel repo.
 BAZEL_CLONE_PATH = _platform_path_str('%s/.bazel-bench/bazel' % TMP)
 # The path to the clone of the project to be built with Bazel.
-PROJECT_CLONE_BASE_PATH = _platform_path_str('%s/.bazel-bench/project-clones/' %
+PROJECT_CLONE_BASE_PATH = _platform_path_str('%s/.bazel-bench/project-clones' %
                                              TMP)
 BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 # The path to the directory that stores the bazel binaries.
-BAZEL_BINARY_BASE_PATH = _platform_path_str('%s/.bazel-bench/bazel-bin/' % TMP)
+BAZEL_BINARY_BASE_PATH = _platform_path_str('%s/.bazel-bench/bazel-bin' % TMP)
 # The path to the directory that stores the output csv (If required).
-DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/.bazel-bench/out/' % TMP)
+DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/.bazel-bench/out' % TMP)
 
 
 def _get_clone_subdir(project_source):
@@ -146,7 +146,8 @@ def _build_bazel_binary(commit, repo, outroot):
   Returns:
     The path to the resulting binary (copied to outroot).
   """
-  destination = outroot + commit
+  outroot_for_commit = '%s/%s' % (outroot, commit)
+  destination = '%s/bazel' % outroot_for_commit
   if os.path.exists(destination):
     logger.log('Binary exists at %s, reusing...' % destination)
     return destination
@@ -158,10 +159,9 @@ def _build_bazel_binary(commit, repo, outroot):
 
   # Copy to another location
   binary_out = '%s/bazel-bin/src/bazel' % repo.working_dir
-  destination = outroot + commit
 
-  if not os.path.exists(outroot):
-    os.makedirs(outroot)
+  if not os.path.exists(outroot_for_commit):
+    os.makedirs(outroot_for_commit)
   logger.log('Copying bazel binary to %s' % destination)
   shutil.copyfile(binary_out, destination)
   _exec_command(['chmod', '+x', destination])
@@ -281,7 +281,7 @@ def _run_benchmark(bazel_binary_path,
     bep_json_dir = bep_json_dir or DEFAULT_OUT_BASE_PATH
     if not os.path.exists(bep_json_dir):
       os.makedirs(bep_json_dir)
-    bep_json_path = bep_json_dir + 'build_env.json'
+    bep_json_path = bep_json_dir + '/build_env.json'
 
     logger.log('Pre-fetching external dependencies & exporting build event json ' \
         'to %s...' % bep_json_path)
@@ -420,7 +420,7 @@ def main(argv):
   # Set up project repo
   logger.log('Preparing %s clone.' % FLAGS.project_source)
   project_clone_repo = _setup_project_repo(
-      PROJECT_CLONE_BASE_PATH + _get_clone_subdir(FLAGS.project_source),
+      PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(FLAGS.project_source),
       FLAGS.project_source)
 
   project_commits = _get_commits_topological(FLAGS.project_commits,
