@@ -93,7 +93,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
                                      unused_exists_mock):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._build_bazel_binary('commit', 'repo_path', 'outroot/')
-    self.assertEqual('Binary exists at outroot/commit, reusing...',
+    self.assertEqual('Binary exists at outroot/commit/bazel, reusing...',
                      mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os.path, 'exists', return_value=False)
