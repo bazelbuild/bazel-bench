@@ -146,7 +146,8 @@ def _build_bazel_binary(commit, repo, outroot):
   Returns:
     The path to the resulting binary (copied to outroot).
   """
-  destination = outroot + commit
+  outroot_for_commit = '%s/%s' % (outroot, commit)
+  destination = '%s/bazel' % outroot_for_commit
   if os.path.exists(destination):
     logger.log('Binary exists at %s, reusing...' % destination)
     return destination
@@ -160,8 +161,8 @@ def _build_bazel_binary(commit, repo, outroot):
   binary_out = '%s/bazel-bin/src/bazel' % repo.working_dir
   destination = outroot + commit
 
-  if not os.path.exists(outroot):
-    os.makedirs(outroot)
+  if not os.path.exists(outroot_for_commit):
+    os.makedirs(outroot_for_commit)
   logger.log('Copying bazel binary to %s' % destination)
   shutil.copyfile(binary_out, destination)
   _exec_command(['chmod', '+x', destination])
