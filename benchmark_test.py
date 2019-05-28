@@ -92,8 +92,8 @@ class BenchmarkFunctionTests(absltest.TestCase):
   def test_build_bazel_binary_exists(self, unused_chdir_mock,
                                      unused_exists_mock):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
-      benchmark._build_bazel_binary('commit', 'repo_path', 'outroot/')
-    self.assertEqual('Binary exists at outroot/commit, reusing...',
+      benchmark._build_bazel_binary('commit', 'repo_path', 'outroot')
+    self.assertEqual('Binary exists at outroot/commit/bazel, reusing...',
                      mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os.path, 'exists', return_value=False)
@@ -107,15 +107,15 @@ class BenchmarkFunctionTests(absltest.TestCase):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
       mock.patch('benchmark.git.Repo') as mock_repo_class:
       mock_repo = mock_repo_class.return_value
-      benchmark._build_bazel_binary('commit', mock_repo, 'outroot/')
+      benchmark._build_bazel_binary('commit', mock_repo, 'outroot')
 
     mock_repo.git.checkout.assert_called_once_with('-f', 'commit')
     self.assertEqual(
         ''.join([
             'Building Bazel binary at commit commit',
             "['bazel', 'build', '//src:bazel']",
-            'Copying bazel binary to outroot/commit',
-            "['chmod', '+x', 'outroot/commit']"
+            'Copying bazel binary to outroot/commit/bazel',
+            "['chmod', '+x', 'outroot/commit/bazel']"
         ]), mock_stderr.getvalue())
 
   def test_single_run(self):
