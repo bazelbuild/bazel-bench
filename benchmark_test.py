@@ -267,17 +267,5 @@ class BenchmarkFlagsTest(absltest.TestCase):
         '--upload_data_to should follow the pattern ' \
             '<project_id>:<dataset_id>:<table_id>:<location>')
 
-  @flagsaver.flagsaver(upload_data_to='project:correct:flag:pattern')
-  @mock.patch.object(benchmark.os, 'environ', return_value={})
-  def test_upload_data_to_no_credentials(self, _):
-    with self.assertRaises(ValueError) as context:
-      benchmark._flag_checks()
-    value_err = context.exception
-    self.assertEqual(
-        value_err.message,
-        'GOOGLE_APPLICATION_CREDENTIALS is required to upload data to bigquery.'
-    )
-
-
 if __name__ == '__main__':
   absltest.main()
