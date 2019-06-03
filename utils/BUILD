@@ -1,4 +1,5 @@
 load("@third_party//:requirements.bzl", "requirement")
+load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -49,6 +50,7 @@ py_test(
     name = "bazel_args_parser_test",
     size = "small",
     srcs = ["bazel_args_parser_test.py"],
+    python_version = "PY2",
     deps = [
         ":utils",
         requirement("mock"),
@@ -59,6 +61,7 @@ py_test(
     name = "bazel_test",
     size = "small",
     srcs = ["bazel_test.py"],
+    python_version = "PY2",
     deps = [
         ":utils",
         requirement("mock"),
@@ -69,6 +72,7 @@ py_test(
     name = "values_test",
     size = "small",
     srcs = ["values_test.py"],
+    python_version = "PY2",
     deps = [
         ":utils",
         requirement("mock"),
