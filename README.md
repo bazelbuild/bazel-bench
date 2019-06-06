@@ -108,7 +108,7 @@ Some useful flags are:
   --runs: The number of benchmark runs.
     (default: '3')
     (an integer)
-  --upload_data_to: The details of the BigQuery table to upload results to: <dataset_id>:<table_id>:<location>
+  --upload_data_to: The details of the BigQuery table to upload results to: <project_id>:<dataset_id>:<table_id>:<location>
   --[no]verbose: Whether to include git/Bazel stdout logs.
     (default: 'false')
   --[no]collect_json_profile: Whether to collect JSON profile for each run.
