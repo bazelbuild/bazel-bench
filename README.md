@@ -136,7 +136,7 @@ bazel run utils:json_profile_merger \
 --project_source=<some url or path> \
 --project_commit=<some_commit> \
 --output_path=/tmp/outfile.csv \
---upload_data_to=<project_id>:<dataset_id>:<table_id>:location \
+--upload_data_to=<project_id>:<dataset_id>:<table_id>:<location> \
 -- /tmp/my_json_profiles_*.profile
 ```
 
