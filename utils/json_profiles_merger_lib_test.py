@@ -69,6 +69,7 @@ class JsonProfilesMergerLibTest(unittest.TestCase):
             'cat': 'fake_cat',
             'name': 'fake_name',
             'dur': 1,
+            'ts': 10001,
             'non_dur': 'something'
         },
     ]
@@ -81,6 +82,11 @@ class JsonProfilesMergerLibTest(unittest.TestCase):
                 'cat': 'build phase marker',
                 'name': 'phase1',
                 'dur_list': [9.0]
+            },
+            'phase2': {
+                'cat': 'build phase marker',
+                'name': 'phase2',
+                'dur_list': [0.001]
             },
             'fake_name': {
                 'cat': 'fake_cat',

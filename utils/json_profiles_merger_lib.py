@@ -67,10 +67,14 @@ def _accumulate_event_duration(event_list, accum_dict):
   """
   # A list of tuples of the form (marker, occurrence time in micro s)
   build_markers_ts_pairs = []
+  max_ts = 0
 
   # Only collect events with a duration.
   # Special case: markers that indicates beginning/end of execution.
   for event in event_list:
+    if 'ts' in event:
+      max_ts = max(max_ts, event['ts'])
+
     if 'cat' in event and event['cat'] == 'build phase marker':
       build_markers_ts_pairs.append((event['name'], event['ts']))
 
@@ -84,6 +88,11 @@ def _accumulate_event_duration(event_list, accum_dict):
           'dur_list': []
       }
     accum_dict[event['name']]['dur_list'].append(event['dur'])
+
+  # Append an artificial marker that signifies the end of the run.
+  # This is to determine the duration from the last marker to the actual end of
+  # the run and will not end up in the final data.
+  build_markers_ts_pairs.append((None, max_ts))
 
   # Fill in the markers.
   for i, marker_ts_pair in enumerate(build_markers_ts_pairs[:-1]):
