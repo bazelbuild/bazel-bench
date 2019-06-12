@@ -7,7 +7,10 @@ filegroup(
     name = "utils-srcs",
     srcs = glob(
         ["*.py"],
-        exclude = ["*_test.py"],
+        exclude = [
+            "*_test.py",
+            "json_profile_merger.py",
+        ],
     ),
 )
 
@@ -46,6 +49,15 @@ py_library(
     ],
 )
 
+py_binary(
+    name = "json_profiles_merger",
+    srcs = ["json_profiles_merger.py"],
+    deps = [
+        ":utils",
+        requirement("absl-py"),
+    ],
+)
+
 py_test(
     name = "bazel_args_parser_test",
     size = "small",
@@ -72,6 +84,17 @@ py_test(
     name = "values_test",
     size = "small",
     srcs = ["values_test.py"],
+    python_version = "PY2",
+    deps = [
+        ":utils",
+        requirement("mock"),
+    ],
+)
+
+py_test(
+    name = "json_profiles_merger_lib_test",
+    size = "small",
+    srcs = ["json_profiles_merger_lib_test.py"],
     python_version = "PY2",
     deps = [
         ":utils",

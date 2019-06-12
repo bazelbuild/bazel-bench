@@ -496,7 +496,8 @@ def main(argv):
         FLAGS.project_source,
         FLAGS.platform)
     if FLAGS.upload_data_to:
-      upload_csv(csv_file_path, FLAGS.upload_data_to)
+      project_id, dataset_id, table_id, location = FLAGS.upload_data_to
+      upload_csv(csv_file_path, project_id, dataset_id, table_id, location)
 
   logger.log('Done.')
 
