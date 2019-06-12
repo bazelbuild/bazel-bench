@@ -63,22 +63,23 @@ def export_csv(data_directory, filename, data, project_source, platform):
   return csv_file_path
 
 
-def upload_csv(csv_file_path, bigquery_cfg):
+def upload_csv(csv_file_path, project_id, dataset_id, table_id, location):
   """Uploads the csv file to BigQuery.
 
   Takes the configuration from config.json.
 
   Args:
     csv_file_path: the path to the csv to be uploaded.
-    bigquery_cfg: The string representing the BigQuery table config. Comes in
-      the form <project_id>:<dataset_id>:<table_id>:<location>
+    project_id: the BigQuery project id.
+    dataset_id: the BigQuery dataset id.
+    table_id: the BigQuery table id.
+    location: the BigQuery table's location.
   """
   # This is a workaround for
   # https://github.com/bazelbuild/rules_python/issues/14
   from google.cloud import bigquery
 
   logger.log('Uploading the data to bigquery.')
-  project_id, dataset_id, table_id, location = bigquery_cfg.split(':')
   client = bigquery.Client(project=project_id)
 
   dataset_ref = client.dataset(dataset_id)

@@ -115,9 +115,35 @@ Some useful flags are:
     Requires --data_directory to be set.
     (default: 'false')
 ```
+
 ## Collecting JSON Profile
 
 [Bazel's JSON Profile](https://docs.bazel.build/versions/master/skylark/performance.html#json-profile) is a useful tool to investigate the performance of Bazel. You can configure `bazel-bench` to export these JSON profiles on runs using the `--collect_json_profile` flag.
+
+### JSON Profile Aggregation
+
+For each pair of `project_commit` and `bazel_commit`, we produce a couple JSON
+profiles, based on the number of runs. To have a better overview of the
+performance of each phase and events, we can aggregate these profiles and
+produce the median duration of each event across them.
+
+To run the tool:
+
+```
+bazel run utils:json_profile_merger \
+-- \
+--bazel_source=<some commit or path> \
+--project_source=<some url or path> \
+--project_commit=<some_commit> \
+--output_path=/tmp/outfile.csv \
+--upload_data_to=<project_id>:<dataset_id>:<table_id>:<location> \
+-- /tmp/my_json_profiles_*.profile
+```
+
+You can pass the pattern that selects the input profiles into the positional
+argument of the script, like in the above example
+(`/tmp/my_json_profiles_*.profile`).
+
 
 ## Uploading to BigQuery
 
