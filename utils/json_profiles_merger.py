@@ -19,15 +19,15 @@ import json_profiles_merger_lib as lib
 import output_handling
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string('output_path', None, 'The path to the output file')
+flags.DEFINE_string('output_path', None, 'The path to the output file.')
 flags.DEFINE_string(
     'bazel_source', None,
     ('(Optional) The bazel commit or path to the bazel binary from which these'
-     'JSON profiles were collected'))
+     'JSON profiles were collected.'))
 flags.DEFINE_string(
     'project_source', None,
     ('(Optional) The project on which the runs that generated these JSON'
-     'profiles were performed'))
+     'profiles were performed.'))
 flags.DEFINE_string(
     'project_commit', None,
     '(Optional) The project commit on which the Bazel runs were performed.')
