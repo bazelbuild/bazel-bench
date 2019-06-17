@@ -63,7 +63,7 @@ def export_csv(data_directory, filename, data, project_source, platform):
   return csv_file_path
 
 
-def upload_csv(csv_file_path, project_id, dataset_id, table_id, location):
+def upload_to_bq(csv_file_path, project_id, dataset_id, table_id, location):
   """Uploads the csv file to BigQuery.
 
   Takes the configuration from config.json.
@@ -105,3 +105,19 @@ def upload_csv(csv_file_path, project_id, dataset_id, table_id, location):
     sys.exit(-1)
   logger.log('Uploaded {} rows into {}:{}.'.format(job.output_rows, dataset_id,
                                                    table_id))
+
+def upload_to_storage(csv_file_path, project_id, bucket_id, destination):
+  # This is a workaround for
+  # https://github.com/bazelbuild/rules_python/issues/14
+  from google.cloud import storage
+
+  logger.log('Uploading data to Storage.')
+  client = storage.Client(project=project_id)
+  bucket = client.get_bucket(bucket_id)
+  blob = bucket.blob(destination)
+
+  blog.upload_from_filename(csv_file_path)
+
+  logger.log(
+      'Uploaded {} to {}/{}.'.format(csv_file_path, bucket_id, destination))
+
