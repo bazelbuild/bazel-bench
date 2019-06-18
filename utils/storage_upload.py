@@ -17,6 +17,7 @@ import logger
 
 from google.cloud import storage
 
+
 def upload_to_storage(file_path, project_id, bucket_id, destination):
   """Uploads the file to Storage.
 
