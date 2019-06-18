@@ -15,8 +15,6 @@
 """
 import logger
 
-from google.cloud import storage
-
 
 def upload_to_storage(file_path, project_id, bucket_id, destination):
   """Uploads the file to Storage.
@@ -29,6 +27,9 @@ def upload_to_storage(file_path, project_id, bucket_id, destination):
     bucket_id: the Storage bucket.
     destination: the path to the destination on the bucket.
   """
+  # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14
+  from google.cloud import storage
+
   logger.log('Uploading data to Storage.')
   client = storage.Client(project=project_id)
   bucket = client.get_bucket(bucket_id)
