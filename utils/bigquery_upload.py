@@ -14,8 +14,12 @@
 """Handles the uploading of result CSV to BigQuery.
 """
 import logger
+import re
 import sys
 
+from absl import app
+from absl import flags
+from google.cloud import bigquery
 
 def upload_to_bigquery(csv_file_path, project_id, dataset_id, table_id, location):
   """Uploads the csv file to BigQuery.
@@ -29,8 +33,6 @@ def upload_to_bigquery(csv_file_path, project_id, dataset_id, table_id, location
     table_id: the BigQuery table id.
     location: the BigQuery table's location.
   """
-  # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14
-  from google.cloud import bigquery
 
   logger.log('Uploading the data to bigquery.')
   client = bigquery.Client(project=project_id)
@@ -59,4 +61,25 @@ def upload_to_bigquery(csv_file_path, project_id, dataset_id, table_id, location
   logger.log('Uploaded {} rows into {}:{}.'.format(job.output_rows, dataset_id,
                                                    table_id))
 
+FLAGS = flags.FLAGS
+flags.DEFINE_string('upload_to_bigquery', None,
+                    'The details of the BigQuery table to upload ' \
+                    'results to: <project_id>:<dataset_id>:<table_id>:<location>')
 
+
+def main(argv):
+  if not re.match('^[\w-]+:[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_to_bigquery):
+    raise ValueError('--upload_to_bigquery should follow the pattern '
+                     '<project_id>:<dataset_id>:<table_id>:<location>.')
+
+  # Discard the first argument.
+  csv_files_to_upload = argv[1:]
+
+  project_id, dataset_id, table_id, location = FLAGS.upload_to_bigquery.split(':')
+  for filename in csv_files_to_upload:
+    upload_to_bigquery(
+        filename, project_id, dataset_id, table_id, location)
+
+
+if __name__ == '__main__':
+  app.run(main)

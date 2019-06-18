@@ -13,6 +13,7 @@
 # limitations under the License.
 from __future__ import print_function
 
+import csv
 import datetime
 import os
 import subprocess
@@ -24,13 +25,11 @@ import tempfile
 import git
 import utils.logger as logger
 import utils.bazel_args_parser as args_parser
+import utils.json_profiles_merger_lib as json_profiles_merger_lib
 import utils.output_handling as output_handling
-import utils.bigquery_upload as bigquery_upload
-import utils.storage_upload as storage_upload
 
 from absl import app
 from absl import flags
-from absl.flags import argparse_flags
 
 from utils.values import Values
 from utils.bazel import Bazel
@@ -56,6 +55,7 @@ BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 BAZEL_BINARY_BASE_PATH = _platform_path_str('%s/.bazel-bench/bazel-bin' % TMP)
 # The path to the directory that stores the output csv (If required).
 DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/.bazel-bench/out' % TMP)
+DEFAULT_AGGR_JSON_PROFILES_FILENAME = 'aggr_json_profiles.csv'
 
 
 def _get_clone_subdir(project_source):
@@ -186,6 +186,18 @@ def _construct_json_profile_flags(out_file_path):
       "--experimental_json_trace_compression",
       "--profile={}".format(out_file_path)
   ]
+
+
+def json_profile_filename(
+    data_directory, bazel_bench_uid, bazel_commit, project_commit, run_number,
+    total_runs):
+  return '%s/%s_%s_%s_%s_of_%s.profile.gz' % (
+      data_directory,
+      bazel_bench_uid,
+      bazel_commit,
+      project_commit,
+      run_number,
+      total_runs)
 
 
 def _single_run(bazel_binary_path,
@@ -320,7 +332,7 @@ def _run_benchmark(bazel_binary_path,
       assert bazel_commit, 'bazel_commit is required when collect_json_profile'
       assert project_commit, 'project_commit is required when collect_json_profile'
       maybe_include_json_profile_flags += _construct_json_profile_flags(
-          '%s/%s_%s_%s_%s_of_%s.profile.gz' % (
+          json_profile_filename(
               data_directory,
               bazel_bench_uid,
               bazel_commit,
@@ -334,6 +346,49 @@ def _run_benchmark(bazel_binary_path,
 
   return collected, (command, expressions, options)
 
+def handle_json_profiles_aggr(
+    bazel_commits, project_source, project_commits, runs, output_prefix,
+    output_path, data_directory):
+  """Aggregates the collected JSON profiles and writes the result to a CSV.
+
+  Args:
+    bazel_commits: the Bazel commits that bazel-bench ran on.
+    project_source:  a path/url to a local/remote repository of the project
+      on which benchmarking was performed.
+    project_commits: the commits of the project when benchmarking was done.
+    runs: the total number of runs.
+    output_prefix: the prefix to json profile filenames.
+      Often the bazel-bench-uid.
+    output_path: the path to the output csv file.
+    data_directory: the directory that stores output files.
+  """
+  output_dir = os.path.dirname(output_path)
+  if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+  with open(output_path, 'w') as f:
+    csv_writer = csv.writer(f)
+    csv_writer.writerow(
+        ['bazel_source', 'project_source', 'project_commit',
+         'cat', 'name', 'dur'])
+
+    for bazel_commit in bazel_commits:
+      for project_commit in project_commits:
+        profiles_filenames = [
+             json_profile_filename(
+                data_directory,
+                output_prefix,
+                bazel_commit,
+                project_commit,
+                i,
+                runs) for i in range(1, runs + 1)]
+        event_list = json_profiles_merger_lib.aggregate_data(
+            profiles_filenames, only_phases=True)
+        for event in event_list:
+          csv_writer.writerow(
+              [bazel_commit, project_source, project_commit,
+               event['cat'], event['name'], event['dur']])
+    logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
 
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
@@ -370,17 +425,13 @@ flags.DEFINE_boolean('prefetch_ext_deps', True,
 flags.DEFINE_boolean('collect_json_profile', False,
                      'Whether to collect JSON profile for each run. Requires ' \
                      '--data_directory to be set.')
-
+flags.DEFINE_boolean('aggregate_json_profiles', False,
+                     'Whether to aggregate the collected JSON profiles. Requires '\
+                     '--collect_json_profile to be set.')
 # Output storage flags.
 flags.DEFINE_string('data_directory', None,
                     'The directory in which the csv files should be stored. ' \
                     'Turns on memory collection.')
-flags.DEFINE_string('upload_to_bigquery', None,
-                    'The details of the BigQuery table to upload ' \
-                    'results to: <project_id>:<dataset_id>:<table_id>:<location>')
-flags.DEFINE_string('upload_to_storage', None,
-                    'The details of the GCP Storage bucket to upload ' \
-                    'results to: <project_id>:<bucket_id>:<subdirectory>.')
 # The daily report generation process on BazelCI requires the csv file name to
 # be determined before bazel-bench is launched, so that METADATA files are
 # properly filled.
@@ -395,18 +446,9 @@ def _flag_checks():
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
-  if FLAGS.upload_to_bigquery:
-    if not re.match('^[\w-]+:[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_to_bigquery):
-      raise ValueError('--upload_to_bigquery should follow the pattern '
-                       '<project_id>:<dataset_id>:<table_id>:<location>.')
-
-  if FLAGS.upload_to_storage:
-    if not FLAGS.csv_file_name:
-      raise ValueError('--csv_file_name is required with --upload_to_storage.')
-    if not re.match('^[\w-]+:[\w-]+:[\w\/-]+$', FLAGS.upload_to_storage):
-      raise ValueError('--upload_to_storage should follow the pattern '
-                       '<project_id>:<bucket_id>:<subdirectory>.')
-
+  if FLAGS.aggregate_json_profiles and not FLAGS.collect_json_profile:
+    raise ValueError('--aggregate_json_profiles requires '
+                     '--collect_json_profile to be set.')
   if FLAGS.collect_json_profile and not FLAGS.data_directory:
     raise ValueError('--collect_json_profile requires '
                      '--data_directory to be set.')
@@ -504,7 +546,7 @@ def main(argv):
              values.stddev(), pval))
     last_collected = collected
 
-  if FLAGS.data_directory or FLAGS.upload_to_bigquery or FLAGS.upload_to_storage:
+  if FLAGS.data_directory:
     csv_file_name = FLAGS.csv_file_name or bazel_bench_uid
 
     csv_file_path = output_handling.export_csv(
@@ -514,16 +556,15 @@ def main(argv):
         FLAGS.project_source,
         FLAGS.platform)
 
-    if FLAGS.upload_to_bigquery:
-      project_id, dataset_id, table_id, location = FLAGS.upload_to_bigquery.split(':')
-      bigquery_upload.upload_to_bigquery(
-          csv_file_path, project_id, dataset_id, table_id, location)
+    if FLAGS.aggregate_json_profiles:
+      aggr_json_profiles_csv_path = (
+          '%s/%s' % (FLAGS.data_directory, DEFAULT_AGGR_JSON_PROFILES_FILENAME))
+      handle_json_profiles_aggr(
+          bazel_commits, FLAGS.project_source, project_commits, FLAGS.runs,
+          output_prefix=bazel_bench_uid,
+          output_path=aggr_json_profiles_csv_path,
+          data_directory=FLAGS.data_directory)
 
-    if FLAGS.upload_to_storage:
-      project_id, bucket_id, subdirectory = FLAGS.upload_to_storage.split(':')
-      destination = "%s/%s.csv" % (subdirectory, csv_file_name)
-      storage_upload.upload_to_storage(
-          csv_file_path, project_id, bucket_id, destination)
 
   logger.log('Done.')
 
