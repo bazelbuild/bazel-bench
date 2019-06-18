@@ -5,7 +5,7 @@ Collect median duration of events across these profiles.
 Usage:
   bazel run json_profiles_merger -- \
   --bazel_source=/usr/bin/bazel \
-  --project=https://github.com/bazelbuild/bazel \
+  --project_source=https://github.com/bazelbuild/bazel \
   --project_commit=2 \
   --output_path=/tmp/median_dur.csv \
   --upload_data_to=project-id:dataset-id:table-id:location \
