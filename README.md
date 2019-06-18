@@ -98,6 +98,7 @@ Some useful flags are:
   --bazelrc: The path to a .bazelrc file.
   --[no]collect_memory: Whether to collect used heap sizes.
     (default: 'false')
+  --csv_file_name: The name of the output csv, without the .csv extension
   --data_directory: The directory in which the csv files should be stored. Turns on memory collection.
   --[no]prefetch_ext_deps: Whether to do an initial run to pre-fetch external dependencies.
     (default: 'true')
@@ -109,6 +110,7 @@ Some useful flags are:
     (default: '3')
     (an integer)
   --upload_to_bigquery: The details of the BigQuery table to upload results to: <project_id>:<dataset_id>:<table_id>:<location>
+  --upload_to_storage: The details of the GCP Storage bucket to upload results to: <project_id>:<bucket_id>:<subdirectory>
   --[no]verbose: Whether to include git/Bazel stdout logs.
     (default: 'false')
   --[no]collect_json_profile: Whether to collect JSON profile for each run.
