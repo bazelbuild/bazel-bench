@@ -26,7 +26,7 @@ def _median(lst):
   return (sorted_lst[length // 2 - 1] + sorted_lst[length // 2]) / 2
 
 
-def write_to_csv(
+def _write_to_csv(
     bazel_source, project_source, project_commit, event_list, output_csv_path):
   """Writes the event_list to output_csv_path.
 
@@ -42,10 +42,6 @@ def write_to_csv(
     event_list: the list of events, aggregated from the JSON profiles.
     output_csv_path: a path to the output CSV file.
   """
-  output_dir = os.path.dirname(output_csv_path)
-  if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
-
   with open(output_csv_path, 'w') as csv_file:
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow(
@@ -138,19 +134,24 @@ def _aggregate_from_accum_dict(accum_dict):
   return result
 
 
-def aggregate_data(input_profiles, only_phases=False):
+def aggregate_data(
+    bazel_source, project_source, project_commit, input_profiles, output_path,
+    only_phases=False):
   """Produces the aggregated data from the JSON profile inputs.
 
   Collects information on cat, name and median duration of the events in the
   JSON profiles.
+  Writes the result to output_path.
 
   Args:
+    bazel_source: the bazel commit or path to the bazel binary from which these
+      JSON profiles were collected.
+    project_source: the project on which the runs that generated these JSON
+      projects were performed.
+    project_commit: the project commit on which the Bazel runs were performed.
     input_profiles: a list of paths to .profile or .profile.gz files.
+    output_path: a path to the output file.
     only_phases: only output entries from phase markers.
-
-  Returns:
-    The list of objects which contain the info about cat, name and median
-    duration of events.
   """
   # A map from event name to an object which accumulates the durations.
   accum_dict = dict()
@@ -168,5 +169,18 @@ def aggregate_data(input_profiles, only_phases=False):
       event_list = event_list['traceEvents']
     _accumulate_event_duration(event_list, accum_dict, only_phases)
 
-  return _aggregate_from_accum_dict(accum_dict)
+  # The list of objects which contain the info about cat, name and median
+  # duration of events.
+  aggregated_data = _aggregate_from_accum_dict(accum_dict)
+
+  output_dir = os.path.dirname(output_path)
+  if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+  _write_to_csv(
+      bazel_source,
+      project_source,
+      project_commit,
+      aggregated_data,
+      output_path)
 

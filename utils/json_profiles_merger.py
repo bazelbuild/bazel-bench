@@ -43,18 +43,13 @@ flags.DEFINE_boolean(
 def main(argv):
   # Discard the first argument (the binary).
   input_profiles = argv[1:]
-
-  aggregated_data = lib.aggregate_data(
-      input_profiles,
-      FLAGS.only_phases)
-
-  lib.write_to_csv(
+  lib.aggregate_data(
       FLAGS.bazel_source,
       FLAGS.project_source,
       FLAGS.project_commit,
-      aggregated_data,
-      FLAGS.output_path)
-
+      input_profiles,
+      FLAGS.output_path,
+      FLAGS.only_phases)
   if FLAGS.upload_data_to:
     project_id, dataset_id, table_id, location = FLAGS.upload_data_to.split(':')
     output_handling.upload_csv(
