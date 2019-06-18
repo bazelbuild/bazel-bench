@@ -10,6 +10,8 @@ filegroup(
         exclude = [
             "*_test.py",
             "json_profile_merger.py",
+            "bigquery_upload.py",
+            "storage_upload.py",
         ],
     ),
 )
@@ -25,18 +27,9 @@ py_library(
         requirement("enum34"),
         requirement("funcsigs"),
         requirement("futures"),
-        # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
-        # google-cloud-bigquery must be listed first.
-        requirement("google-cloud-bigquery"),
-        requirement("google-api-core"),
-        requirement("google-auth"),
-        requirement("google-cloud-core"),
-        requirement("google-resumable-media"),
-        requirement("googleapis-common-protos"),
         requirement("idna"),
         requirement("numpy"),
         requirement("pbr"),
-        requirement("protobuf"),
         requirement("psutil"),
         requirement("pyasn1"),
         requirement("pyasn1-modules"),
@@ -46,6 +39,40 @@ py_library(
         requirement("scipy"),
         requirement("six"),
         requirement("urllib3"),
+    ],
+)
+
+py_library(
+    name = "google-common",
+    deps = [
+        requirement("google-api-core"),
+        requirement("google-auth"),
+        requirement("google-cloud-core"),
+        requirement("google-resumable-media"),
+        requirement("googleapis-common-protos"),
+        requirement("protobuf"),
+    ],
+)
+
+py_library(
+    name = "bigquery_upload",
+    srcs = ["bigquery_upload.py"],
+    deps = [
+        # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
+        # google-cloud-bigquery must be listed first.
+        requirement("google-cloud-bigquery"),
+        ":google-common",
+    ],
+)
+
+py_library(
+    name = "storage_upload",
+    srcs = ["storage_upload.py"],
+    deps = [
+        # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
+        # google-cloud-storage must be listed first.
+        requirement("google-cloud-storage"),
+        ":google-common",
     ],
 )
 

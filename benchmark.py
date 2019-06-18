@@ -25,6 +25,8 @@ import git
 import utils.logger as logger
 import utils.bazel_args_parser as args_parser
 import utils.output_handling as output_handling
+import utils.bigquery_upload as bigquery_upload
+import utils.storage_upload as storage_upload
 
 from absl import app
 from absl import flags
@@ -513,14 +515,14 @@ def main(argv):
         FLAGS.platform)
 
     if FLAGS.upload_to_bq:
-      project_id, dataset_id, table_id, location = FLAGS.upload_to_bq
-      output_handling.upload_to_bq(
+      project_id, dataset_id, table_id, location = FLAGS.upload_to_bq.split(':')
+      bigquery_upload.upload_to_bq(
           csv_file_path, project_id, dataset_id, table_id, location)
 
     if FLAGS.upload_to_storage:
-      project_id, bucket_id, subdirectory = FLAGS.upload_to_storage
+      project_id, bucket_id, subdirectory = FLAGS.upload_to_storage.split(':')
       destination = "%s/%s.csv" % (subdirectory, csv_file_name)
-      output_handling.upload_to_storage(
+      storage_upload.upload_to_storage(
           csv_file_path, project_id, bucket_id, destination)
 
   logger.log('Done.')
