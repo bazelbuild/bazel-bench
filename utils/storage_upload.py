@@ -29,7 +29,6 @@ def upload_to_storage(file_path, project_id, bucket_id, destination):
     bucket_id: the Storage bucket.
     destination: the path to the destination on the bucket.
   """
-
   logger.log('Uploading data to Storage.')
   client = storage.Client(project=project_id)
   bucket = client.get_bucket(bucket_id)

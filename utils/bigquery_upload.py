@@ -31,9 +31,6 @@ def upload_to_bq(csv_file_path, project_id, dataset_id, table_id, location):
     table_id: the BigQuery table id.
     location: the BigQuery table's location.
   """
-  # This is a workaround for
-  # https://github.com/bazelbuild/rules_python/issues/14
-
   logger.log('Uploading the data to bigquery.')
   client = bigquery.Client(project=project_id)
 
