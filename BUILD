@@ -1,6 +1,7 @@
 load("@third_party//:requirements.bzl", "requirement")
 load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
 
+# TODO(https://github.com/bazelbuild/bazel-bench/issues/36): Make these work for python3.
 py_binary(
     name = "benchmark",
     srcs = ["benchmark.py"],
