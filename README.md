@@ -108,7 +108,7 @@ Some useful flags are:
   --runs: The number of benchmark runs.
     (default: '3')
     (an integer)
-  --upload_data_to: The details of the BigQuery table to upload results to: <project_id>:<dataset_id>:<table_id>:<location>
+  --upload_to_bigquery: The details of the BigQuery table to upload results to: <project_id>:<dataset_id>:<table_id>:<location>
   --[no]verbose: Whether to include git/Bazel stdout logs.
     (default: 'false')
   --[no]collect_json_profile: Whether to collect JSON profile for each run.
@@ -136,7 +136,7 @@ bazel run utils:json_profile_merger \
 --project_source=<some url or path> \
 --project_commit=<some_commit> \
 --output_path=/tmp/outfile.csv \
---upload_data_to=<project_id>:<dataset_id>:<table_id>:<location> \
+--upload_to_bigquery=<project_id>:<dataset_id>:<table_id>:<location> \
 -- /tmp/my_json_profiles_*.profile
 ```
 
@@ -145,9 +145,9 @@ argument of the script, like in the above example
 (`/tmp/my_json_profiles_*.profile`).
 
 
-## Uploading to BigQuery
+## Uploading to BigQuery & Storage
 
-To upload the output to BigQuery, you'll need the GCP credentials and the table
+To upload the output to BigQuery & Storage you'll need the GCP credentials and the table
 details. Please contact leba@google.com.
 
 ## Tests

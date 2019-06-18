@@ -375,7 +375,7 @@ flags.DEFINE_boolean('collect_json_profile', False,
 flags.DEFINE_string('data_directory', None,
                     'The directory in which the csv files should be stored. ' \
                     'Turns on memory collection.')
-flags.DEFINE_string('upload_to_bq', None,
+flags.DEFINE_string('upload_to_bigquery', None,
                     'The details of the BigQuery table to upload ' \
                     'results to: <project_id>:<dataset_id>:<table_id>:<location>')
 flags.DEFINE_string('upload_to_storage', None,
@@ -395,9 +395,9 @@ def _flag_checks():
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
-  if FLAGS.upload_to_bq:
-    if not re.match('^[\w-]+:[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_to_bq):
-      raise ValueError('--upload_to_bq should follow the pattern '
+  if FLAGS.upload_to_bigquery:
+    if not re.match('^[\w-]+:[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_to_bigquery):
+      raise ValueError('--upload_to_bigquery should follow the pattern '
                        '<project_id>:<dataset_id>:<table_id>:<location>.')
 
   if FLAGS.upload_to_storage:
@@ -504,7 +504,7 @@ def main(argv):
              values.stddev(), pval))
     last_collected = collected
 
-  if FLAGS.data_directory or FLAGS.upload_to_bq or FLAGS.upload_to_storage:
+  if FLAGS.data_directory or FLAGS.upload_to_bigquery or FLAGS.upload_to_storage:
     csv_file_name = FLAGS.csv_file_name or bazel_bench_uid
 
     csv_file_path = output_handling.export_csv(
@@ -514,9 +514,9 @@ def main(argv):
         FLAGS.project_source,
         FLAGS.platform)
 
-    if FLAGS.upload_to_bq:
-      project_id, dataset_id, table_id, location = FLAGS.upload_to_bq.split(':')
-      bigquery_upload.upload_to_bq(
+    if FLAGS.upload_to_bigquery:
+      project_id, dataset_id, table_id, location = FLAGS.upload_to_bigquery.split(':')
+      bigquery_upload.upload_to_bigquery(
           csv_file_path, project_id, dataset_id, table_id, location)
 
     if FLAGS.upload_to_storage:

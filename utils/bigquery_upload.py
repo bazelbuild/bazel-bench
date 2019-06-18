@@ -17,7 +17,7 @@ import logger
 import sys
 
 
-def upload_to_bq(csv_file_path, project_id, dataset_id, table_id, location):
+def upload_to_bigquery(csv_file_path, project_id, dataset_id, table_id, location):
   """Uploads the csv file to BigQuery.
 
   Takes the configuration from GOOGLE_APPLICATION_CREDENTIALS.
