@@ -95,6 +95,47 @@ class JsonProfilesMergerLibTest(unittest.TestCase):
             },
         }, accum_dict)
 
+
+  def test_accumulate_only_phase_marker(self):
+    event_list = [
+        {
+            'name': 'to_skip_no_dur',
+        },
+        {
+            'cat': 'build phase marker',
+            'name': 'phase1',
+            'ts': 1000
+        },
+        {
+            'cat': 'build phase marker',
+            'name': 'phase2',
+            'ts': 10000
+        },
+        {
+            'cat': 'fake_cat',
+            'name': 'fake_name',
+            'dur': 1,
+            'ts': 10001,
+            'non_dur': 'something'
+        },
+    ]
+
+    accum_dict = {}
+    lib._accumulate_event_duration(event_list, accum_dict, only_phases=True)
+    self.assertEqual(
+        {
+            'phase1': {
+                'cat': 'build phase marker',
+                'name': 'phase1',
+                'dur_list': [9.0]
+            },
+            'phase2': {
+                'cat': 'build phase marker',
+                'name': 'phase2',
+                'dur_list': [0.001]
+            },
+        }, accum_dict)
+
   def test_aggregate_from_accum_dict(self):
     accum_dict = {
         'fake_name': {
