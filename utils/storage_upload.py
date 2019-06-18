@@ -35,7 +35,7 @@ def upload_to_storage(file_path, project_id, bucket_id, destination):
   bucket = client.get_bucket(bucket_id)
   blob = bucket.blob(destination)
 
-  blog.upload_from_filename(file_path)
+  blob.upload_from_filename(file_path)
 
   logger.log(
       'Uploaded {} to {}/{}.'.format(file_path, bucket_id, destination))
