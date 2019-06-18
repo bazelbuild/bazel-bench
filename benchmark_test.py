@@ -257,15 +257,36 @@ class BenchmarkFlagsTest(absltest.TestCase):
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
-  @flagsaver.flagsaver(upload_data_to='wrong_pattern')
-  def test_upload_data_to_wrong_pattern(self):
+  @flagsaver.flagsaver(upload_to_bigquery='wrong_pattern')
+  def test_upload_to_bigquery_wrong_pattern(self):
     with self.assertRaises(ValueError) as context:
       benchmark._flag_checks()
     value_err = context.exception
     self.assertEqual(
         value_err.message,
-        '--upload_data_to should follow the pattern ' \
-            '<project_id>:<dataset_id>:<table_id>:<location>')
+        '--upload_to_bigquery should follow the pattern ' \
+            '<project_id>:<dataset_id>:<table_id>:<location>.')
+
+  @flagsaver.flagsaver(upload_to_storage='wrong_pattern')
+  @flagsaver.flagsaver(csv_file_name='dummy')
+  def test_upload_to_storage_wrong_pattern(self):
+    with self.assertRaises(ValueError) as context:
+      benchmark._flag_checks()
+    value_err = context.exception
+    self.assertEqual(
+        value_err.message,
+        '--upload_to_storage should follow the pattern ' \
+            '<project_id>:<bucket_id>:<subdirectory>.')
+
+  @flagsaver.flagsaver(upload_to_storage='wrong_pattern')
+  def test_upload_to_storage_missing_csv_file_name(self):
+    with self.assertRaises(ValueError) as context:
+      benchmark._flag_checks()
+    value_err = context.exception
+    self.assertEqual(
+        value_err.message,
+        '--csv_file_name is required with --upload_to_storage.')
+
 
 if __name__ == '__main__':
   absltest.main()
