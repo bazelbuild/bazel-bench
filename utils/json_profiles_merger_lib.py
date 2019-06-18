@@ -54,7 +54,7 @@ def _write_to_csv(
            event['cat'], event['name'], event['dur']])
 
 
-def _accumulate_event_duration(event_list, accum_dict):
+def _accumulate_event_duration(event_list, accum_dict, only_phases=False):
   """Fill up accum_dict by accummulating durations of each event.
 
   Also create the entries for each phase by subtracting the build phase markers'
@@ -64,6 +64,7 @@ def _accumulate_event_duration(event_list, accum_dict):
     event_list: the list of event objects.
     accum_dict: the dict to be filled up with a mapping of the following format:
       { <name>: { name: ..., cat: ..., dur_list: [...]}, ...}
+    only_phases: only collect entries from phase markers.
   """
   # A list of tuples of the form (marker, occurrence time in micro s)
   build_markers_ts_pairs = []
@@ -81,13 +82,14 @@ def _accumulate_event_duration(event_list, accum_dict):
     if 'dur' not in event:
       continue
 
-    if event['name'] not in accum_dict:
-      accum_dict[event['name']] = {
-          'name': event['name'],
-          'cat': event['cat'],
-          'dur_list': []
-      }
-    accum_dict[event['name']]['dur_list'].append(event['dur'])
+    if not only_phases:
+      if event['name'] not in accum_dict:
+        accum_dict[event['name']] = {
+            'name': event['name'],
+            'cat': event['cat'],
+            'dur_list': []
+        }
+      accum_dict[event['name']]['dur_list'].append(event['dur'])
 
   # Append an artificial marker that signifies the end of the run.
   # This is to determine the duration from the last marker to the actual end of
@@ -133,7 +135,8 @@ def _aggregate_from_accum_dict(accum_dict):
 
 
 def aggregate_data(
-    bazel_source, project_source, project_commit, input_profiles, output_path):
+    bazel_source, project_source, project_commit, input_profiles, output_path,
+    only_phases=False):
   """Produces the aggregated data from the JSON profile inputs.
 
   Collects information on cat, name and median duration of the events in the
@@ -148,6 +151,7 @@ def aggregate_data(
     project_commit: the project commit on which the Bazel runs were performed.
     input_profiles: a list of paths to .profile or .profile.gz files.
     output_path: a path to the output file.
+    only_phases: only output entries from phase markers.
   """
   # A map from event name to an object which accumulates the durations.
   accum_dict = dict()
@@ -163,7 +167,7 @@ def aggregate_data(
     # or as the value of key 'traceEvents'.
     if 'traceEvents' in event_list:
       event_list = event_list['traceEvents']
-    _accumulate_event_duration(event_list, accum_dict)
+    _accumulate_event_duration(event_list, accum_dict, only_phases)
 
   # The list of objects which contain the info about cat, name and median
   # duration of events.

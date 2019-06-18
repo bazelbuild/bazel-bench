@@ -5,7 +5,7 @@ Collect median duration of events across these profiles.
 Usage:
   bazel run json_profiles_merger -- \
   --bazel_source=/usr/bin/bazel \
-  --project=https://github.com/bazelbuild/bazel \
+  --project_source=https://github.com/bazelbuild/bazel \
   --project_commit=2 \
   --output_path=/tmp/median_dur.csv \
   --upload_data_to=project-id:dataset-id:table-id:location \
@@ -36,7 +36,9 @@ flags.DEFINE_string(
     'Uploads data to bigquery, requires output_path to be set. '
     'The details of the BigQuery table to upload results to specified in '
     'the form: <project_id>:<dataset_id>:<table_id>:<location>.')
-
+flags.DEFINE_boolean(
+    'only_phases', False,
+    'Whether to only include events from phase markers in the final output.')
 
 def main(argv):
   # Discard the first argument (the binary).
@@ -46,7 +48,8 @@ def main(argv):
       FLAGS.project_source,
       FLAGS.project_commit,
       input_profiles,
-      FLAGS.output_path)
+      FLAGS.output_path,
+      FLAGS.only_phases)
   if FLAGS.upload_data_to:
     project_id, dataset_id, table_id, location = FLAGS.upload_data_to.split(':')
     output_handling.upload_csv(

@@ -79,6 +79,7 @@ py_library(
 py_binary(
     name = "json_profiles_merger",
     srcs = ["json_profiles_merger.py"],
+    python_version = "PY2",
     deps = [
         ":utils",
         requirement("absl-py"),
