@@ -24,6 +24,7 @@ import tempfile
 import git
 import utils.logger as logger
 import utils.bazel_args_parser as args_parser
+import utils.json_profiles_merger_lib as json_profiles_merger_lib
 import utils.output_handling as output_handling
 
 from absl import app
@@ -53,7 +54,8 @@ BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 BAZEL_BINARY_BASE_PATH = _platform_path_str('%s/.bazel-bench/bazel-bin' % TMP)
 # The path to the directory that stores the output csv (If required).
 DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/.bazel-bench/out' % TMP)
-
+# The default name of the aggr json profile.
+DEFAULT_AGGR_JSON_PROFILE_FILENAME = 'aggr_json_profiles.csv'
 
 def _get_clone_subdir(project_source):
   """Calculates a hexdigest of project_source to serve as a unique subdir name."""
@@ -344,6 +346,51 @@ def _run_benchmark(bazel_binary_path,
   return collected, (command, expressions, options)
 
 
+def handle_json_profiles_aggr(
+    bazel_commits, project_source, project_commits, runs, output_prefix,
+    output_path, data_directory):
+  """Aggregates the collected JSON profiles and writes the result to a CSV.
+
+   Args:
+    bazel_commits: the Bazel commits that bazel-bench ran on.
+    project_source: a path/url to a local/remote repository of the project
+      on which benchmarking was performed.
+    project_commits: the commits of the project when benchmarking was done.
+    runs: the total number of runs.
+    output_prefix: the prefix to json profile filenames.
+      Often the bazel-bench-uid.
+    output_path: the path to the output csv file.
+    data_directory: the directory that stores output files.
+  """
+  output_dir = os.path.dirname(output_path)
+  if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+    with open(output_path, 'w') as f:
+      csv_writer = csv.writer(f)
+      csv_writer.writerow(
+          ['bazel_source', 'project_source', 'project_commit',
+           'cat', 'name', 'dur'])
+
+      for bazel_commit in bazel_commits:
+        for project_commit in project_commits:
+          profiles_filenames = [
+               json_profile_filename(
+                    data_directory,
+                    output_prefix,
+                    bazel_commit,
+                    project_commit,
+                    i,
+                    runs) for i in range(1, runs + 1)]
+          event_list = json_profiles_merger_lib.aggregate_data(
+              profiles_filenames, only_phases=True)
+          for event in event_list:
+            csv_writer.writerow(
+                [bazel_commit, project_source, project_commit,
+                 event['cat'], event['name'], event['dur']])
+    logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
+
+
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
 flags.DEFINE_list('bazel_commits', None, 'The commits at which bazel is built.')
@@ -379,6 +426,9 @@ flags.DEFINE_boolean('prefetch_ext_deps', True,
 flags.DEFINE_boolean('collect_json_profile', False,
                      'Whether to collect JSON profile for each run. Requires ' \
                      '--data_directory to be set.')
+flags.DEFINE_boolean('aggregate_json_profiles', False,
+                     'Whether to aggregate the collected JSON profiles. Requires '\
+                     '--collect_json_profile to be set.')
 
 # Output storage flags.
 flags.DEFINE_string('data_directory', None,
@@ -398,6 +448,9 @@ def _flag_checks():
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
+  if FLAGS.aggregate_json_profiles and not FLAGS.collect_json_profile:
+    raise ValueError('--aggregate_json_profiles requires '
+                     '--collect_json_profile to be set.')
   if FLAGS.collect_json_profile and not FLAGS.data_directory:
     raise ValueError('--collect_json_profile requires '
                      '--data_directory to be set.')
@@ -504,6 +557,15 @@ def main(argv):
         csv_data,
         FLAGS.project_source,
         FLAGS.platform)
+
+    if FLAGS.aggregate_json_profiles:
+      aggr_json_profiles_csv_path = (
+          '%s/%s' % (FLAGS.data_directory, DEFAULT_AGGR_JSON_PROFILE_FILENAME))
+      handle_json_profiles_aggr(
+          bazel_commits, FLAGS.project_source, project_commits, FLAGS.runs,
+          output_prefix=bazel_bench_uid,
+          output_path=aggr_json_profiles_csv_path,
+          data_directory=FLAGS.data_directory)
 
   logger.log('Done.')
 
