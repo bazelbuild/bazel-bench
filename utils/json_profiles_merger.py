@@ -1,7 +1,5 @@
 r"""A simple script to aggregate JSON profiles.
-
 Collect median duration of events across these profiles.
-
 Usage:
   bazel run json_profiles_merger -- \
   --bazel_source=/usr/bin/bazel \
@@ -43,13 +41,18 @@ flags.DEFINE_boolean(
 def main(argv):
   # Discard the first argument (the binary).
   input_profiles = argv[1:]
-  lib.aggregate_data(
+
+  aggregated_data = lib.aggregate_data(
+      input_profiles,
+      FLAGS.only_phases)
+
+  lib.write_to_csv(
       FLAGS.bazel_source,
       FLAGS.project_source,
       FLAGS.project_commit,
-      input_profiles,
-      FLAGS.output_path,
-      FLAGS.only_phases)
+      aggregated_data,
+      FLAGS.output_path)
+
   if FLAGS.upload_data_to:
     project_id, dataset_id, table_id, location = FLAGS.upload_data_to.split(':')
     output_handling.upload_csv(
