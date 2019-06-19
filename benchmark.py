@@ -353,7 +353,7 @@ def handle_json_profiles_aggr(
 
    Args:
     bazel_commits: the Bazel commits that bazel-bench ran on.
-    project_source:  a path/url to a local/remote repository of the project
+    project_source: a path/url to a local/remote repository of the project
       on which benchmarking was performed.
     project_commits: the commits of the project when benchmarking was done.
     runs: the total number of runs.
