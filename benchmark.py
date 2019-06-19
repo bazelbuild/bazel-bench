@@ -25,12 +25,9 @@ import git
 import utils.logger as logger
 import utils.bazel_args_parser as args_parser
 import utils.output_handling as output_handling
-import utils.bigquery_upload as bigquery_upload
-import utils.storage_upload as storage_upload
 
 from absl import app
 from absl import flags
-from absl.flags import argparse_flags
 
 from utils.values import Values
 from utils.bazel import Bazel
@@ -188,6 +185,18 @@ def _construct_json_profile_flags(out_file_path):
   ]
 
 
+def json_profile_filename(
+    data_directory, bazel_bench_uid, bazel_commit, project_commit, run_number,
+    total_runs):
+  return '%s/%s_%s_%s_%s_of_%s.profile.gz' % (
+      data_directory,
+      bazel_bench_uid,
+      bazel_commit,
+      project_commit,
+      run_number,
+      total_runs)
+
+
 def _single_run(bazel_binary_path,
                 command,
                 args,
@@ -320,7 +329,7 @@ def _run_benchmark(bazel_binary_path,
       assert bazel_commit, 'bazel_commit is required when collect_json_profile'
       assert project_commit, 'project_commit is required when collect_json_profile'
       maybe_include_json_profile_flags += _construct_json_profile_flags(
-          '%s/%s_%s_%s_%s_of_%s.profile.gz' % (
+          json_profile_filename(
               data_directory,
               bazel_bench_uid,
               bazel_commit,
@@ -375,12 +384,6 @@ flags.DEFINE_boolean('collect_json_profile', False,
 flags.DEFINE_string('data_directory', None,
                     'The directory in which the csv files should be stored. ' \
                     'Turns on memory collection.')
-flags.DEFINE_string('upload_to_bigquery', None,
-                    'The details of the BigQuery table to upload ' \
-                    'results to: <project_id>:<dataset_id>:<table_id>:<location>')
-flags.DEFINE_string('upload_to_storage', None,
-                    'The details of the GCP Storage bucket to upload ' \
-                    'results to: <project_id>:<bucket_id>:<subdirectory>.')
 # The daily report generation process on BazelCI requires the csv file name to
 # be determined before bazel-bench is launched, so that METADATA files are
 # properly filled.
@@ -394,18 +397,6 @@ def _flag_checks():
     raise ValueError(
         'Either --bazel_commits or --project_commits should be a single element.'
     )
-
-  if FLAGS.upload_to_bigquery:
-    if not re.match('^[\w-]+:[\w-]+:[\w-]+:[\w-]+$', FLAGS.upload_to_bigquery):
-      raise ValueError('--upload_to_bigquery should follow the pattern '
-                       '<project_id>:<dataset_id>:<table_id>:<location>.')
-
-  if FLAGS.upload_to_storage:
-    if not FLAGS.csv_file_name:
-      raise ValueError('--csv_file_name is required with --upload_to_storage.')
-    if not re.match('^[\w-]+:[\w-]+:[\w\/-]+$', FLAGS.upload_to_storage):
-      raise ValueError('--upload_to_storage should follow the pattern '
-                       '<project_id>:<bucket_id>:<subdirectory>.')
 
   if FLAGS.collect_json_profile and not FLAGS.data_directory:
     raise ValueError('--collect_json_profile requires '
@@ -504,7 +495,7 @@ def main(argv):
              values.stddev(), pval))
     last_collected = collected
 
-  if FLAGS.data_directory or FLAGS.upload_to_bigquery or FLAGS.upload_to_storage:
+  if FLAGS.data_directory:
     csv_file_name = FLAGS.csv_file_name or bazel_bench_uid
 
     csv_file_path = output_handling.export_csv(
@@ -513,17 +504,6 @@ def main(argv):
         csv_data,
         FLAGS.project_source,
         FLAGS.platform)
-
-    if FLAGS.upload_to_bigquery:
-      project_id, dataset_id, table_id, location = FLAGS.upload_to_bigquery.split(':')
-      bigquery_upload.upload_to_bigquery(
-          csv_file_path, project_id, dataset_id, table_id, location)
-
-    if FLAGS.upload_to_storage:
-      project_id, bucket_id, subdirectory = FLAGS.upload_to_storage.split(':')
-      destination = "%s/%s.csv" % (subdirectory, csv_file_name)
-      storage_upload.upload_to_storage(
-          csv_file_path, project_id, bucket_id, destination)
 
   logger.log('Done.')
 

@@ -14,7 +14,12 @@
 """Handles the uploading of results to Storage.
 """
 import logger
+import os
+import re
 
+from absl import app
+from absl import flags
+from google.cloud import storage
 
 def upload_to_storage(file_path, project_id, bucket_id, destination):
   """Uploads the file to Storage.
@@ -28,7 +33,6 @@ def upload_to_storage(file_path, project_id, bucket_id, destination):
     destination: the path to the destination on the bucket.
   """
   # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14
-  from google.cloud import storage
 
   logger.log('Uploading data to Storage.')
   client = storage.Client(project=project_id)
@@ -40,3 +44,27 @@ def upload_to_storage(file_path, project_id, bucket_id, destination):
   logger.log(
       'Uploaded {} to {}/{}.'.format(file_path, bucket_id, destination))
 
+
+FLAGS = flags.FLAGS
+flags.DEFINE_string('upload_to_storage', None,
+                    'The details of the GCP Storage bucket to upload ' \
+                    'results to: <project_id>:<bucket_id>:<subdirectory>.')
+
+
+def main(argv):
+  if not re.match('^[\w-]+:[\w-]+:[\w\/-]+$', FLAGS.upload_to_storage):
+    raise ValueError('--upload_to_storage should follow the pattern '
+                     '<project_id>:<bucket_id>:<subdirectory>.')
+
+  # Discard the first argument.
+  files_to_upload = argv[1:]
+
+  project_id, bucket_id, subdirectory = FLAGS.upload_to_storage.split(':')
+  for filepath in files_to_upload:
+      filename = os.path.basename(filepath)
+      destination = '%s/%s' % (subdirectory, filename)
+      upload_to_storage(filepath, project_id, bucket_id, destination)
+
+
+if __name__ == '__main__':
+  app.run(main)

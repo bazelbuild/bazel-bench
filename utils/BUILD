@@ -54,24 +54,30 @@ py_library(
     ],
 )
 
-py_library(
+py_binary(
     name = "bigquery_upload",
     srcs = ["bigquery_upload.py"],
     deps = [
         # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-bigquery must be listed first.
         requirement("google-cloud-bigquery"),
+        requirement("absl-py"),
+        requirement("cachetools"),
+        requirement("pytz"),
         ":google-common",
     ],
 )
 
-py_library(
+py_binary(
     name = "storage_upload",
     srcs = ["storage_upload.py"],
     deps = [
         # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-storage must be listed first.
         requirement("google-cloud-storage"),
+        requirement("absl-py"),
+        requirement("cachetools"),
+        requirement("pytz"),
         ":google-common",
     ],
 )
