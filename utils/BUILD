@@ -21,20 +21,16 @@ py_library(
     srcs = [":utils-srcs"],
     deps = [
         requirement("absl-py"),
-        requirement("cachetools"),
         requirement("certifi"),
         requirement("chardet"),
         requirement("enum34"),
         requirement("funcsigs"),
-        requirement("futures"),
         requirement("idna"),
         requirement("numpy"),
         requirement("pbr"),
         requirement("psutil"),
         requirement("pyasn1"),
         requirement("pyasn1-modules"),
-        requirement("pytz"),
-        requirement("requests"),
         requirement("rsa"),
         requirement("scipy"),
         requirement("six"),
@@ -45,12 +41,15 @@ py_library(
 py_library(
     name = "google-common",
     deps = [
+        requirement("cachetools"),
         requirement("google-api-core"),
         requirement("google-auth"),
         requirement("google-cloud-core"),
         requirement("google-resumable-media"),
         requirement("googleapis-common-protos"),
         requirement("protobuf"),
+        requirement("pytz"),
+        requirement("requests"),
     ],
 )
 
@@ -63,8 +62,7 @@ py_binary(
         # google-cloud-bigquery must be listed first.
         requirement("google-cloud-bigquery"),
         requirement("absl-py"),
-        requirement("cachetools"),
-        requirement("pytz"),
+        requirement("futures"),
         ":google-common",
     ],
 )
@@ -78,8 +76,6 @@ py_binary(
         # google-cloud-storage must be listed first.
         requirement("google-cloud-storage"),
         requirement("absl-py"),
-        requirement("cachetools"),
-        requirement("pytz"),
         ":google-common",
     ],
 )
