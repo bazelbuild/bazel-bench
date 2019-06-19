@@ -57,6 +57,7 @@ py_library(
 py_binary(
     name = "bigquery_upload",
     srcs = ["bigquery_upload.py"],
+    python_version = "PY2",
     deps = [
         # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-bigquery must be listed first.
@@ -71,6 +72,7 @@ py_binary(
 py_binary(
     name = "storage_upload",
     srcs = ["storage_upload.py"],
+    python_version = "PY2",
     deps = [
         # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-storage must be listed first.
