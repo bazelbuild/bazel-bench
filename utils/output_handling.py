@@ -35,7 +35,7 @@ def export_csv(data_directory, filename, data, project_source, platform):
   """
   if not os.path.exists(data_directory):
     os.makedirs(data_directory)
-  csv_file_path = '%s/%s.csv' % (data_directory, filename)
+  csv_file_path = os.path.join(data_directory, filename)
   logger.log('Writing raw data into csv file: %s' % str(csv_file_path))
 
   with open(csv_file_path, 'w') as csv_file:
