@@ -350,6 +350,7 @@ def handle_json_profiles_aggr(
     bazel_commits, project_source, project_commits, runs, output_prefix,
     output_path, data_directory):
   """Aggregates the collected JSON profiles and writes the result to a CSV.
+
    Args:
     bazel_commits: the Bazel commits that bazel-bench ran on.
     project_source:  a path/url to a local/remote repository of the project
@@ -371,22 +372,22 @@ def handle_json_profiles_aggr(
           ['bazel_source', 'project_source', 'project_commit',
            'cat', 'name', 'dur'])
 
-        for bazel_commit in bazel_commits:
-          for project_commit in project_commits:
-            profiles_filenames = [
-                 json_profile_filename(
-                      data_directory,
-                      output_prefix,
-                      bazel_commit,
-                      project_commit,
-                      i,
-                      runs) for i in range(1, runs + 1)]
-            event_list = json_profiles_merger_lib.aggregate_data(
-                profiles_filenames, only_phases=True)
-            for event in event_list:
-              csv_writer.writerow(
-                  [bazel_commit, project_source, project_commit,
-                   event['cat'], event['name'], event['dur']])
+      for bazel_commit in bazel_commits:
+        for project_commit in project_commits:
+          profiles_filenames = [
+               json_profile_filename(
+                    data_directory,
+                    output_prefix,
+                    bazel_commit,
+                    project_commit,
+                    i,
+                    runs) for i in range(1, runs + 1)]
+          event_list = json_profiles_merger_lib.aggregate_data(
+              profiles_filenames, only_phases=True)
+          for event in event_list:
+            csv_writer.writerow(
+                [bazel_commit, project_source, project_commit,
+                 event['cat'], event['name'], event['dur']])
     logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
 
 
