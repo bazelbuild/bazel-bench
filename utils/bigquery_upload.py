@@ -16,6 +16,8 @@
 import logger
 import re
 import sys
+import enum
+print(enum.__file__)
 
 from absl import app
 from absl import flags
