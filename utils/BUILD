@@ -43,12 +43,14 @@ py_library(
     srcs_version = "PY2",
     deps = [
         requirement("cachetools"),
+        requirement("requests"),
+        requirement("protobuf"),
+        requirement("pytz"),
         requirement("google-api-core"),
         requirement("google-auth"),
         requirement("google-cloud-core"),
         requirement("google-resumable-media"),
         requirement("googleapis-common-protos"),
-        requirement("pytz"),
     ],
 )
 
