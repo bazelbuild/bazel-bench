@@ -8,11 +8,10 @@ py_binary(
     python_version = "PY2",
     deps = [
         "//utils",
-        "//utils:bigquery_upload",
-        "//utils:storage_upload",
         requirement("absl-py"),
         requirement("GitPython"),
         requirement("gitdb2"),
+        requirement("smmap2"),
     ],
 )
 

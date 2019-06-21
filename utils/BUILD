@@ -19,33 +19,32 @@ filegroup(
 py_library(
     name = "utils",
     srcs = [":utils-srcs"],
+    srcs_version = "PY2",
     deps = [
         requirement("absl-py"),
-        requirement("certifi"),
-        requirement("chardet"),
-        requirement("enum34"),
-        requirement("funcsigs"),
-        requirement("idna"),
         requirement("numpy"),
         requirement("pbr"),
         requirement("psutil"),
-        requirement("pyasn1"),
-        requirement("pyasn1-modules"),
-        requirement("rsa"),
         requirement("scipy"),
-        requirement("six"),
         requirement("urllib3"),
     ],
 )
 
 py_library(
     name = "google-common",
-    srcs_version = "PY2",
+    srcs_version = "PY3",
     deps = [
         requirement("cachetools"),
+        requirement("certifi"),
+        requirement("chardet"),
+        requirement("idna"),
         requirement("requests"),
         requirement("protobuf"),
         requirement("pytz"),
+        requirement("pyasn1"),
+        requirement("pyasn1-modules"),
+        requirement("rsa"),
+        requirement("six"),
         requirement("google-api-core"),
         requirement("google-auth"),
         requirement("google-cloud-core"),
@@ -57,13 +56,12 @@ py_library(
 py_binary(
     name = "bigquery_upload",
     srcs = ["bigquery_upload.py"],
-    python_version = "PY2",
+    python_version = "PY3",
     deps = [
         # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-bigquery must be listed first.
         requirement("google-cloud-bigquery"),
         requirement("absl-py"),
-        requirement("futures"),
         ":google-common",
     ],
 )
@@ -71,7 +69,7 @@ py_binary(
 py_binary(
     name = "storage_upload",
     srcs = ["storage_upload.py"],
-    python_version = "PY2",
+    python_version = "PY3",
     deps = [
         # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-storage must be listed first.
