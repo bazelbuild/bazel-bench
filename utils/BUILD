@@ -26,7 +26,6 @@ py_library(
         requirement("pbr"),
         requirement("psutil"),
         requirement("scipy"),
-        requirement("urllib3"),
     ],
 )
 
@@ -50,6 +49,7 @@ py_library(
         requirement("google-cloud-core"),
         requirement("google-resumable-media"),
         requirement("googleapis-common-protos"),
+        requirement("urllib3"),
     ],
 )
 
