@@ -40,6 +40,7 @@ py_library(
 
 py_library(
     name = "google-common",
+    srcs_version = "PY2",
     deps = [
         requirement("cachetools"),
         requirement("google-api-core"),
