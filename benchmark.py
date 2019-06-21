@@ -13,6 +13,7 @@
 # limitations under the License.
 from __future__ import print_function
 
+import csv
 import datetime
 import os
 import subprocess
@@ -366,29 +367,29 @@ def handle_json_profiles_aggr(
   if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-    with open(output_path, 'w') as f:
-      csv_writer = csv.writer(f)
-      csv_writer.writerow(
-          ['bazel_source', 'project_source', 'project_commit',
-           'cat', 'name', 'dur'])
+  with open(output_path, 'w') as f:
+    csv_writer = csv.writer(f)
+    csv_writer.writerow(
+        ['bazel_source', 'project_source', 'project_commit',
+         'cat', 'name', 'dur'])
 
-      for bazel_commit in bazel_commits:
-        for project_commit in project_commits:
-          profiles_filenames = [
-               json_profile_filename(
-                    data_directory,
-                    output_prefix,
-                    bazel_commit,
-                    project_commit,
-                    i,
-                    runs) for i in range(1, runs + 1)]
-          event_list = json_profiles_merger_lib.aggregate_data(
-              profiles_filenames, only_phases=True)
-          for event in event_list:
-            csv_writer.writerow(
-                [bazel_commit, project_source, project_commit,
-                 event['cat'], event['name'], event['dur']])
-    logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
+    for bazel_commit in bazel_commits:
+      for project_commit in project_commits:
+        profiles_filenames = [
+             json_profile_filename(
+                  data_directory,
+                  output_prefix,
+                  bazel_commit,
+                  project_commit,
+                  i,
+                  runs) for i in range(1, runs + 1)]
+        event_list = json_profiles_merger_lib.aggregate_data(
+            profiles_filenames, only_phases=True)
+        for event in event_list:
+          csv_writer.writerow(
+              [bazel_commit, project_source, project_commit,
+               event['cat'], event['name'], event['dur']])
+  logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
 
 
 FLAGS = flags.FLAGS
