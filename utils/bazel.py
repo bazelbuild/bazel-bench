@@ -66,7 +66,7 @@ class Bazel(object):
     exit_status = 0
 
     try:
-      command_result = subprocess.check_call(
+      subprocess.check_call(
         [self._bazel_binary_path, self._bazelrc_flag, command_name] + args,
         stdout=dev_null
       )
