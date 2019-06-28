@@ -63,10 +63,16 @@ class Bazel(object):
 
     before_times = self._get_times()
     dev_null = open(os.devnull, 'w')
-    process = subprocess.Popen(
+    exit_status = 0
+
+    try:
+      command_result = subprocess.check_call(
         [self._bazel_binary_path, self._bazelrc_flag, command_name] + args,
-        stdout=dev_null)
-    exit_status = process.wait()
+        stdout=dev_null
+      )
+    except subprocess.CalledProcessError as e:
+      exit_status = e.returncode
+      logger.log_error('Bazel command failed with exit code %s' % e.returncode)
 
     if command_name == 'shutdown':
       return None
