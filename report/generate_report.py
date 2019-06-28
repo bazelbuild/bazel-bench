@@ -273,12 +273,13 @@ def _full_report(project, date, command, graph_components, raw_files_components)
   </script>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
   <style>
-    h1 {{ font-size: 2em; }}
-    h2 {{ font-size: 1.2em; color: gray; }}
+    h1 {{ font-size: 1.7rem; }}
+    h2 {{ font-size: 1.3rem; color: gray; }}
     h2.underlined {{ border-bottom: 2px dotted lightgray; }}
+    body {{ font-family: monospace; padding: 1% 3% 1% 3%; font-size:1.1rem; }}
   </style>
   </head>
-  <body style="font-family: Helvetica;">
+  <body>
   <div class="container-fluid">
     <div class="row">
     <div class="col-sm-12">
@@ -411,7 +412,7 @@ def main(args=None):
       "--project",
       action="append",
       help=(
-          "Projects to generate report for. Use the storage_subdir defined",
+          "Projects to generate report for. Use the storage_subdir defined"
           "in bazel_bench.py."
       ),
   )
