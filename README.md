@@ -172,6 +172,33 @@ bazel run utils:storage_upload \
 <file1> <file2> ...
 ```
 
+## Performance Report
+
+We generate a performance report with BazelCI. The template for the report can
+be found under the `/report` directory.
+
+```
+$ python3 report/generate_report.py --help
+usage: generate_report.py [-h] [--date DATE] [--project PROJECT]
+                          [--storage_bucket STORAGE_BUCKET]
+
+Bazel Bench Daily Report
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --date DATE           Date in YYYY-mm-dd format.
+  --project PROJECT     Projects to generate report for. Use the
+                        storage_subdir definedin bazel_bench.py.
+  --storage_bucket STORAGE_BUCKET
+                        The GCP Storage bucket to upload the reports to.
+```
+
+Example Usage:
+```
+$ python3 report/generate_report.py --date=2019-01-01 --project=dummy
+--storage_bucket=dummy_bucket
+```
+
 ## Tests
 
 The tests for each module are found in the same directory. To run the test,
