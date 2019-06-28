@@ -412,8 +412,8 @@ def main(args=None):
       "--project",
       action="append",
       help=(
-          "Projects to generate report for. Use the storage_subdir defined"
-          "in bazel_bench.py."
+          "Projects to generate report for. Use the storage_subdir defined "
+          "in the main bazel-bench script in bazelbuild/continuous-integration."
       ),
   )
   parser.add_argument(

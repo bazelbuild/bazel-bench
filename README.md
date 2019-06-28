@@ -188,8 +188,9 @@ optional arguments:
   -h, --help            show this help message and exit
   --date DATE           Date in YYYY-mm-dd format.
   --project PROJECT     Projects to generate report for. Use the
-                        storage_subdir definedin bazel_bench.py.
-  --storage_bucket STORAGE_BUCKET
+                        storage_subdir defined in the main bazel-bench script
+                        in bazelbuild/continuous-integration.
+ --storage_bucket STORAGE_BUCKET
                         The GCP Storage bucket to upload the reports to.
 ```
 
