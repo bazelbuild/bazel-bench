@@ -204,6 +204,7 @@ def _commits_component(performance_data):
 """.format(li_components)
 
 
+# TODO(leba): Add stddev/error bars to the bars in the chart.
 def _single_graph(metric, metric_label, data, platform):
   """Returns the HTML <div> component of a single graph.
   """
