@@ -392,6 +392,47 @@ def handle_json_profiles_aggr(
   logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
 
 
+def print_summary(data):
+  """Prints the runs summary onto stdout.
+  """
+  print('\nRESULTS:')
+  last_collected = None
+  table_headers = ['metric', 'mean', '', 'median', '', 'stddev', 'pval']
+  for (bazel_commit, project_commit), collected in data.items():
+    print('Bazel commit: %s, Project commit: %s, Project source: %s' %
+          (bazel_commit, project_commit, FLAGS.project_source))
+    print(
+        '%s  %s %s %s %s' % (
+            'metric'.rjust(8),
+            'mean'.center(20),
+            'median'.center(20),
+            'stddev'.center(10),
+            'pval'.center(10)))
+
+    for metric, values in collected.items():
+      if metric in ['exit_status', 'started_at']:
+        continue
+      if last_collected:
+        base = last_collected[metric]
+        pval = '% 7.5f' % values.pval(base.values())
+        mean_diff = '(% +6.2f%%)' % (100. * (values.mean() - base.mean()) /
+                                     base.mean())
+        median_diff = '(% +6.2f%%)' % (100. *
+                                       (values.median() - base.median()) /
+                                       base.median())
+      else:
+        pval = ''
+        mean_diff = median_diff = '         '
+      print(
+          '%s: %s %s %s %s' % (
+              metric.rjust(8),
+              ('% 8.3fs %s' % (values.mean(), mean_diff)).center(20),
+              ('% 8.3fs %s' % (values.median(), median_diff)).center(20),
+              ('% 7.3fs' % values.stddev()).center(10),
+              pval.center(10)))
+    last_collected = collected
+
+
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
 flags.DEFINE_list('bazel_commits', None, 'The commits at which bazel is built.')
@@ -525,29 +566,7 @@ def main(argv):
           'args': args
       }
 
-  print('\nRESULTS:')
-  last_collected = None
-  for (bazel_commit, project_commit), collected in data.items():
-    print('Bazel commit: %s, Project commit: %s, Project source: %s' %
-          (bazel_commit, project_commit, FLAGS.project_source))
-    for metric, values in collected.items():
-      if metric in ['exit_status', 'started_at']:
-        continue
-      if last_collected:
-        base = last_collected[metric]
-        pval = ', pval: % 7.5f' % values.pval(base.values())
-        mean_diff = '(% +6.2f%%)' % (100. * (values.mean() - base.mean()) /
-                                     base.mean())
-        median_diff = '(% +6.2f%%)' % (100. *
-                                       (values.median() - base.median()) /
-                                       base.median())
-      else:
-        pval = ''
-        mean_diff = median_diff = '         '
-      print('% 8s: mean: % 8.3fs %s, median: % 8.3fs %s, stddev: % 7.3f%s' %
-            (metric, values.mean(), mean_diff, values.median(), median_diff,
-             values.stddev(), pval))
-    last_collected = collected
+  print_summary(data)
 
   if FLAGS.data_directory:
     csv_file_name = FLAGS.csv_file_name or bazel_bench_uid
