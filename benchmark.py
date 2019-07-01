@@ -395,10 +395,11 @@ def handle_json_profiles_aggr(
 
 def print_summary(data):
   """Prints the runs summary onto stdout.
+
+  Excludes runs with non-zero exit codes from the final summary table.
   """
   print('\nRESULTS:')
   last_collected = None
-  table_headers = ['metric', 'mean', '', 'median', '', 'stddev', 'pval']
   for (bazel_commit, project_commit), collected in data.items():
     header = (
         'Bazel commit: %s, Project commit: %s, Project source: %s' %
@@ -415,35 +416,51 @@ def print_summary(data):
             'median'.center(20),
             'stddev'.center(10),
             'pval'.center(10)))
-    exit_statuses = []
+
+    num_runs = len(collected['wall'].items())
+    # A map from run number to exit code, for runs with non-zero exit codes.
+    non_zero_runs = {}
+    for i, exit_code in enumerate(collected['exit_status'].items()):
+      if exit_code != 0:
+        non_zero_runs[i] = exit_code
     for metric, values in collected.items():
       if metric in ['exit_status', 'started_at']:
-        if metric == 'exit_status':
-          exit_statuses = values.items()
         continue
+
+      values_exclude_failures = values.exclude_from_indexes(
+          non_zero_runs.keys())
+      # Skip if there's no value available after excluding failed runs.
+      if not values_exclude_failures.items():
+        continue
+
       if last_collected:
         base = last_collected[metric]
-        pval = '% 7.5f' % values.pval(base.values())
-        mean_diff = '(% +6.2f%%)' % (100. * (values.mean() - base.mean()) /
-                                     base.mean())
-        median_diff = '(% +6.2f%%)' % (100. *
-                                       (values.median() - base.median()) /
-                                       base.median())
+        pval = '% 7.5f' % values_exclude_failures.pval(base.values())
+        mean_diff = '(% +6.2f%%)' % (
+            100. * (values_exclude_failures.mean() - base.mean()) / base.mean())
+        median_diff = '(% +6.2f%%)' % (
+            100. * (values_exclude_failures.median() - base.median()) /
+            base.median())
       else:
         pval = ''
         mean_diff = median_diff = '         '
       print(
           '%s: %s %s %s %s' % (
               metric.rjust(8),
-              ('% 8.3fs %s' % (values.mean(), mean_diff)).center(20),
-              ('% 8.3fs %s' % (values.median(), median_diff)).center(20),
-              ('% 7.3fs' % values.stddev()).center(10),
+              ('% 8.3fs %s' % (
+                  values_exclude_failures.mean(), mean_diff)).center(20),
+              ('% 8.3fs %s' % (
+                  values_exclude_failures.median(), median_diff)).center(20),
+              ('% 7.3fs' % values_exclude_failures.stddev()).center(10),
               pval.center(10)))
     last_collected = collected
-    if list(filter(lambda x: x != 0, exit_statuses)):
+    if non_zero_runs:
       print(
-          ('The runs contain non-zero exit code(s): %s. Please check the full '
-           'log for more details.' % exit_statuses))
+          ('The following runs contain non-zero exit code(s):\n %s\n'
+           'Please check the full log for more details. These runs are '
+           'excluded from the above result table.' % '\n '.join(
+               '- run: %s/%s, exit_code: %s' % (k + 1, num_runs, v)
+               for k, v in non_zero_runs.items())))
     print('\n')
 
 FLAGS = flags.FLAGS
