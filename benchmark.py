@@ -17,6 +17,7 @@ import csv
 import datetime
 import os
 import subprocess
+import sys
 import hashlib
 import re
 import shutil
@@ -399,8 +400,14 @@ def print_summary(data):
   last_collected = None
   table_headers = ['metric', 'mean', '', 'median', '', 'stddev', 'pval']
   for (bazel_commit, project_commit), collected in data.items():
-    print('Bazel commit: %s, Project commit: %s, Project source: %s' %
-          (bazel_commit, project_commit, FLAGS.project_source))
+    header = (
+        'Bazel commit: %s, Project commit: %s, Project source: %s' %
+            (bazel_commit, project_commit, FLAGS.project_source))
+    if sys.stdout.isatty():
+      print('\033[1m%s\033[0m' % header)
+    else:
+      print(header)
+
     print(
         '%s  %s %s %s %s' % (
             'metric'.rjust(8),
@@ -408,9 +415,11 @@ def print_summary(data):
             'median'.center(20),
             'stddev'.center(10),
             'pval'.center(10)))
-
+    exit_statuses = []
     for metric, values in collected.items():
       if metric in ['exit_status', 'started_at']:
+        if metric == 'exit_status':
+          exit_statuses = values.items()
         continue
       if last_collected:
         base = last_collected[metric]
@@ -431,7 +440,11 @@ def print_summary(data):
               ('% 7.3fs' % values.stddev()).center(10),
               pval.center(10)))
     last_collected = collected
-
+    if list(filter(lambda x: x != 0, exit_statuses)):
+      print(
+          ('The runs contain non-zero exit code(s): %s. Please check the full '
+           'log for more details.' % exit_statuses))
+    print('\n')
 
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
