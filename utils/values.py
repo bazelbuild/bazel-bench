@@ -14,7 +14,7 @@
 """"Stores a set of numeric values and offers statistical operations on them."""
 import numpy
 import scipy.stats
-
+import copy
 
 class Values(object):
   """Utility class to store numeric values.
@@ -68,3 +68,7 @@ class Values(object):
       return 1 - p
     else:
       return -1
+
+  def items(self):
+    return copy.copy(self._items)
+
