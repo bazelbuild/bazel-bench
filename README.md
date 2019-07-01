@@ -172,6 +172,22 @@ bazel run utils:storage_upload \
 <file1> <file2> ...
 ```
 
+## Performance Report
+
+We generate a performance report with BazelCI. The generator script can be 
+found under the `/report` directory.
+
+Example Usage:
+```
+$ python3 report/generate_report.py --date=2019-01-01 --project=dummy
+--storage_bucket=dummy_bucket
+```
+
+For more detailed usage information, run:
+```
+$ python3 report/generate_report.py --help
+```
+
 ## Tests
 
 The tests for each module are found in the same directory. To run the test,
