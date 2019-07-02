@@ -35,27 +35,18 @@ from absl import flags
 from utils.values import Values
 from utils.bazel import Bazel
 
-# TMP has different values, depending on the platform.
-TMP = tempfile.gettempdir()
-
-
-def _platform_path_str(posix_path):
-  """Converts the path to the appropriate format for platform."""
-  if os.name == 'nt':
-    return posix_path.replace('/', '\\')
-  return posix_path
-
+# BB_ROOT has different values, depending on the platform.
+BB_ROOT = os.path.join(os.path.expanduser('~'), '.bazel-bench')
 
 # The path to the cloned bazelbuild/bazel repo.
-BAZEL_CLONE_PATH = _platform_path_str('%s/.bazel-bench/bazel' % TMP)
+BAZEL_CLONE_PATH = os.path.join(BB_ROOT, 'bazel')
 # The path to the clone of the project to be built with Bazel.
-PROJECT_CLONE_BASE_PATH = _platform_path_str('%s/.bazel-bench/project-clones' %
-                                             TMP)
+PROJECT_CLONE_BASE_PATH = os.path.join(BB_ROOT, 'project-clones')
 BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 # The path to the directory that stores the bazel binaries.
-BAZEL_BINARY_BASE_PATH = _platform_path_str('%s/.bazel-bench/bazel-bin' % TMP)
+BAZEL_BINARY_BASE_PATH = os.path.join(BB_ROOT, 'bazel-bin')
 # The path to the directory that stores the output csv (If required).
-DEFAULT_OUT_BASE_PATH = _platform_path_str('%s/.bazel-bench/out' % TMP)
+DEFAULT_OUT_BASE_PATH = os.path.join(BB_ROOT, 'out')
 # The default name of the aggr json profile.
 DEFAULT_AGGR_JSON_PROFILE_FILENAME = 'aggr_json_profiles.csv'
 
@@ -523,9 +514,6 @@ def _flag_checks():
   if FLAGS.aggregate_json_profiles and not FLAGS.collect_json_profile:
     raise ValueError('--aggregate_json_profiles requires '
                      '--collect_json_profile to be set.')
-  if FLAGS.collect_json_profile and not FLAGS.data_directory:
-    raise ValueError('--collect_json_profile requires '
-                     '--data_directory to be set.')
 
 
 def main(argv):
@@ -535,6 +523,9 @@ def main(argv):
   # argv would be something like:
   # ['benchmark.py', 'build', '--nobuild', '//:all']
   bazel_args = argv[1:]
+  # This is a workaround for https://github.com/bazelbuild/bazel/issues/3236.
+  if sys.platform.startswith('linux'):
+    bazel_args.append('--sandbox_tmpfs_path=/tmp')
 
   # Building Bazel binaries
   bazel_binaries = []

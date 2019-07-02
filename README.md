@@ -143,6 +143,27 @@ You can pass the pattern that selects the input profiles into the positional
 argument of the script, like in the above example
 (`/tmp/my_json_profiles_*.profile`).
 
+## Output Directory Layout
+
+By default, bazel-bench will store the measurement results and other required
+files (project clones, built binaries, ...) under the `~/.bazel-bench` directory.
+
+The layout is:
+
+```
+~/.bazel-bench/                         <= The root of bazel-bench's output dir.
+  bazel/                                <= Where bazel's repository is cloned.
+  bazel-bin/                            <= Where the built bazel binaries are stored.
+    fba9a2c87ee9589d72889caf082f1029/   <= The bazel commit hash.
+      bazel                             <= The actual bazel binary.
+  project-clones/                       <= Where the projects' repositories are cloned.
+    7ffd56a6e4cb724ea575aba15733d113/   <= Each project is stored under a project hash,
+                                           computed from its source.
+  out/                                  <= This is the default output root. But
+                                           the output root can also be set via --data_directory.
+```
+
+To clear the caches, simple `rm -rf` where necessary.
 
 ## Uploading to BigQuery & Storage
 
