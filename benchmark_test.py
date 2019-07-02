@@ -167,6 +167,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
   @mock.patch.object(benchmark.args_parser, 'parse_bazel_args_from_build_event')
   def test_run_benchmark_prefetch(self, args_parser_mock, _):
     args_parser_mock.return_value = ('build', ['//:all'], [])
+    benchmark.DEFAULT_OUT_BASE_PATH = 'some_out_path'
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._run_benchmark(
           'bazel_binary_path',
@@ -180,8 +181,8 @@ class BenchmarkFunctionTests(absltest.TestCase):
 
     self.assertEqual(
         ''.join([
-            'Pre-fetching external dependencies & exporting build event json to /tmp/.bazel-bench/out/build_env.json...',
-            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=/tmp/.bazel-bench/out/build_env.json',
+            'Pre-fetching external dependencies & exporting build event json to some_out_path/build_env.json...',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=some_out_path/build_env.json',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 1/2:',
@@ -198,6 +199,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
   @mock.patch.object(benchmark.args_parser, 'parse_bazel_args_from_build_event')
   def test_run_benchmark_collect_json_profile(self, args_parser_mock, _):
     args_parser_mock.return_value = ('build', ['//:all'], [])
+    benchmark.DEFAULT_OUT_BASE_PATH = 'some_out_path'
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._run_benchmark(
           'bazel_binary_path',
@@ -215,8 +217,8 @@ class BenchmarkFunctionTests(absltest.TestCase):
 
     self.assertEqual(
         ''.join([
-            'Pre-fetching external dependencies & exporting build event json to /tmp/.bazel-bench/out/build_env.json...',
-            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=/tmp/.bazel-bench/out/build_env.json',
+            'Pre-fetching external dependencies & exporting build event json to some_out_path/build_env.json...',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=some_out_path/build_env.json',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 1/2:',
