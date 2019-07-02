@@ -163,7 +163,7 @@ The layout is:
                                            the output root can also be set via --data_directory.
 ```
 
-To clear the caches, simple `rm -rf` where necessary.
+To clear the caches, simply `rm -rf` where necessary.
 
 ## Uploading to BigQuery & Storage
 
