@@ -523,6 +523,9 @@ def main(argv):
   # argv would be something like:
   # ['benchmark.py', 'build', '--nobuild', '//:all']
   bazel_args = argv[1:]
+  # This is a workaround for https://github.com/bazelbuild/bazel/issues/3236.
+  if sys.platform.startswith('linux'):
+    bazel_args.append('--sandbox_tmpfs_path=/tmp')
 
   # Building Bazel binaries
   bazel_binaries = []
