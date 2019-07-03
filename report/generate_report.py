@@ -385,7 +385,7 @@ def _generate_report_for_date(project, date, storage_bucket):
         _row_component(
             _col_component(
                 "col-sm-5",
-                  '<h2 class="underlined">{}</h2></hr>'.format(platform))))
+                '<h2 class="underlined">{}</h2></hr>'.format(platform))))
     raw_files_components.append(
         _col_component(
             "col-sm-10",
