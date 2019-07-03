@@ -69,7 +69,9 @@ def _load_json_from_remote_file(http_url):
 
 
 def _get_storage_url(storage_bucket, dated_subdir):
-  return "https://{}.storage.googleapis.com/{}".format(storage_bucket, dated_subdir)
+  # In this case, the storage_bucket is a Domain-named bucket.
+  # https://cloud.google.com/storage/docs/domain-name-verification
+  return "https://{}/{}".format(storage_bucket, dated_subdir)
 
 
 def _get_dated_subdir_for_project(project, date):
@@ -86,10 +88,7 @@ def _get_file_list_from_gs(bucket_name, gs_subdir):
   # The last element is just an empty string.
   decoded = command_output.decode("utf-8").split("\n")[:-1]
 
-  return [line.strip("'").replace(
-      "gs://{}".format(bucket_name),
-      "https://{}.storage.googleapis.com".format(bucket_name))
-      for line in decoded]
+  return [line.strip("'").replace("gs://", "https://") for line in decoded]
 
 
 def _get_file_list_component(bucket_name, dated_subdir, platform):
