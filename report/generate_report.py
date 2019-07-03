@@ -149,7 +149,7 @@ def _prepare_data_for_graph(performance_data, aggr_json_profile):
     # Exclude measurements from failed runs in the graphs.
     # TODO(leba): Print the summary table, which includes info on which runs
     # failed.
-    if entry['exit_status'] != 0:
+    if entry['exit_status'] != '0':
       continue
 
     bazel_commit = entry["bazel_commit"]
@@ -266,7 +266,7 @@ def _single_graph(metric, metric_label, data, platform):
   )
 
 
-def _full_report(project, date, command, graph_components, raw_files_components):
+def _full_report(project, project_source, date, command, graph_components, raw_files_components):
   """Returns the full HTML of a complete report, from the graph components.
   """
   return """
@@ -288,7 +288,7 @@ def _full_report(project, date, command, graph_components, raw_files_components)
   <div class="container-fluid">
     <div class="row">
     <div class="col-sm-12">
-      <h1>[{project}] Report for {date}</h1>
+      <h1>[<a href="{project_source}">{project}</a>] Report for {date}</h1>
       </hr>
     </div>
     <div class="col-sm-12">
@@ -305,6 +305,7 @@ def _full_report(project, date, command, graph_components, raw_files_components)
 </html>
 """.format(
     project=project,
+    project_source=project_source,
     date=date,
     command=command,
     graphs=graph_components,
@@ -386,6 +387,7 @@ def _generate_report_for_date(project, date, storage_bucket):
 
   content = _full_report(
       project,
+      metadata["project_source"],
       date,
       command=metadata["command"],
       graph_components="\n".join(graph_components),
