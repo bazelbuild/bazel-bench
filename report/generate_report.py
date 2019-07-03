@@ -141,12 +141,17 @@ def _short_form(commit):
 
 def _prepare_data_for_graph(performance_data, aggr_json_profile):
   """Massage the data to fit a format suitable for graph generation.
-  TODO(leba): Add hyperlink to each bazel commit.
   """
   bazel_commit_to_phase_proportion = _get_proportion_breakdown(
       aggr_json_profile)
   ordered_commit_to_readings = collections.OrderedDict()
   for entry in performance_data:
+    # Exclude measurements from failed runs in the graphs.
+    # TODO(leba): Print the summary table, which includes info on which runs
+    # failed.
+    if entry['exit_status'] != 0:
+      continue
+
     bazel_commit = entry["bazel_commit"]
     if bazel_commit not in ordered_commit_to_readings:
       ordered_commit_to_readings[bazel_commit] = {
