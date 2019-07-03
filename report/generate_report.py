@@ -69,7 +69,9 @@ def _load_json_from_remote_file(http_url):
 
 
 def _get_storage_url(storage_bucket, dated_subdir):
-  return "https://{}.storage.googleapis.com/{}".format(storage_bucket, dated_subdir)
+  # In this case, the storage_bucket is a Domain-named bucket.
+  # https://cloud.google.com/storage/docs/domain-name-verification
+  return "https://{}/{}".format(storage_bucket, dated_subdir)
 
 
 def _get_dated_subdir_for_project(project, date):
@@ -86,10 +88,7 @@ def _get_file_list_from_gs(bucket_name, gs_subdir):
   # The last element is just an empty string.
   decoded = command_output.decode("utf-8").split("\n")[:-1]
 
-  return [line.strip("'").replace(
-      "gs://{}".format(bucket_name),
-      "https://{}.storage.googleapis.com".format(bucket_name))
-      for line in decoded]
+  return [line.strip("'").replace("gs://", "https://") for line in decoded]
 
 
 def _get_file_list_component(bucket_name, dated_subdir, platform):
@@ -142,12 +141,17 @@ def _short_form(commit):
 
 def _prepare_data_for_graph(performance_data, aggr_json_profile):
   """Massage the data to fit a format suitable for graph generation.
-  TODO(leba): Add hyperlink to each bazel commit.
   """
   bazel_commit_to_phase_proportion = _get_proportion_breakdown(
       aggr_json_profile)
   ordered_commit_to_readings = collections.OrderedDict()
   for entry in performance_data:
+    # Exclude measurements from failed runs in the graphs.
+    # TODO(leba): Print the summary table, which includes info on which runs
+    # failed.
+    if entry['exit_status'] != '0':
+      continue
+
     bazel_commit = entry["bazel_commit"]
     if bazel_commit not in ordered_commit_to_readings:
       ordered_commit_to_readings[bazel_commit] = {
@@ -262,7 +266,7 @@ def _single_graph(metric, metric_label, data, platform):
   )
 
 
-def _full_report(project, date, command, graph_components, raw_files_components):
+def _full_report(project, project_source, date, command, graph_components, raw_files_components):
   """Returns the full HTML of a complete report, from the graph components.
   """
   return """
@@ -284,7 +288,7 @@ def _full_report(project, date, command, graph_components, raw_files_components)
   <div class="container-fluid">
     <div class="row">
     <div class="col-sm-12">
-      <h1>[{project}] Report for {date}</h1>
+      <h1>[<a href="{project_source}">{project}</a>] Report for {date}</h1>
       </hr>
     </div>
     <div class="col-sm-12">
@@ -301,6 +305,7 @@ def _full_report(project, date, command, graph_components, raw_files_components)
 </html>
 """.format(
     project=project,
+    project_source=project_source,
     date=date,
     command=command,
     graphs=graph_components,
@@ -382,6 +387,7 @@ def _generate_report_for_date(project, date, storage_bucket):
 
   content = _full_report(
       project,
+      metadata["project_source"],
       date,
       command=metadata["command"],
       graph_components="\n".join(graph_components),
