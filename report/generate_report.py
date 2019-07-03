@@ -162,18 +162,37 @@ def _prepare_data_for_graph(performance_data, aggr_json_profile):
     ordered_commit_to_readings[bazel_commit]["wall_readings"].append(float(entry["wall"]))
     ordered_commit_to_readings[bazel_commit]["memory_readings"].append(float(entry["memory"]))
 
-  wall_data = [["Bazel Commit"] + EVENTS_ORDER]
-  memory_data = [["Bazel Commit", "Memory (MB)"]]
+  wall_data = [
+      ["Bazel Commit"]
+      + EVENTS_ORDER
+      + ["Median [Min, Max]", { "role": "interval" }, { "role": "interval" }]]
+  memory_data = [
+      ["Bazel Commit",
+       "Memory (MB)",
+       { "role": "interval" },
+       { "role": "interval" }]]
 
   for obj in ordered_commit_to_readings.values():
     commit = _short_form(obj["bazel_commit"])
+
+    median_wall = statistics.median(obj["wall_readings"])
+    min_wall = min(obj["wall_readings"])
+    max_wall = max(obj["wall_readings"])
     wall_data.append(
         [commit]
         + _fit_data_to_phase_proportion(
-            statistics.median(
-                obj["wall_readings"]),
-            bazel_commit_to_phase_proportion[bazel_commit]))
-    memory_data.append([commit, statistics.median(obj["memory_readings"])])
+            median_wall, bazel_commit_to_phase_proportion[bazel_commit])
+        + [median_wall, min_wall, max_wall])
+
+    median_memory = statistics.median(obj["memory_readings"])
+    min_memory = min(obj["memory_readings"])
+    max_memory = max(obj["memory_readings"])
+    memory_data.append([
+        commit,
+        median_memory,
+        min_memory,
+        max_memory
+    ])
 
   return wall_data, memory_data
 
@@ -208,13 +227,12 @@ def _commits_component(performance_data):
 """.format(li_components)
 
 
-# TODO(leba): Add stddev/error bars to the bars in the chart.
-def _single_graph(metric, metric_label, data, platform):
+def _single_graph(metric, metric_label, data, platform, median_series=None):
   """Returns the HTML <div> component of a single graph.
   """
   title = "[{}] Bar Chart of {} vs Bazel commits".format(platform, metric_label)
-  vAxis = "Bazel Commits (chronological order)"
-  hAxis = metric_label
+  hAxis = "Bazel Commits (chronological order)"
+  vAxis = metric_label
   chart_id = "{}-{}".format(platform, metric)
 
   return """
@@ -224,45 +242,37 @@ def _single_graph(metric, metric_label, data, platform):
     var data = google.visualization.arrayToDataTable({data})
 
     var options = {{
-    title: "{title}",
-    titleTextStyle: {{ color: "gray" }},
-    hAxis: {{
-      title: "{hAxis}",
-      titleTextStyle: {{ color: "darkgray" }},
-      textStyle: {{ color: "darkgray" }},
-      minValue: 0,
-    }},
-    vAxis: {{
-      title: "{vAxis}",
-      titleTextStyle: {{ color: "darkgray" }},
-      textStyle: {{ color: "darkgray" }},
-    }},
-    bars: "horizontal",
-    axes: {{
-      y: {{
-      0: {{ side: "right"}}
-      }}
-    }},
-    chartArea: {{ width: "70%"}},
-    isStacked: true,
-    trendlines: {{
-      0: {{
-        type: 'linear',
-        color: 'green',
-        lineWidth: 3,
-        opacity: 0.3,
-        showR2: true,
-        visibleInLegend: true
-      }}
-    }},
+      title: "{title}",
+      titleTextStyle: {{ color: "gray" }},
+      hAxis: {{
+        title: "{hAxis}",
+        titleTextStyle: {{ color: "darkgray" }},
+        textStyle: {{ color: "darkgray" }},
+        minValue: 0,
+      }},
+      vAxis: {{
+        title: "{vAxis}",
+        titleTextStyle: {{ color: "darkgray" }},
+        textStyle: {{ color: "darkgray" }},
+      }},
+      isStacked: true,
+      seriesType: "bars",
+      focusTarget: 'category',
+      series: {{
+        {median_series}: {{
+          type: "line",
+          lineWidth: 0.00001, // A very small number.
+        }},
+      }},
+      legend: {{ position: "right" }},
     }};
-    var chart = new google.visualization.BarChart(document.getElementById("{chart_id}"));
+    var chart = new google.visualization.ComboChart(document.getElementById("{chart_id}"));
     chart.draw(data, options);
   }}
   </script>
 <div id="{chart_id}" style="min-height: 500px"></div>
 """.format(
-    title=title, data=data, hAxis=hAxis, vAxis=vAxis, chart_id=chart_id
+    title=title, data=data, hAxis=hAxis, vAxis=vAxis, chart_id=chart_id, median_series=median_series
   )
 
 
@@ -358,6 +368,7 @@ def _generate_report_for_date(project, date, storage_bucket):
             metric_label="Wall Time (s)",
             data=wall_data,
             platform=platform,
+            median_series=len(EVENTS_ORDER)
         ))
     )
 
