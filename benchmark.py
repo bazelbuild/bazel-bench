@@ -14,6 +14,7 @@
 from __future__ import print_function
 
 import csv
+import collections
 import datetime
 import os
 import subprocess
@@ -548,8 +549,8 @@ def main(argv):
 
   # A dictionary that maps a (bazel_commit, project_commit) tuple
   # to its benchmarking result.
-  data = {}
-  csv_data = {}
+  data = collections.OrderedDict()
+  csv_data = collections.OrderedDict()
   data_directory = FLAGS.data_directory or DEFAULT_OUT_BASE_PATH
 
   # We use the start time as a unique identifier of this bazel-bench run.
