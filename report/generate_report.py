@@ -209,22 +209,19 @@ def _col_component(col_class, content):
 """.format(col_class=col_class, content=content)
 
 
-def _commits_component(performance_data):
-  # Bazel commits, in chronological order.
-  sorted_bazel_commits = []
-  for entry in performance_data:
-    if entry["bazel_commit"] not in sorted_bazel_commits:
-      sorted_bazel_commits.append(entry["bazel_commit"])
-
-  li_components = "\n".join(
-      ['<li>{}</li>'.format(_get_bazel_github_a_component(commit), commit)
-       for commit in sorted_bazel_commits])
+def _commits_component(full_list, benchmarked_list):
+  li_components = []
+  for commit in full_list:
+    if commit in benchmarked_list:
+      li_components.append('<li><b>{}</b></li>'.format(_get_bazel_github_a_component(commit)))
+    else:
+      li_components.append('<li>{}</li>'.format(_get_bazel_github_a_component(commit)))
   return """
 <b>Commits:</b>
 <ul>
   {}
 </ul>
-""".format(li_components)
+""".format("\n".join(li_components))
 
 
 def _single_graph(metric, metric_label, data, platform, median_series=None):
@@ -338,20 +335,17 @@ def _generate_report_for_date(project, date, storage_bucket):
 
   graph_components = []
   raw_files_components = []
-  added_commits_component = False
+  graph_components.append(
+    _row_component(
+        _col_component(
+            "col-sm-10",
+            _commits_component(
+                metadata["all_commits"], metadata["benchmarked_commits"]))))
   for platform_measurement in metadata["platforms"]:
     # Get the data
     performance_data = _load_csv_from_remote_file(
         "{}/{}".format(root_storage_url, platform_measurement["perf_data"])
     )
-    if not added_commits_component:
-      graph_components.append(
-          _row_component(
-              _col_component(
-                  "col-sm-10",
-                  _commits_component(performance_data))))
-      added_commits_component = True
-
     aggr_json_profile = _load_csv_from_remote_file(
         "{}/{}".format(
             root_storage_url, platform_measurement["aggr_json_profiles"])
