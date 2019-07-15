@@ -462,6 +462,8 @@ flags.DEFINE_string('bazel_source',
                     'https://github.com/bazelbuild/bazel.git',
                     'Either a path to the local Bazel repo or a https url to ' \
                     'a GitHub repository.')
+flags.DEFINE_string('bazel_bin_dir', None,
+                    'The directory to store the bazel binaries from each commit.')
 
 # Flags for the project to be built.
 flags.DEFINE_string('project_source', None,
@@ -556,10 +558,12 @@ def main(argv):
   # We use the start time as a unique identifier of this bazel-bench run.
   bazel_bench_uid = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
 
+  bazel_bin_base_path = FLAGS.bazel_bin_dir or BAZEL_BINARY_BASE_PATH
+
   for bazel_commit in bazel_commits:
     for project_commit in project_commits:
       bazel_binary_path = _build_bazel_binary(bazel_commit, bazel_clone_repo,
-                                              BAZEL_BINARY_BASE_PATH)
+                                              bazel_bin_base_path)
       project_clone_repo.git.checkout('-f', project_commit)
 
       results, args = _run_benchmark(
