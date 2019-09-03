@@ -212,7 +212,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
           prefetch_ext_deps=True,
           collect_json_profile=True,
           data_directory='fake_dir',
-          bazel_commit='fake_bazel_commit',
+          bazel_identifier='fake_bazel_commit',
           project_commit='fake_project_commit')
 
     self.assertEqual(
