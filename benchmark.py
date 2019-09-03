@@ -292,6 +292,9 @@ def _run_benchmark(bazel_bin_path,
   collected = []
   os.chdir(project_path)
 
+  logger.log(
+      '=== BENCHMARKING BAZEL: %s, PROJECT: %s ==='
+      % (bazel_identifier, project_commit))
   # Runs the command once to make sure external dependencies are fetched.
   # If prefetch_ext_deps, run the command with --build_event_json_file to get the
   # command arguments.
@@ -608,8 +611,8 @@ def main(argv):
             collected[metric] = Values()
           collected[metric].add(value)
 
-      data[(bazel_bin_path, project_commit)] = collected
-      csv_data[(bazel_bin_path, project_commit)] = {
+      data[(bazel_identifier, project_commit)] = collected
+      csv_data[(bazel_identifier, project_commit)] = {
           'results': results,
           'args': args
       }

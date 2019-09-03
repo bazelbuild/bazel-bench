@@ -152,6 +152,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
 
     self.assertEqual(
         ''.join([
+            '=== BENCHMARKING BAZEL: None, PROJECT: None ===',
             'Parsing arguments from command line...',
             'Starting benchmark run 1/2:',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
@@ -181,6 +182,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
 
     self.assertEqual(
         ''.join([
+            '=== BENCHMARKING BAZEL: None, PROJECT: None ===',
             'Pre-fetching external dependencies & exporting build event json to some_out_path/build_env.json...',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=some_out_path/build_env.json',
             'Executing Bazel command: bazel clean --color=no',
@@ -217,6 +219,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
 
     self.assertEqual(
         ''.join([
+            '=== BENCHMARKING BAZEL: fake_bazel_commit, PROJECT: fake_project_commit ===',
             'Pre-fetching external dependencies & exporting build event json to some_out_path/build_env.json...',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=some_out_path/build_env.json',
             'Executing Bazel command: bazel clean --color=no',
