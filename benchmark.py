@@ -580,8 +580,8 @@ def main(argv):
   bazel_bin_identifiers = []
 
   for bazel_commit in bazel_commits:
-    bazel_bin_path = _build_bazel_binary(bazel_commit, bazel_clone_repo,
-                                            bazel_bin_base_path)
+    bazel_bin_path = _build_bazel_binary(
+        bazel_commit, bazel_clone_repo, bazel_bin_base_path)
     bazel_bin_identifiers.append((bazel_bin_path, bazel_commit))
 
   for bazel_bin_path in FLAGS.bazel_binaries:
