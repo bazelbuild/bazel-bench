@@ -547,7 +547,7 @@ def main(argv):
     bazel_args.append('--sandbox_tmpfs_path=/tmp')
 
   # Building Bazel binaries
-  bazel_binaries = FLAGS.bazel_binaries else []
+  bazel_binaries = FLAGS.bazel_binaries or []
   logger.log('Preparing bazelbuild/bazel repository.')
   bazel_source = FLAGS.bazel_source if FLAGS.bazel_source else BAZEL_GITHUB_URL
   bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH, bazel_source)
