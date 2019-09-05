@@ -547,7 +547,7 @@ def main(argv):
     bazel_args.append('--sandbox_tmpfs_path=/tmp')
 
   # Building Bazel binaries
-  bazel_binaries = []
+  bazel_binaries = FLAGS.bazel_binaries or []
   logger.log('Preparing bazelbuild/bazel repository.')
   bazel_source = FLAGS.bazel_source if FLAGS.bazel_source else BAZEL_GITHUB_URL
   bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH, bazel_source)
@@ -555,7 +555,7 @@ def main(argv):
       FLAGS.bazel_commits,
       bazel_clone_repo,
       'bazel_commits',
-      fill_default=not FLAGS.bazel_commits and not FLAGS.bazel_binaries)
+      fill_default=not FLAGS.bazel_commits and not bazel_binaries)
 
   # Set up project repo
   logger.log('Preparing %s clone.' % FLAGS.project_source)
@@ -584,7 +584,7 @@ def main(argv):
         bazel_commit, bazel_clone_repo, bazel_bin_base_path)
     bazel_bin_identifiers.append((bazel_bin_path, bazel_commit))
 
-  for bazel_bin_path in FLAGS.bazel_binaries:
+  for bazel_bin_path in bazel_binaries:
     bazel_bin_identifiers.append((bazel_bin_path, bazel_bin_path))
 
   for bazel_bin_path, bazel_identifier in bazel_bin_identifiers:
