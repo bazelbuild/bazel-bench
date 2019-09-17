@@ -208,6 +208,14 @@ def _col_component(col_class, content):
 <div class="{col_class}">{content}</div>
 """.format(col_class=col_class, content=content)
 
+def _binaries_component(binaries):
+  li_components = ['<li>{}</li>'.format(x) for x in binaries]
+  return """
+<b>Binaries:</b>
+<ul>
+  {}
+</ul>
+""".format("\n".join(li_components))
 
 def _commits_component(full_list, benchmarked_list):
   li_components = []
@@ -340,8 +348,7 @@ def _generate_report_for_date(project, date, storage_bucket, report_name):
     _row_component(
         _col_component(
             "col-sm-10",
-            _commits_component(
-                metadata["all_commits"], metadata["benchmarked_commits"]))))
+            _binaries_component(metadata["binaries"]))))
   for platform_measurement in metadata["platforms"]:
     # Get the data
     performance_data = _load_csv_from_remote_file(
