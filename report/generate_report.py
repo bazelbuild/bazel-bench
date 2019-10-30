@@ -342,7 +342,7 @@ def _generate_report_for_date(project, date, storage_bucket, report_name):
             "col-sm-10",
             _commits_component(
                 metadata["all_commits"], metadata["benchmarked_commits"]))))
-  for platform_measurement in metadata["platforms"]:
+  for platform_measurement in sorted(metadata["platforms"], key=lambda k: k['platform']):
     # Get the data
     performance_data = _load_csv_from_remote_file(
         "{}/{}".format(root_storage_url, platform_measurement["perf_data"])
