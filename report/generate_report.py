@@ -98,8 +98,9 @@ def _get_file_list_component(bucket_name, dated_subdir, platform):
       '<li><a href="{}">{}</a></li>'.format(link, os.path.basename(link))
       for link in links]
   return """
-<b>{}</b>
+<div class="collapse" id="raw_files_{}">
 <ul>{}</ul>
+</div>
 """.format(platform, "\n".join(li_components))
 
 
@@ -196,6 +197,16 @@ def _prepare_data_for_graph(performance_data, aggr_json_profile):
 
   return wall_data, memory_data
 
+def _uncollapse_button(element_id, text):
+  return """
+<button class="btn btn-secondary btn-sm" type="button" data-toggle="collapse"
+        data-target="#{element_id}" aria-expanded="false"
+        aria-controls="{element_id}" style="margin-bottom: 5px;">
+{text}
+</button>
+""".format(element_id=element_id,
+           text=text)
+
 
 def _row_component(content):
   return """
@@ -217,10 +228,12 @@ def _commits_component(full_list, benchmarked_list):
     else:
       li_components.append('<li>{}</li>'.format(_get_bazel_github_a_component(commit)))
   return """
+<div class="collapse" id="commits">
 <b>Commits:</b>
 <ul>
   {}
 </ul>
+</div>
 """.format("\n".join(li_components))
 
 
@@ -284,6 +297,10 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
     google.charts.load("current", {{ packages:["corechart"] }});
   </script>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
   <style>
     h1 {{ font-size: 1.7rem; }}
     h2 {{ font-size: 1.3rem; color: gray; }}
@@ -304,9 +321,7 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
     </div>
     {graphs}
     <h2>Raw Files:</h2>
-    <div class="row">
     {files}
-    </div>
   </div>
   </body>
 </html>
@@ -336,6 +351,9 @@ def _generate_report_for_date(project, date, storage_bucket, report_name):
 
   graph_components = []
   raw_files_components = []
+  graph_components.append(
+      _uncollapse_button('commits', 'Show commits')
+  )
   graph_components.append(
     _row_component(
         _col_component(
@@ -382,12 +400,19 @@ def _generate_report_for_date(project, date, storage_bucket, report_name):
                 "col-sm-5",
                 '<h2 class="underlined">{}</h2></hr>'.format(platform))))
     raw_files_components.append(
-        _col_component(
-            "col-sm-10",
-            _get_file_list_component(
-                storage_bucket,
-                dated_subdir,
-                platform)))
+        _uncollapse_button(
+            'raw_files_%s' % platform,
+            'Show raw files for %s' % platform
+        )
+    )
+    raw_files_components.append(
+        _row_component(
+            _col_component(
+                "col-sm-10",
+                _get_file_list_component(
+                    storage_bucket,
+                    dated_subdir,
+                    platform))))
     graph_components.append(_row_component("\n".join(row_content)))
 
 
