@@ -34,6 +34,7 @@ py_library(
         requirement("scipy"),
         requirement("six"),
         requirement("urllib3"),
+        requirement("PyYAML"),
     ],
 )
 
