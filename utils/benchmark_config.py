@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# python3
 """Manages the configuration file for benchmarking.
 
 Currently supported flags/attributes:
@@ -55,7 +54,6 @@ benchmarked.
 import copy
 import shlex
 import yaml
-import utils
 
 from typing import Mapping, Sequence, Text, Union
 
@@ -206,11 +204,6 @@ class BenchmarkConfig(object):
     parsed_unit = copy.copy(cls._DEFAULT_VALS)
     parsed_unit.update(unit)
     bazel_commit = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_path']
-    if bazel_commit == 'HEAD':
-      bazel_commit = utils.get_piper_head()
-    parsed_unit['project_commit'] = (
-        utils.get_piper_head()
-        if unit['project_commit'] == 'HEAD' else unit['project_commit'])
 
     if 'command' not in unit or not isinstance(unit['command'], str):
       raise ValueError('A command has to be specified either as a global option'
