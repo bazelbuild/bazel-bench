@@ -55,8 +55,6 @@ import copy
 import shlex
 import yaml
 
-from typing import Mapping, Sequence, Text, Union
-
 
 class BenchmarkConfig(object):
   """Manages the configuration file for benchmarking."""
@@ -74,9 +72,7 @@ class BenchmarkConfig(object):
       'shutdown': True,
   }
 
-  def __init__(self,
-               units: Sequence[Mapping[Text, Union[Text, int]]],
-               benchmark_project_commits: bool = False):
+  def __init__(self, units, benchmark_project_commits = False):
     """Loads the YAML config file and get the benchmarking units.
 
     Args:
@@ -87,7 +83,7 @@ class BenchmarkConfig(object):
     self._units = units
     self._benchmark_project_commits = benchmark_project_commits
 
-  def get_bazel_commits(self) -> Sequence[Union[Text, int]]:
+  def get_bazel_commits(self):
     """Returns the list of specified bazel_commits."""
     return [
         unit['bazel_commit']
@@ -95,16 +91,16 @@ class BenchmarkConfig(object):
         if 'bazel_commit' in unit and isinstance(unit['bazel_commit'], int)
     ]
 
-  def get_units(self) -> Sequence[Mapping[Text, Union[Text, int]]]:
+  def get_units(self):
     """Returns a copy of the parsed units."""
     return copy.copy(self._units)
 
-  def benchmark_project_commits(self) -> bool:
+  def benchmark_project_commits(self):
     """Returns whether we're benchmarking project commits (instead of bazel commits)."""
     return self._benchmark_project_commits
 
   @classmethod
-  def from_file(cls, config_file_path: Text) -> 'BenchmarkConfig':
+  def from_file(cls, config_file_path):
     """Loads the YAML config file and constructs a BenchmarkConfig.
 
     Args:
@@ -117,7 +113,7 @@ class BenchmarkConfig(object):
       return cls.from_string(fi.read())
 
   @classmethod
-  def from_string(cls, string: Text) -> 'BenchmarkConfig':
+  def from_string(cls, string):
     """Parses the content of a YAML config file and constructs a BenchmarkConfig.
 
     Args:
@@ -146,11 +142,9 @@ class BenchmarkConfig(object):
     return cls(parsed_units, benchmark_project_commits)
 
   @classmethod
-  def from_flags(cls, bazel_commits: Union[Sequence[Text], Sequence[int]],
-                 project_commits: Sequence[int], runs: int,
-                 bazelrc: Text, collect_memory: bool,
-                 collect_profile: bool, warmup_runs: int, shutdown: bool,
-                 command: Text) -> 'BenchmarkConfig':
+  def from_flags(cls, bazel_commits, project_commits, runs,
+                 bazelrc, collect_memory, collect_profile,
+                 warmup_runs, shutdown, command):
     """Creates the BenchmarkConfig based on specified flags.
 
     Args:
@@ -188,9 +182,7 @@ class BenchmarkConfig(object):
     return cls(units, benchmark_project_commits=(len(project_commits) > 1))
 
   @classmethod
-  def _parse_unit(
-      cls, unit: Mapping[Text, Union[Text, int, bool]]
-  ) -> Mapping[Text, Union[Text, int, bool]]:
+  def _parse_unit(cls, unit):
     """Performs parsing of a benchmarking unit.
 
     Also fills up default values for attributes if they're not specified.

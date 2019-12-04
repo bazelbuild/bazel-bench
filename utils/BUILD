@@ -138,7 +138,7 @@ py_test(
     name = "benchmark_config_test",
     size = "small",
     srcs = ["benchmark_config_test.py"],
-    python_version = "PY3",
+    python_version = "PY2",
     deps = [
         ":utils",
     ],
