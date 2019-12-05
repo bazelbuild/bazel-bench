@@ -62,8 +62,6 @@ class BenchmarkConfig(object):
   # TODO(leba): have a single source of truth for this.
   # TODO(leba): Consider replacing dict with collections.namedtuple.
   _DEFAULT_VALS = {
-      'bazel_commit': None,
-      'project_commit': None,
       'runs': 3,
       'bazelrc': None,
       'collect_memory': False,
@@ -88,7 +86,7 @@ class BenchmarkConfig(object):
     return [
         unit['bazel_commit']
         for unit in self._units
-        if 'bazel_commit' in unit and isinstance(unit['bazel_commit'], int)
+        if 'bazel_commit' in unit
     ]
 
   def get_units(self):
@@ -193,9 +191,10 @@ class BenchmarkConfig(object):
     Returns:
       A dictionary that contains various attributes of the benchmarking unit.
     """
+    print(unit)
     parsed_unit = copy.copy(cls._DEFAULT_VALS)
     parsed_unit.update(unit)
-    bazel_commit = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_path']
+    print(parsed_unit)
 
     if 'command' not in unit or not isinstance(unit['command'], str):
       raise ValueError('A command has to be specified either as a global option'
@@ -219,12 +218,5 @@ class BenchmarkConfig(object):
     parsed_unit['command'] = command
     parsed_unit['options'] = options
     parsed_unit['targets'] = targets
-    parsed_unit['bazel_commit'] = bazel_commit
-
-    # This is necessary to maintain a consistent structure of the benchmark unit
-    # objects.
-    # TODO(leba) Clean this up.
-    if 'bazel_path' in parsed_unit:
-      del parsed_unit['bazel_path']
 
     return parsed_unit
