@@ -30,7 +30,7 @@ units or as a global option in their singular form.
 Example of a config file:
 benchmark_project_commits: False
 global_options:
-  project_commit: 223456789
+  project_commit: 595a730
   runs: 3
   collect_memory: true
   warmup_runs: 1
@@ -38,13 +38,13 @@ global_options:
   bazelrc: null
   project_source: /path/to/project/repo
 units:
- - bazel_commit: 273901377
+ - bazel_commit: 595a730
    command: info
  - bazel_path: /tmp/bazel
    command: --host_jvm_debug build --nobuild //src:bazel
  - bazel_path: /tmp/bazel
    command: info
-   project_commit: 987654321
+   project_commit: 595a731
 
 The "benchmarking units" represent independent sets of conditions to be
 benchmarked.
