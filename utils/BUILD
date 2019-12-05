@@ -23,7 +23,6 @@ py_library(
         requirement("absl-py"),
         requirement("certifi"),
         requirement("chardet"),
-        requirement("enum34"),
         requirement("funcsigs"),
         requirement("idna"),
         requirement("numpy"),
@@ -35,6 +34,7 @@ py_library(
         requirement("scipy"),
         requirement("six"),
         requirement("urllib3"),
+        requirement("PyYAML"),
     ],
 )
 
@@ -131,5 +131,15 @@ py_test(
     deps = [
         ":utils",
         requirement("mock"),
+    ],
+)
+
+py_test(
+    name = "benchmark_config_test",
+    size = "small",
+    srcs = ["benchmark_config_test.py"],
+    python_version = "PY2",
+    deps = [
+        ":utils",
     ],
 )
