@@ -75,7 +75,7 @@ class BenchmarkConfig(object):
 
     Args:
       units: the benchmarking units.
-      benchmark_project_commits: whether we're benchmarking depot CLs (instead of
+      benchmark_project_commits: whether we're benchmarking project commits (instead of
         bazel commits). This makes a difference in how we generate our report.
     """
     self._units = units
@@ -140,15 +140,17 @@ class BenchmarkConfig(object):
     return cls(parsed_units, benchmark_project_commits)
 
   @classmethod
-  def from_flags(cls, bazel_commits, project_commits, runs,
+  def from_flags(cls, bazel_commits, bazel_paths, project_commits, runs,
                  bazelrc, collect_memory, collect_profile,
                  warmup_runs, shutdown, command):
     """Creates the BenchmarkConfig based on specified flags.
-
+    
+    TODO(leba): Add support for bazel_paths.
+    
     Args:
-      bazel_commits: could be the bazel cl numbers, or paths to specific bazel
-        versions.
-      project_commits: the depot cls
+      bazel_commits: the bazel commits.
+      bazel_paths: paths to pre-built bazel binaries.
+      project_commits: the project commits.
       runs: The number of benchmark runs to perform for each combination.
       bazelrc: An optional path to a bazelrc.
       collect_memory: Whether to collect Blaze memory consumption.
@@ -177,6 +179,20 @@ class BenchmarkConfig(object):
                 'shutdown': shutdown,
                 'command': command,
             }))
+    for bazel_path in bazel_paths:
+      for project_commit in project_commits:
+          units.append(
+              cls._parse_unit({
+                  'bazel_path': bazel_path,
+                  'project_commit': project_commit,
+                  'runs': runs,
+                  'bazelrc': bazelrc,
+                  'collect_memory': collect_memory,
+                  'collect_profile': collect_profile,
+                  'warmup_runs': warmup_runs,
+                  'shutdown': shutdown,
+                  'command': command,
+              }))
     return cls(units, benchmark_project_commits=(len(project_commits) > 1))
 
   @classmethod

@@ -99,7 +99,8 @@ units:
 
   def test_parsing_from_flags(self):
     result = benchmark_config.BenchmarkConfig.from_flags(
-        bazel_commits=['hash1', 'hash2'],
+        bazel_commits=['hash1'],
+        bazel_paths=['path/to/bazel'],
         project_commits=['hash3'],
         runs=3,
         bazelrc=None,
@@ -122,7 +123,7 @@ units:
         'options': ['--nobuild'],
         'targets': ['//abc']
     }, {
-        'bazel_commit': 'hash2',
+        'bazel_path': 'path/to/bazel',
         'project_commit': 'hash3',
         'runs': 3,
         'bazelrc': None,
