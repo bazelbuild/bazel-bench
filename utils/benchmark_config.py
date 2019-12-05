@@ -191,10 +191,8 @@ class BenchmarkConfig(object):
     Returns:
       A dictionary that contains various attributes of the benchmarking unit.
     """
-    print(unit)
     parsed_unit = copy.copy(cls._DEFAULT_VALS)
     parsed_unit.update(unit)
-    print(parsed_unit)
 
     if 'command' not in unit or not isinstance(unit['command'], str):
       raise ValueError('A command has to be specified either as a global option'
