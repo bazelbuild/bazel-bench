@@ -1,5 +1,7 @@
 """A library that holds the bulk of the logic for merging JSON profiles.
 Collect duration statistics of events across these profiles.
+
+Duration is measured in milliseconds.
 """
 from __future__ import division
 
@@ -106,13 +108,14 @@ def _accumulate_event_duration(event_list, accum_dict, only_phases=False):
           'cat': 'build phase marker',
           'dur_list': []
       }
-    current_phase_duration_millis = (next_ts - ts) / 1000
+    current_phase_duration_millis = (next_ts - ts) / 1000 # Convert from microseconds to milliseconds
     accum_dict[marker]['dur_list'].append(current_phase_duration_millis)
 
 
 def _aggregate_from_accum_dict(accum_dict):
   """Aggregate the result from the accummulated dict.
   Calculate statistics of the durations and counts for each event.
+  All measurements of time should be in milliseconds.
   Args:
     accum_dict: the dict to be filled up with a mapping of the following format:
       { <name>: { name: ..., cat: ..., dur_list: [...]}, ...}
