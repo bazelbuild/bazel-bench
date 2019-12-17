@@ -148,7 +148,10 @@ class JsonProfilesMergerLibTest(unittest.TestCase):
     self.assertEqual([{
         'cat': 'fake_cat',
         'name': 'fake_name',
-        'dur': 2.0
+        'median': 2.0,
+        'min': 1,
+        'max': 3,
+        'count': 2
     }], lib._aggregate_from_accum_dict(accum_dict))
 
 
