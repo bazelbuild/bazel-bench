@@ -396,7 +396,7 @@ def handle_json_profiles_aggr(
         for event in event_list:
           csv_writer.writerow(
               [bazel_commit, project_source, project_commit,
-               event['cat'], event['name'], event['dur']])
+               event['cat'], event['name'], event['median']])
   logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
 
 
