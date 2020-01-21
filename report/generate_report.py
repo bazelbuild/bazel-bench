@@ -33,6 +33,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.request
+from google.cloud import bigquery
 
 
 TMP = tempfile.gettempdir()
@@ -335,7 +336,34 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
   )
 
 
-def _generate_report_for_date(project, date, storage_bucket, report_name):
+def _query_bq(bq_project, bq_table, project_source, date_cutoff, platform):
+  bq_client = bigquery.Client(project=bq_project)
+  query = """
+SELECT
+  MIN(wall) as min_wall,
+  APPROX_QUANTILES(wall, 101)[OFFSET(50)] AS median_wall,
+  MAX(wall) as max_wall,
+  MIN(memory) as min_memory,
+  APPROX_QUANTILES(memory, 101)[OFFSET(50)] AS median_memory,
+  MAX(memory) as max_memory,
+  bazel_commit
+FROM (SELECT wall, memory, bazel_commit FROM `{bq_project}.{bq_table}`
+WHERE bazel_commit IN (
+  SELECT
+    DISTINCT bazel_commit
+  FROM `{bq_project}.{bq_table}`
+  WHERE bazel_commit=project_commit
+    AND project_source = "{project_source}"
+    AND started_at < "{date_cutoff}"
+    AND platform="{platform}"
+    LIMIT 7))
+GROUP BY bazel_commit;
+""".format(bq_project=bq_project, bq_table=bq_table, project_source=project_source, date_cutoff=date_cutoff, platform=platform)
+  result = bq_client.query(query)
+
+  return result
+
+def _generate_report_for_date(project, date, storage_bucket, report_name, bq_project, bq_table):
   """Generates a html report for the specified date & project.
 
   Args:
@@ -343,8 +371,11 @@ def _generate_report_for_date(project, date, storage_bucket, report_name):
     date: the date to generate report for.
     storage_bucket: the Storage bucket to upload the report to.
     report_name: the name of the report on GS.
+    bq_project: the BigQuery project.
+    bq_table: the BigQuery table.
   """
   dated_subdir = _get_dated_subdir_for_project(project, date)
+  bq_date_cutoff = (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
   root_storage_url = _get_storage_url(storage_bucket, dated_subdir)
   metadata_file_url = "{}/METADATA".format(root_storage_url)
   metadata = _load_json_from_remote_file(metadata_file_url)
@@ -360,6 +391,7 @@ def _generate_report_for_date(project, date, storage_bucket, report_name):
             "col-sm-10",
             _commits_component(
                 metadata["all_commits"], metadata["benchmarked_commits"]))))
+
   for platform_measurement in sorted(metadata["platforms"], key=lambda k: k['platform']):
     # Get the data
     performance_data = _load_csv_from_remote_file(
@@ -415,6 +447,10 @@ def _generate_report_for_date(project, date, storage_bucket, report_name):
                     platform))))
     graph_components.append(_row_component("\n".join(row_content)))
 
+    # TODO: Add time series graph
+    time_series_data = _query_bq(bq_project, bq_table, metadata["project_source"], bq_date_cutoff, platform)
+    for row in time_series_data:
+      print(row)
 
   content = _full_report(
       project,
@@ -433,11 +469,12 @@ def _generate_report_for_date(project, date, storage_bucket, report_name):
   with open(report_tmp_file, "w") as fo:
     fo.write(content)
 
-  if storage_bucket:
-    _upload_to_storage(
-        report_tmp_file, storage_bucket, dated_subdir + "/{}.html".format(report_name))
-  else:
-    print(content)
+  # if storage_bucket:
+  #   _upload_to_storage(
+  #       report_tmp_file, storage_bucket, dated_subdir + "/{}.html".format(report_name))
+  # else:
+  #   print(content)
+  #print(content)
 
 
 def main(args=None):
@@ -458,6 +495,9 @@ def main(args=None):
       "--storage_bucket",
       help="The GCP Storage bucket to upload the reports to.")
   parser.add_argument(
+      "--bigquery_table",
+      help="The BigQuery table to fetch data from. In the format: project:table_identifier.")
+  parser.add_argument(
       "--report_name", type=str,
       help="The name of the generated report.", default="report")
   parsed_args = parser.parse_args(args)
@@ -468,9 +508,10 @@ def main(args=None):
       else datetime.date.today()
   )
 
+  bq_project, bq_table = parsed_args.bigquery_table.split(':')
   for project in parsed_args.project:
     _generate_report_for_date(
-        project, date, parsed_args.storage_bucket, parsed_args.report_name)
+        project, date, parsed_args.storage_bucket, parsed_args.report_name, bq_project, bq_table)
 
 
 if __name__ == "__main__":
