@@ -1,0 +1,923 @@
+
+<html>
+  <head>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script type="text/javascript">
+    google.charts.load("current", { packages:["corechart"] });
+  </script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+  <style>
+    h1 { font-size: 1.7rem; }
+    h2 { font-size: 1.3rem; color: gray; }
+    h2.underlined { border-bottom: 2px dotted lightgray; }
+    body { font-family: monospace; padding: 1% 3% 1% 3%; font-size:1.1rem; }
+  </style>
+  </head>
+  <body>
+  <div class="container-fluid">
+    <div class="row">
+    <div class="col-sm-12">
+      <h1>[<a href="https://github.com/bazelbuild/bazel.git">bazel</a>] Report for 2020-01-20</h1>
+      </hr>
+    </div>
+    <div class="col-sm-12">
+      <i>Dates are in UTC.</i>
+    </div>
+    <div class="col-sm-12">
+      <b>Command: </b><span style="font-family: monospace">build //src:bazel</span>
+    </div>
+    </div>
+    
+<button class="btn btn-secondary btn-sm" type="button" data-toggle="collapse"
+        data-target="#commits" aria-expanded="false"
+        aria-controls="commits" style="margin-bottom: 5px;">
+Show commits
+</button>
+
+
+<div class="row">
+<div class="col-sm-10">
+<div class="collapse" id="commits">
+<b>Commits:</b>
+<ul>
+  <li><b><a href="https://github.com/bazelbuild/bazel/commit/3e5ece38c8cdb34530355c94bcf3076d93b7fe0c">3e5ece38c8cdb34530355c94bcf3076d93b7fe0c</a></b></li>
+<li><b><a href="https://github.com/bazelbuild/bazel/commit/044264ee7290292195d0980657469ac69ba280e0">044264ee7290292195d0980657469ac69ba280e0</a></b></li>
+<li><b><a href="https://github.com/bazelbuild/bazel/commit/912e822cd14710b2ebe8c7484c682d627f2906cb">912e822cd14710b2ebe8c7484c682d627f2906cb</a></b></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+<div class="row">
+<div class="col-sm-5"><h2 class="underlined">macos</h2></hr></div>
+</div>
+
+
+<div class="row">
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Bazel Commit', 'Launch Blaze', 'Initialize command', 'Load packages', 'Analyze dependencies', 'Analyze licenses', 'Prepare for build', 'Build artifacts', 'Complete build', 'Median [Min, Max]', {'role': 'interval'}, {'role': 'interval'}], ['3e5ece3', 0.051545849286992344, 0.20821648439580825, 0.6848564920541305, 4.762894463198541, 0, 0.019124005718640383, 269.98617731683515, 0.042073803847341294, 275.7548884153366, 273.84086298942566, 279.7211148738861], ['044264e', 0.05188101766400315, 0.20957037771810627, 0.6893096583536917, 4.793864398298764, 0, 0.01924835640928425, 271.74171787186236, 0.042347381812303506, 277.54793906211853, 274.60677886009216, 278.2816081047058], ['912e822', 0.05201841382270817, 0.21012538157449373, 0.6911351525995723, 4.806559957933786, 0, 0.019299331705280722, 272.46136968049296, 0.042459530105729566, 278.28296744823456, 275.7811710834503, 280.0862510204315]])
+
+    var options = {
+      title: "[macos] Bar Chart of Wall Time (s) vs Bazel commits",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Bazel Commits (chronological order)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        minValue: 0,
+      },
+      vAxis: {
+        title: "Wall Time (s)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      isStacked: true,
+      seriesType: "bars",
+      focusTarget: 'category',
+      series: {
+        8: {
+          type: "line",
+          lineWidth: 0.00001, // A very small number.
+        },
+      },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.ComboChart(document.getElementById("macos-wall"));
+    chart.draw(data, options);
+  }
+</script>
+<div id="macos-wall" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Date', 'Wall Time', {'role': 'interval'}, {'role': 'interval'}], ['2020-01-14 (367c7f1)', 274.8560872077942, 273.2608690261841, 281.4052860736847], ['2020-01-15 (8ddbf7b)', 276.21899580955505, 273.4648928642273, 280.0729880332947], ['2020-01-16 (83000f2)', 276.62917399406433, 273.760479927063, 279.1212329864502], ['2020-01-17 (582bbce)', 275.901967048645, 274.98392486572266, 281.78892493247986], ['2020-01-18 (24dafca)', 275.8027620315552, 273.18663597106934, 282.3521659374237], ['2020-01-20 (912e822)', 278.27301597595215, 275.7811710834503, 280.0862510204315]])
+
+    var options = {
+      title: "[macos] Historical values of Wall Time (s)",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Date (commmit)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      vAxis: {
+        title: "Wall Time (s)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        viewWindow: {
+          min: 270.45476961135864,
+          max: 285.17568759679796,
+        }
+      },
+      series: {
+        0: { axis: 'wall'},
+      },
+      axes: {
+        y: {
+          wall: { label: 'Wall Time (s)' },
+        }
+      },
+      intervals: { 'style':'area' },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.LineChart(document.getElementById("macos-wall-time"));
+    chart.draw(data, options);
+  }
+  </script>
+<div id="macos-wall-time" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Bazel Commit', 'Memory (MB)', {'role': 'interval'}, {'role': 'interval'}], ['3e5ece3', 75.0, 75.0, 75.0], ['044264e', 75.0, 75.0, 75.0], ['912e822', 75.0, 75.0, 75.0]])
+
+    var options = {
+      title: "[macos] Bar Chart of Memory (MB) vs Bazel commits",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Bazel Commits (chronological order)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        minValue: 0,
+      },
+      vAxis: {
+        title: "Memory (MB)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      isStacked: true,
+      seriesType: "bars",
+      focusTarget: 'category',
+      series: {
+        None: {
+          type: "line",
+          lineWidth: 0.00001, // A very small number.
+        },
+      },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.ComboChart(document.getElementById("macos-memory"));
+    chart.draw(data, options);
+  }
+</script>
+<div id="macos-memory" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Date', 'Memory', {'role': 'interval'}, {'role': 'interval'}], ['2020-01-14 (367c7f1)', 75.0, 74.0, 75.0], ['2020-01-15 (8ddbf7b)', 75.0, 75.0, 75.0], ['2020-01-16 (83000f2)', 75.0, 74.0, 75.0], ['2020-01-17 (582bbce)', 75.0, 74.0, 75.0], ['2020-01-18 (24dafca)', 75.0, 75.0, 75.0], ['2020-01-20 (912e822)', 75.0, 75.0, 75.0]])
+
+    var options = {
+      title: "[macos] Historical values of Memory (MB)",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Date (commmit)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      vAxis: {
+        title: "Memory (MB)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        viewWindow: {
+          min: 73.26,
+          max: 75.75,
+        }
+      },
+      series: {
+        0: { axis: 'wall'},
+      },
+      axes: {
+        y: {
+          wall: { label: 'Wall Time (s)' },
+        }
+      },
+      intervals: { 'style':'area' },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.LineChart(document.getElementById("macos-memory-time"));
+    chart.draw(data, options);
+  }
+  </script>
+<div id="macos-memory-time" style="min-height: 400px"></div>
+</div>
+</div>
+
+
+<div class="row">
+<div class="col-sm-5"><h2 class="underlined">rbe_ubuntu1604</h2></hr></div>
+</div>
+
+
+<div class="row">
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Bazel Commit', 'Launch Blaze', 'Initialize command', 'Load packages', 'Analyze dependencies', 'Analyze licenses', 'Prepare for build', 'Build artifacts', 'Complete build', 'Median [Min, Max]', {'role': 'interval'}, {'role': 'interval'}], ['3e5ece3', 0.024753705294937943, 0.19347199014059957, 0.6913685135170872, 1.5949243036000649, 0, 0.0173117513350678, 114.82195863946934, 0.028774697183047662, 117.37256360054016, 114.21803283691406, 122.81540393829346], ['044264e', 0.024669138107970248, 0.1928110231553225, 0.6890065604417981, 1.5894754925968309, 0, 0.01725260842719007, 114.42968726318182, 0.028676392902228932, 116.97157847881317, 113.73210406303406, 118.91153812408447], ['912e822', 0.025024372300048173, 0.19558749097250053, 0.6989282159031154, 1.612363849699906, 0, 0.017501045011761692, 116.07746828117908, 0.029089331336468, 118.6559625864029, 115.956955909729, 121.5193190574646]])
+
+    var options = {
+      title: "[rbe_ubuntu1604] Bar Chart of Wall Time (s) vs Bazel commits",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Bazel Commits (chronological order)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        minValue: 0,
+      },
+      vAxis: {
+        title: "Wall Time (s)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      isStacked: true,
+      seriesType: "bars",
+      focusTarget: 'category',
+      series: {
+        8: {
+          type: "line",
+          lineWidth: 0.00001, // A very small number.
+        },
+      },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.ComboChart(document.getElementById("rbe_ubuntu1604-wall"));
+    chart.draw(data, options);
+  }
+</script>
+<div id="rbe_ubuntu1604-wall" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Date', 'Wall Time', {'role': 'interval'}, {'role': 'interval'}], ['2020-01-14 (367c7f1)', 118.19586205482483, 115.65192198753357, 120.25936388969421], ['2020-01-15 (8ddbf7b)', 119.14516496658325, 117.1682198047638, 122.96080899238586], ['2020-01-16 (83000f2)', 117.15687584877014, 113.98161888122559, 121.504812002182], ['2020-01-17 (582bbce)', 117.60194492340088, 116.01450395584106, 119.5539779663086], ['2020-01-18 (24dafca)', 117.96777391433716, 114.89857220649719, 122.72739911079407], ['2020-01-20 (912e822)', 118.31591010093689, 115.956955909729, 121.5193190574646]])
+
+    var options = {
+      title: "[rbe_ubuntu1604] Historical values of Wall Time (s)",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Date (commmit)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      vAxis: {
+        title: "Wall Time (s)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        viewWindow: {
+          min: 112.84180269241332,
+          max: 124.19041708230972,
+        }
+      },
+      series: {
+        0: { axis: 'wall'},
+      },
+      axes: {
+        y: {
+          wall: { label: 'Wall Time (s)' },
+        }
+      },
+      intervals: { 'style':'area' },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.LineChart(document.getElementById("rbe_ubuntu1604-wall-time"));
+    chart.draw(data, options);
+  }
+  </script>
+<div id="rbe_ubuntu1604-wall-time" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Bazel Commit', 'Memory (MB)', {'role': 'interval'}, {'role': 'interval'}], ['3e5ece3', 75.0, 74.0, 75.0], ['044264e', 74.0, 74.0, 75.0], ['912e822', 75.0, 74.0, 75.0]])
+
+    var options = {
+      title: "[rbe_ubuntu1604] Bar Chart of Memory (MB) vs Bazel commits",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Bazel Commits (chronological order)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        minValue: 0,
+      },
+      vAxis: {
+        title: "Memory (MB)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      isStacked: true,
+      seriesType: "bars",
+      focusTarget: 'category',
+      series: {
+        None: {
+          type: "line",
+          lineWidth: 0.00001, // A very small number.
+        },
+      },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.ComboChart(document.getElementById("rbe_ubuntu1604-memory"));
+    chart.draw(data, options);
+  }
+</script>
+<div id="rbe_ubuntu1604-memory" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Date', 'Memory', {'role': 'interval'}, {'role': 'interval'}], ['2020-01-14 (367c7f1)', 75.0, 74.0, 75.0], ['2020-01-15 (8ddbf7b)', 74.0, 74.0, 75.0], ['2020-01-16 (83000f2)', 74.0, 74.0, 75.0], ['2020-01-17 (582bbce)', 75.0, 74.0, 75.0], ['2020-01-18 (24dafca)', 74.0, 74.0, 75.0], ['2020-01-20 (912e822)', 75.0, 74.0, 75.0]])
+
+    var options = {
+      title: "[rbe_ubuntu1604] Historical values of Memory (MB)",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Date (commmit)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      vAxis: {
+        title: "Memory (MB)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        viewWindow: {
+          min: 73.26,
+          max: 75.75,
+        }
+      },
+      series: {
+        0: { axis: 'wall'},
+      },
+      axes: {
+        y: {
+          wall: { label: 'Wall Time (s)' },
+        }
+      },
+      intervals: { 'style':'area' },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.LineChart(document.getElementById("rbe_ubuntu1604-memory-time"));
+    chart.draw(data, options);
+  }
+  </script>
+<div id="rbe_ubuntu1604-memory-time" style="min-height: 400px"></div>
+</div>
+</div>
+
+
+<div class="row">
+<div class="col-sm-5"><h2 class="underlined">ubuntu1604</h2></hr></div>
+</div>
+
+
+<div class="row">
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Bazel Commit', 'Launch Blaze', 'Initialize command', 'Load packages', 'Analyze dependencies', 'Analyze licenses', 'Prepare for build', 'Build artifacts', 'Complete build', 'Median [Min, Max]', {'role': 'interval'}, {'role': 'interval'}], ['3e5ece3', 0.024938861268965454, 0.20290257528430294, 0.6795196273172348, 1.607523085437286, 0, 0.01732801958690258, 116.04465485136299, 0.029985988012578683, 118.60685300827026, 115.552090883255, 121.20461702346802], ['044264e', 0.025094890474290584, 0.20417202889882818, 0.6837710206069948, 1.6175805033304882, 0, 0.017436431799346584, 116.77068460402131, 0.03017359440847751, 119.34891307353973, 116.00556802749634, 122.56120300292969], ['912e822', 0.025007240041746835, 0.20345890497965227, 0.6813827724582937, 1.611930682665341, 0, 0.017375530525806537, 116.36283261421256, 0.03006820528139556, 118.9320559501648, 116.5477888584137, 121.15722393989563]])
+
+    var options = {
+      title: "[ubuntu1604] Bar Chart of Wall Time (s) vs Bazel commits",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Bazel Commits (chronological order)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        minValue: 0,
+      },
+      vAxis: {
+        title: "Wall Time (s)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      isStacked: true,
+      seriesType: "bars",
+      focusTarget: 'category',
+      series: {
+        8: {
+          type: "line",
+          lineWidth: 0.00001, // A very small number.
+        },
+      },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.ComboChart(document.getElementById("ubuntu1604-wall"));
+    chart.draw(data, options);
+  }
+</script>
+<div id="ubuntu1604-wall" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Date', 'Wall Time', {'role': 'interval'}, {'role': 'interval'}], ['2020-01-14 (367c7f1)', 124.21213912963867, 116.30986523628235, 133.94461107254028], ['2020-01-15 (8ddbf7b)', 117.88077092170715, 114.8503189086914, 120.73673415184021], ['2020-01-16 (83000f2)', 118.71051907539368, 116.46834802627563, 121.73266196250916], ['2020-01-17 (582bbce)', 117.18809914588928, 114.19200301170349, 119.7374939918518], ['2020-01-18 (24dafca)', 120.21743297576904, 117.57582902908325, 123.05921387672424], ['2020-01-20 (912e822)', 118.86097502708435, 116.5477888584137, 121.15722393989563]])
+
+    var options = {
+      title: "[ubuntu1604] Historical values of Wall Time (s)",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Date (commmit)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      vAxis: {
+        title: "Wall Time (s)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        viewWindow: {
+          min: 113.05008298158646,
+          max: 135.28405718326567,
+        }
+      },
+      series: {
+        0: { axis: 'wall'},
+      },
+      axes: {
+        y: {
+          wall: { label: 'Wall Time (s)' },
+        }
+      },
+      intervals: { 'style':'area' },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.LineChart(document.getElementById("ubuntu1604-wall-time"));
+    chart.draw(data, options);
+  }
+  </script>
+<div id="ubuntu1604-wall-time" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Bazel Commit', 'Memory (MB)', {'role': 'interval'}, {'role': 'interval'}], ['3e5ece3', 75.0, 74.0, 75.0], ['044264e', 74.5, 74.0, 75.0], ['912e822', 74.5, 74.0, 75.0]])
+
+    var options = {
+      title: "[ubuntu1604] Bar Chart of Memory (MB) vs Bazel commits",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Bazel Commits (chronological order)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        minValue: 0,
+      },
+      vAxis: {
+        title: "Memory (MB)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      isStacked: true,
+      seriesType: "bars",
+      focusTarget: 'category',
+      series: {
+        None: {
+          type: "line",
+          lineWidth: 0.00001, // A very small number.
+        },
+      },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.ComboChart(document.getElementById("ubuntu1604-memory"));
+    chart.draw(data, options);
+  }
+</script>
+<div id="ubuntu1604-memory" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Date', 'Memory', {'role': 'interval'}, {'role': 'interval'}], ['2020-01-14 (367c7f1)', 75.0, 74.0, 75.0], ['2020-01-15 (8ddbf7b)', 74.0, 74.0, 75.0], ['2020-01-16 (83000f2)', 74.0, 74.0, 75.0], ['2020-01-17 (582bbce)', 74.0, 74.0, 75.0], ['2020-01-18 (24dafca)', 74.0, 74.0, 75.0], ['2020-01-20 (912e822)', 74.0, 74.0, 75.0]])
+
+    var options = {
+      title: "[ubuntu1604] Historical values of Memory (MB)",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Date (commmit)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      vAxis: {
+        title: "Memory (MB)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        viewWindow: {
+          min: 73.26,
+          max: 75.75,
+        }
+      },
+      series: {
+        0: { axis: 'wall'},
+      },
+      axes: {
+        y: {
+          wall: { label: 'Wall Time (s)' },
+        }
+      },
+      intervals: { 'style':'area' },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.LineChart(document.getElementById("ubuntu1604-memory-time"));
+    chart.draw(data, options);
+  }
+  </script>
+<div id="ubuntu1604-memory-time" style="min-height: 400px"></div>
+</div>
+</div>
+
+
+<div class="row">
+<div class="col-sm-5"><h2 class="underlined">ubuntu1804</h2></hr></div>
+</div>
+
+
+<div class="row">
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Bazel Commit', 'Launch Blaze', 'Initialize command', 'Load packages', 'Analyze dependencies', 'Analyze licenses', 'Prepare for build', 'Build artifacts', 'Complete build', 'Median [Min, Max]', {'role': 'interval'}, {'role': 'interval'}], ['3e5ece3', 0.023955035091762437, 0.20050514090774482, 0.687955669662166, 1.6286883630552267, 0, 0.01695667140235026, 114.03668791311921, 0.0302911418735336, 116.625039935112, 113.14637303352356, 118.80571913719177], ['044264e', 0.024159562543722028, 0.20221704846361235, 0.6938294168571991, 1.6425940609452903, 0, 0.01710144701141757, 115.0103301190036, 0.030549766836536502, 117.62078142166138, 114.43059492111206, 120.64533305168152], ['912e822', 0.02400932493710242, 0.20095955030635582, 0.6895147993717929, 1.632379496839777, 0, 0.01699510069558185, 114.29513187390539, 0.030359791382966003, 116.88934993743896, 114.98353695869446, 122.84801197052002]])
+
+    var options = {
+      title: "[ubuntu1804] Bar Chart of Wall Time (s) vs Bazel commits",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Bazel Commits (chronological order)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        minValue: 0,
+      },
+      vAxis: {
+        title: "Wall Time (s)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      isStacked: true,
+      seriesType: "bars",
+      focusTarget: 'category',
+      series: {
+        8: {
+          type: "line",
+          lineWidth: 0.00001, // A very small number.
+        },
+      },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.ComboChart(document.getElementById("ubuntu1804-wall"));
+    chart.draw(data, options);
+  }
+</script>
+<div id="ubuntu1804-wall" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Date', 'Wall Time', {'role': 'interval'}, {'role': 'interval'}], ['2020-01-14 (367c7f1)', 119.30609512329102, 115.31610012054443, 123.05546593666077], ['2020-01-15 (8ddbf7b)', 118.91874194145203, 115.31527900695801, 120.54679298400879], ['2020-01-16 (83000f2)', 119.73400092124939, 115.15826201438904, 125.52146100997925], ['2020-01-17 (582bbce)', 120.19261002540588, 117.87156581878662, 124.61235809326172], ['2020-01-18 (24dafca)', 118.59362697601318, 115.91775107383728, 122.30508399009705], ['2020-01-20 (912e822)', 116.71929287910461, 114.98353695869446, 122.84801197052002]])
+
+    var options = {
+      title: "[ubuntu1804] Historical values of Wall Time (s)",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Date (commmit)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      vAxis: {
+        title: "Wall Time (s)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        viewWindow: {
+          min: 113.8337015891075,
+          max: 126.77667562007905,
+        }
+      },
+      series: {
+        0: { axis: 'wall'},
+      },
+      axes: {
+        y: {
+          wall: { label: 'Wall Time (s)' },
+        }
+      },
+      intervals: { 'style':'area' },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.LineChart(document.getElementById("ubuntu1804-wall-time"));
+    chart.draw(data, options);
+  }
+  </script>
+<div id="ubuntu1804-wall-time" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Bazel Commit', 'Memory (MB)', {'role': 'interval'}, {'role': 'interval'}], ['3e5ece3', 74.0, 74.0, 74.0], ['044264e', 74.0, 74.0, 74.0], ['912e822', 74.0, 74.0, 74.0]])
+
+    var options = {
+      title: "[ubuntu1804] Bar Chart of Memory (MB) vs Bazel commits",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Bazel Commits (chronological order)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        minValue: 0,
+      },
+      vAxis: {
+        title: "Memory (MB)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      isStacked: true,
+      seriesType: "bars",
+      focusTarget: 'category',
+      series: {
+        None: {
+          type: "line",
+          lineWidth: 0.00001, // A very small number.
+        },
+      },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.ComboChart(document.getElementById("ubuntu1804-memory"));
+    chart.draw(data, options);
+  }
+</script>
+<div id="ubuntu1804-memory" style="min-height: 400px"></div>
+</div>
+
+
+<div class="col-sm-6">
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable([['Date', 'Memory', {'role': 'interval'}, {'role': 'interval'}], ['2020-01-14 (367c7f1)', 74.0, 74.0, 74.0], ['2020-01-15 (8ddbf7b)', 74.0, 74.0, 74.0], ['2020-01-16 (83000f2)', 74.0, 74.0, 74.0], ['2020-01-17 (582bbce)', 74.0, 74.0, 74.0], ['2020-01-18 (24dafca)', 74.0, 74.0, 74.0], ['2020-01-20 (912e822)', 74.0, 74.0, 74.0]])
+
+    var options = {
+      title: "[ubuntu1804] Historical values of Memory (MB)",
+      titleTextStyle: { color: "gray" },
+      hAxis: {
+        title: "Date (commmit)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+      },
+      vAxis: {
+        title: "Memory (MB)",
+        titleTextStyle: { color: "darkgray" },
+        textStyle: { color: "darkgray" },
+        viewWindow: {
+          min: 73.26,
+          max: 74.74,
+        }
+      },
+      series: {
+        0: { axis: 'wall'},
+      },
+      axes: {
+        y: {
+          wall: { label: 'Wall Time (s)' },
+        }
+      },
+      intervals: { 'style':'area' },
+      legend: { position: "right" },
+    };
+    var chart = new google.visualization.LineChart(document.getElementById("ubuntu1804-memory-time"));
+    chart.draw(data, options);
+  }
+  </script>
+<div id="ubuntu1804-memory-time" style="min-height: 400px"></div>
+</div>
+</div>
+
+    <h2>Raw Files:</h2>
+    
+<button class="btn btn-secondary btn-sm" type="button" data-toggle="collapse"
+        data-target="#raw_files_macos" aria-expanded="false"
+        aria-controls="raw_files_macos" style="margin-bottom: 5px;">
+Show raw files for macos
+</button>
+
+
+<div class="row">
+<div class="col-sm-10">
+<div class="collapse" id="raw_files_macos">
+<ul><li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003238_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003238_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003238_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/aggr_json_profiles.csv">aggr_json_profiles.csv</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/macos/perf_data.csv">perf_data.csv</a></li></ul>
+</div>
+</div>
+</div>
+
+
+<button class="btn btn-secondary btn-sm" type="button" data-toggle="collapse"
+        data-target="#raw_files_rbe_ubuntu1604" aria-expanded="false"
+        aria-controls="raw_files_rbe_ubuntu1604" style="margin-bottom: 5px;">
+Show raw files for rbe_ubuntu1604
+</button>
+
+
+<div class="row">
+<div class="col-sm-10">
+<div class="collapse" id="raw_files_rbe_ubuntu1604">
+<ul><li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003217_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003217_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003217_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/aggr_json_profiles.csv">aggr_json_profiles.csv</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/rbe_ubuntu1604/perf_data.csv">perf_data.csv</a></li></ul>
+</div>
+</div>
+</div>
+
+
+<button class="btn btn-secondary btn-sm" type="button" data-toggle="collapse"
+        data-target="#raw_files_ubuntu1604" aria-expanded="false"
+        aria-controls="raw_files_ubuntu1604" style="margin-bottom: 5px;">
+Show raw files for ubuntu1604
+</button>
+
+
+<div class="row">
+<div class="col-sm-10">
+<div class="collapse" id="raw_files_ubuntu1604">
+<ul><li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003216_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003216_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003216_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/aggr_json_profiles.csv">aggr_json_profiles.csv</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1604/perf_data.csv">perf_data.csv</a></li></ul>
+</div>
+</div>
+</div>
+
+
+<button class="btn btn-secondary btn-sm" type="button" data-toggle="collapse"
+        data-target="#raw_files_ubuntu1804" aria-expanded="false"
+        aria-controls="raw_files_ubuntu1804" style="margin-bottom: 5px;">
+Show raw files for ubuntu1804
+</button>
+
+
+<div class="row">
+<div class="col-sm-10">
+<div class="collapse" id="raw_files_ubuntu1804">
+<ul><li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003222_044264ee7290292195d0980657469ac69ba280e0_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003222_3e5ece38c8cdb34530355c94bcf3076d93b7fe0c_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_10_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_1_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_2_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_3_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_4_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_5_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_6_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_7_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_8_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz">20200121003222_912e822cd14710b2ebe8c7484c682d627f2906cb_912e822cd14710b2ebe8c7484c682d627f2906cb_9_of_10.profile.gz</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/aggr_json_profiles.csv">aggr_json_profiles.csv</a></li>
+<li><a href="https://perf.bazel.build/bazel/2020/01/20/ubuntu1804/perf_data.csv">perf_data.csv</a></li></ul>
+</div>
+</div>
+</div>
+
+  </div>
+  </body>
+</html>
+
