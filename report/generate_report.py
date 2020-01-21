@@ -427,9 +427,8 @@ FROM (
 GROUP BY bazel_commit
 ORDER BY report_date ASC;
 """.format(bq_project=bq_project, bq_table=bq_table, project_source=project_source, date_cutoff=date_cutoff, platform=platform)
-  result = bq_client.query(query)
 
-  return result
+  return bq_client.query(query)
 
 def _prepare_time_series_data(raw_data):
   """Massage the data to fit a format suitable for graph generation.
