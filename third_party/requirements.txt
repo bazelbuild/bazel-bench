@@ -12,7 +12,7 @@ google-cloud-bigquery==1.9.0
 google-cloud-storage==1.13.2
 google-cloud-core==0.29.1
 google-resumable-media==0.3.2
-googleapis-common-protos==1.5.8
+googleapis-common-protos==1.6.0
 idna==2.8
 mock==2.0.0
 numpy==1.16.4
