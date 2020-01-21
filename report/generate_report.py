@@ -570,12 +570,11 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, bq_pro
   with open(report_tmp_file, "w") as fo:
     fo.write(content)
 
-  # if storage_bucket:
-  #   _upload_to_storage(
-  #       report_tmp_file, storage_bucket, dated_subdir + "/{}.html".format(report_name))
-  # else:
-  #   print(content)
-  print(content)
+  if storage_bucket:
+    _upload_to_storage(
+        report_tmp_file, storage_bucket, dated_subdir + "/{}.html".format(report_name))
+  else:
+    print(content)
 
 
 def main(args=None):
