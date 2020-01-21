@@ -287,7 +287,7 @@ def _single_graph(metric, metric_label, data, platform, median_series=None):
   )
   
 
-def _historical_graph(metric, metric_label, data, platform):
+def _historical_graph(metric, metric_label, data, platform, color):
   """Returns the HTML <div> component of a single graph.
   """
   title = "[{}] Historical values of {}".format(platform, metric_label)
@@ -328,7 +328,7 @@ def _historical_graph(metric, metric_label, data, platform):
         }}
       }},
       series: {{
-        0: {{ axis: 'wall'}},
+        0: {{ axis: 'wall', color: "{color}"}},
       }},
       axes: {{
         y: {{
@@ -345,7 +345,7 @@ def _historical_graph(metric, metric_label, data, platform):
 <div id="{chart_id}" style="min-height: 400px"></div>
 """.format(
     title=title, data=data, hAxis=hAxis, vAxis=vAxis, chart_id=chart_id,
-    viewWindowMin=viewWindowMin, viewWindowMax=viewWindowMax)
+    viewWindowMin=viewWindowMin, viewWindowMax=viewWindowMax, color=color)
 
 
 def _full_report(project, project_source, date, command, graph_components, raw_files_components):
@@ -509,6 +509,7 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, bq_pro
             metric_label="Wall Time (s)",
             data=historical_wall_data,
             platform=platform,
+            color="#dd4477"
         ))
     )
 
@@ -527,6 +528,7 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, bq_pro
             metric_label="Memory (MB)",
             data=historical_mem_data,
             platform=platform,
+            color="#3366cc"
         ))
     )
 
