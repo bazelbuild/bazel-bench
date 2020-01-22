@@ -301,8 +301,8 @@ def _historical_graph(metric, metric_label, data, platform, color):
   for row in data[1:]:
     minVal = min(minVal, row[2])
     maxVal = max(maxVal, row[3])
-  viewWindowMin = minVal * 0.99
-  viewWindowMax = maxVal * 1.01
+  viewWindowMin = minVal * 0.95
+  viewWindowMax = maxVal * 1.05
 
   return """
 <script type="text/javascript">
