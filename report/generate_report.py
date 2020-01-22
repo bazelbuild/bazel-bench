@@ -459,7 +459,7 @@ def main(args=None):
       "--storage_bucket",
       help="The GCP Storage bucket to fetch benchmark data from/upload the reports to.")
   parser.add_argument(
-      "--upload_report", type=bool,
+      "--upload_report", type=bool, default=False,
       help="Whether to upload the report.")
   parser.add_argument(
       "--report_name", type=str,
