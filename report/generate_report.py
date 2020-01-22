@@ -335,14 +335,15 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
   )
 
 
-def _generate_report_for_date(project, date, storage_bucket, report_name):
+def _generate_report_for_date(project, date, storage_bucket, report_name, upload_report):
   """Generates a html report for the specified date & project.
 
   Args:
     project: the project to generate report for. Check out bazel_bench.py.
     date: the date to generate report for.
-    storage_bucket: the Storage bucket to upload the report to.
+    storage_bucket: the Storage bucket to fetch data from/upload the report to.
     report_name: the name of the report on GS.
+    upload_report: whether to upload the report to GCS.
   """
   dated_subdir = _get_dated_subdir_for_project(project, date)
   root_storage_url = _get_storage_url(storage_bucket, dated_subdir)
@@ -433,7 +434,7 @@ def _generate_report_for_date(project, date, storage_bucket, report_name):
   with open(report_tmp_file, "w") as fo:
     fo.write(content)
 
-  if storage_bucket:
+  if upload_report:
     _upload_to_storage(
         report_tmp_file, storage_bucket, dated_subdir + "/{}.html".format(report_name))
   else:
@@ -456,7 +457,10 @@ def main(args=None):
   )
   parser.add_argument(
       "--storage_bucket",
-      help="The GCP Storage bucket to upload the reports to.")
+      help="The GCP Storage bucket to fetch benchmark data from/upload the reports to.")
+  parser.add_argument(
+      "--upload_report", type=bool,
+      help="Whether to upload the report.")
   parser.add_argument(
       "--report_name", type=str,
       help="The name of the generated report.", default="report")
@@ -470,7 +474,7 @@ def main(args=None):
 
   for project in parsed_args.project:
     _generate_report_for_date(
-        project, date, parsed_args.storage_bucket, parsed_args.report_name)
+        project, date, parsed_args.storage_bucket, parsed_args.report_name, parsed_args.upload_report)
 
 
 if __name__ == "__main__":
