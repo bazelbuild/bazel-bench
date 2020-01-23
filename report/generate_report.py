@@ -69,6 +69,11 @@ def _load_json_from_remote_file(http_url):
     return json.loads(data.decode(encoding))
 
 
+def _load_txt_from_remote_file(http_url):
+  with urllib.request.urlopen(http_url) as resp:
+    return resp.read().decode(resp.headers.get_content_charset() or 'utf-8')
+
+
 def _get_storage_url(storage_bucket, dated_subdir):
   # In this case, the storage_bucket is a Domain-named bucket.
   # https://cloud.google.com/storage/docs/domain-name-verification
@@ -200,7 +205,7 @@ def _prepare_data_for_graph(performance_data, aggr_json_profile):
 
 def _uncollapse_button(element_id, text):
   return """
-<button class="btn btn-secondary btn-sm" type="button" data-toggle="collapse"
+<button class="btn btn-outline-primary btn-sm" type="button" data-toggle="collapse"
         data-target="#{element_id}" aria-expanded="false"
         aria-controls="{element_id}" style="margin-bottom: 5px;">
 {text}
@@ -235,6 +240,7 @@ def _commits_component(full_list, benchmarked_list):
   {}
 </ul>
 </div>
+<br>
 """.format("\n".join(li_components))
 
 
@@ -348,6 +354,14 @@ def _historical_graph(metric, metric_label, data, platform, color):
     viewWindowMin=viewWindowMin, viewWindowMax=viewWindowMax, color=color)
 
 
+def _summary_table(content, platform):
+  """Returns the HTML <div> component of the summary table."""
+  return """
+<pre class="collapse" id="summary-{platform}"  style="font-size:0.75em; color:gray">{content}</pre>
+<br>
+""".format(platform=platform, content=content)
+
+
 def _full_report(project, project_source, date, command, graph_components, raw_files_components):
   """Returns the full HTML of a complete report, from the graph components.
   """
@@ -366,7 +380,7 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
   <link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" />
 
   <style>
-    h1 {{ font-size: 1.7rem; }}
+    h1 {{ font-size: 1.7rem; color: darkslategrey; }}
     h2 {{ font-size: 1.3rem; color: gray; }}
     h2.underlined {{ border-bottom: 2px dotted lightgray; }}
     body {{ font-family: monospace; padding: 1% 3% 1% 3%; font-size:1.1rem; }}
@@ -516,6 +530,9 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
         "{}/{}".format(
             root_storage_url, platform_measurement["aggr_json_profiles"])
     )
+    summary_text = _load_txt_from_remote_file(
+        "{}/{}".format(root_storage_url, platform_measurement["perf_data"].replace('.csv', '.txt'))
+    )
 
     wall_data, memory_data = _prepare_data_for_graph(
       performance_data, aggr_json_profile)
@@ -562,6 +579,18 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
             data=historical_mem_data,
             platform=platform,
             color="#3366cc"
+        ))
+    )
+
+    row_content.append(
+        _col_component("col-sm-12", _uncollapse_button(
+          "summary-{}".format(platform), "Show Summary Table")
+        )
+    )
+    row_content.append(
+        _col_component("col-sm-12", _summary_table(
+            content=summary_text,
+            platform=platform
         ))
     )
 
