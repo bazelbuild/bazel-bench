@@ -386,14 +386,17 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
           <span><button id="viewReportButton" type="button" class="btn btn-sm btn-link">View Past Report</button><i>(Date & time are in UTC.)</i></span>
         </div>
         <script>
-          var reportDate = new Date('{date}');
+          // latestReportDate is always yesterday.
+          var latestReportDate = new Date();
+          latestReportDate.setDate(latestReportDate.getDate() - 1)
+
           var $datePicker = $('#datePicker').datepicker({{
               uiLibrary: 'bootstrap4',
               size: 'small',
               format: 'yyyy/mm/dd',
               value: '{date}',
               disableDates: function (date) {{
-                return date <= reportDate;
+                return date < latestReportDate;
               }}
           }});
           
