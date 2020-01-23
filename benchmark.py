@@ -95,7 +95,8 @@ def _get_commits_topological(
 
     if len(sorted_commit_list) != len(commits_sha_set):
       raise ValueError(
-          "The following commits weren't found in the repo in branch master: %s"
+          "The following commits weren't found in the repo in branch master: %s." \
+          "Please use the full SHA digest."
           % (commits_sha_set - set(sorted_commit_list)))
     return sorted_commit_list
 
@@ -400,23 +401,21 @@ def handle_json_profiles_aggr(
   logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
 
 
-def print_summary(data):
-  """Prints the runs summary onto stdout.
+def create_summary(data):
+  """Creates the runs summary onto stdout.
 
   Excludes runs with non-zero exit codes from the final summary table.
   """
-  print('\nRESULTS:')
+  summary_builder = []
+  summary_builder.append('\nRESULTS:')
   last_collected = None
   for (bazel_commit, project_commit), collected in data.items():
     header = (
         'Bazel commit: %s, Project commit: %s, Project source: %s' %
             (bazel_commit, project_commit, FLAGS.project_source))
-    if sys.stdout.isatty():
-      print('\033[1m%s\033[0m' % header)
-    else:
-      print(header)
+    summary_builder.append(header)
 
-    print(
+    summary_builder.append(
         '%s  %s %s %s %s' % (
             'metric'.rjust(8),
             'mean'.center(20),
@@ -451,7 +450,7 @@ def print_summary(data):
       else:
         pval = ''
         mean_diff = median_diff = '         '
-      print(
+      summary_builder.append(
           '%s: %s %s %s %s' % (
               metric.rjust(8),
               ('% 8.3fs %s' % (
@@ -462,13 +461,15 @@ def print_summary(data):
               pval.center(10)))
     last_collected = collected
     if non_zero_runs:
-      print(
+      summary_builder.append(
           ('The following runs contain non-zero exit code(s):\n %s\n'
            'Please check the full log for more details. These runs are '
            'excluded from the above result table.' % '\n '.join(
                '- run: %s/%s, exit_code: %s' % (k + 1, num_runs, v)
                for k, v in non_zero_runs.items())))
-    print('\n')
+    summary_builder.append('\n')
+
+    return '\n'.join(summary_builder)
 
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
@@ -617,17 +618,20 @@ def main(argv):
           'args': args
       }
 
-  print_summary(data)
+  summary_text = create_summary(data)
+  print(summary_text)
 
   if FLAGS.data_directory:
-    csv_file_name = FLAGS.csv_file_name or bazel_bench_uid
+    csv_file_name = FLAGS.csv_file_name or '{}.csv'.format(bazel_bench_uid)
+    txt_file_name = csv_file_name.replace('.csv', '.txt')
 
-    csv_file_path = output_handling.export_csv(
+    output_handling.export_csv(
         data_directory,
         csv_file_name,
         csv_data,
         FLAGS.project_source,
         FLAGS.platform)
+    output_handling.export_file(data_directory, txt_file_name, summary_text)
 
     if FLAGS.aggregate_json_profiles:
       aggr_json_profiles_csv_path = (
