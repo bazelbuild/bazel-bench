@@ -68,6 +68,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
       mock_C = mock.MagicMock()
       mock_C.hexsha = 'C'
       mock_repo.iter_commits.return_value = [mock_C, mock_B, mock_A]
+      mock_repo.git.rev_parse.side_effect = lambda x: x
       result = benchmark._get_commits_topological(['B', 'A'], mock_repo,
                                                   'flag_name')
 
