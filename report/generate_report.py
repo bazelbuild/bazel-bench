@@ -393,7 +393,7 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
               format: 'yyyy/mm/dd',
               value: '{date}',
               disableDates: function (date) {{
-                return date > reportDate;
+                return date <= reportDate;
               }}
           }});
           
