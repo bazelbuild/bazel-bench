@@ -78,26 +78,25 @@ def _get_commits_topological(
   of the repo.
 
   Args:
-    commits_sha_list: a list of string of commit SHA digest.
+    commits_sha_list: a list of string of commit SHA digest. Can be long or short digest.
     repo: the git.Repo instance of the repository.
     flag_name: the flag that is supposed to specify commits_list.
     fill_default: whether to fill in a default latest commit if none is specified.
 
   Returns:
-    A list of string of commit SHA digests, sorted by topological commit order.
+    A list of string of full SHA digests, sorted by topological commit order.
   """
   if commits_sha_list:
-    commits_sha_set = set(commits_sha_list)
+    long_commits_sha_set = set(map(lambda x: _to_long_sha_digest(x, repo), commits_sha_list))
     sorted_commit_list = []
     for c in reversed(list(repo.iter_commits())):
-      if c.hexsha in commits_sha_set:
+      if c.hexsha in long_commits_sha_set:
         sorted_commit_list.append(c.hexsha)
 
-    if len(sorted_commit_list) != len(commits_sha_set):
+    if len(sorted_commit_list) != len(long_commits_sha_set):
       raise ValueError(
-          "The following commits weren't found in the repo in branch master: %s." \
-          "Please use the full SHA digest."
-          % (commits_sha_set - set(sorted_commit_list)))
+          "The following commits weren't found in the repo in branch master: %s."
+          % (long_commits_sha_set - set(sorted_commit_list)))
     return sorted_commit_list
 
   elif not fill_default:
@@ -110,6 +109,11 @@ def _get_commits_topological(
   logger.log('No %s specified, using the latest one: %s' %
              (flag_name, latest_commit_sha))
   return [latest_commit_sha]
+
+
+def _to_long_sha_digest(digest, repo):
+  """Returns the full 40-char SHA digest of a commit."""
+  return repo.git.rev_parse(digest) if len(digest) < 40 else digest
 
 
 def _setup_project_repo(repo_path, project_source):
