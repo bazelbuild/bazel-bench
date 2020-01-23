@@ -362,6 +362,8 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
+  <link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" />
 
   <style>
     h1 {{ font-size: 1.7rem; }}
@@ -371,29 +373,57 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
   </style>
   </head>
   <body>
-  <div class="container-fluid">
-    <div class="row">
-    <div class="col-sm-12">
-      <h1>[<a href="{project_source}">{project}</a>] Report for {date}</h1>
-      </hr>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-12">
+          <h1>[<a href="{project_source}">{project}</a>] Report for {date}</h1>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-3 input-group">
+          <span><input id="datePicker" width="150px"/></span>
+          <span><button id="viewReportButton" type="button" class="btn btn-sm btn-link">View Past Report</button><i>(Date & time are in UTC.)</i></span>
+        </div>
+        <script>
+          // latestReportDate is always yesterday.
+          var latestReportDate = new Date();
+          latestReportDate.setDate(latestReportDate.getDate() - 1)
+
+          var $datePicker = $('#datePicker').datepicker({{
+              uiLibrary: 'bootstrap4',
+              size: 'small',
+              format: 'yyyy/mm/dd',
+              value: '{date}',
+              disableDates: function (date) {{
+                return date < latestReportDate;
+              }}
+          }});
+          
+          $('#viewReportButton').on('click', function () {{
+            var dateSubdir = $datePicker.value();
+            var url = `https://perf.bazel.build/{project}/${{dateSubdir}}/report.html`;
+            window.open(url, '_blank');
+          }});
+        </script>
+      </div>
+      <br>
+
+      <div class="row">
+        <div class="col-sm-12">
+          <b>Command: </b><span style="font-family: monospace">{command}</span>
+        </div>
+      </div>
+      {graphs}
+      <h2>Raw Files:</h2>
+      {files}
     </div>
-    <div class="col-sm-12">
-      <i>Dates are in UTC.</i>
-    </div>
-    <div class="col-sm-12">
-      <b>Command: </b><span style="font-family: monospace">{command}</span>
-    </div>
-    </div>
-    {graphs}
-    <h2>Raw Files:</h2>
-    {files}
-  </div>
   </body>
 </html>
 """.format(
     project=project,
     project_source=project_source,
-    date=date,
+    date=date.strftime("%Y/%m/%d"),
     command=command,
     graphs=graph_components,
     files=raw_files_components
@@ -430,6 +460,7 @@ ORDER BY report_date ASC;
 
   return bq_client.query(query)
 
+
 def _prepare_time_series_data(raw_data):
   """Massage the data to fit a format suitable for graph generation.
   """
@@ -444,6 +475,7 @@ def _prepare_time_series_data(raw_data):
     memory_data.append([date_str, row.median_memory, row.min_memory, row.max_memory])
 
   return wall_data, memory_data
+
 
 def _generate_report_for_date(project, date, storage_bucket, report_name, upload_report, bq_project, bq_table):
   """Generates a html report for the specified date & project.
