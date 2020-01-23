@@ -33,6 +33,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.request
+from google.cloud import bigquery
 
 
 TMP = tempfile.gettempdir()
@@ -279,11 +280,72 @@ def _single_graph(metric, metric_label, data, platform, median_series=None):
     var chart = new google.visualization.ComboChart(document.getElementById("{chart_id}"));
     chart.draw(data, options);
   }}
-  </script>
-<div id="{chart_id}" style="min-height: 500px"></div>
+</script>
+<div id="{chart_id}" style="min-height: 400px"></div>
 """.format(
     title=title, data=data, hAxis=hAxis, vAxis=vAxis, chart_id=chart_id, median_series=median_series
   )
+  
+
+def _historical_graph(metric, metric_label, data, platform, color):
+  """Returns the HTML <div> component of a single graph.
+  """
+  title = "[{}] Historical values of {}".format(platform, metric_label)
+  hAxis = "Date (commmit)"
+  vAxis = metric_label
+  chart_id = "{}-{}-time".format(platform, metric)
+  
+  # Set viewWindow margins.
+  minVal = sys.maxsize
+  maxVal = 0
+  for row in data[1:]:
+    minVal = min(minVal, row[2])
+    maxVal = max(maxVal, row[3])
+  viewWindowMin = minVal * 0.95
+  viewWindowMax = maxVal * 1.05
+
+  return """
+<script type="text/javascript">
+  google.charts.setOnLoadCallback(drawChart);
+  function drawChart() {{
+    var data = google.visualization.arrayToDataTable({data})
+
+    var options = {{
+      title: "{title}",
+      titleTextStyle: {{ color: "gray" }},
+      hAxis: {{
+        title: "{hAxis}",
+        titleTextStyle: {{ color: "darkgray" }},
+        textStyle: {{ color: "darkgray" }},
+      }},
+      vAxis: {{
+        title: "{vAxis}",
+        titleTextStyle: {{ color: "darkgray" }},
+        textStyle: {{ color: "darkgray" }},
+        viewWindow: {{
+          min: {viewWindowMin},
+          max: {viewWindowMax},
+        }}
+      }},
+      series: {{
+        0: {{ axis: 'wall', color: "{color}"}},
+      }},
+      axes: {{
+        y: {{
+          wall: {{ label: 'Wall Time (s)' }},
+        }}
+      }},
+      intervals: {{ 'style':'area' }},
+      legend: {{ position: "right" }},
+    }};
+    var chart = new google.visualization.LineChart(document.getElementById("{chart_id}"));
+    chart.draw(data, options);
+  }}
+  </script>
+<div id="{chart_id}" style="min-height: 400px"></div>
+""".format(
+    title=title, data=data, hAxis=hAxis, vAxis=vAxis, chart_id=chart_id,
+    viewWindowMin=viewWindowMin, viewWindowMax=viewWindowMax, color=color)
 
 
 def _full_report(project, project_source, date, command, graph_components, raw_files_components):
@@ -316,6 +378,9 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
       </hr>
     </div>
     <div class="col-sm-12">
+      <i>Dates are in UTC.</i>
+    </div>
+    <div class="col-sm-12">
       <b>Command: </b><span style="font-family: monospace">{command}</span>
     </div>
     </div>
@@ -335,7 +400,52 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
   )
 
 
-def _generate_report_for_date(project, date, storage_bucket, report_name, upload_report):
+def _query_bq(bq_project, bq_table, project_source, date_cutoff, platform):
+  bq_client = bigquery.Client(project=bq_project)
+  query = """
+SELECT
+  MIN(wall) as min_wall,
+  APPROX_QUANTILES(wall, 101)[OFFSET(50)] AS median_wall,
+  MAX(wall) as max_wall,
+  MIN(memory) as min_memory,
+  APPROX_QUANTILES(memory, 101)[OFFSET(50)] AS median_memory,
+  MAX(memory) as max_memory,
+  bazel_commit,
+  DATE(MIN(started_at)) as report_date
+FROM (
+  SELECT wall, memory, bazel_commit, started_at FROM `{bq_project}.{bq_table}`
+  WHERE
+    bazel_commit IN (
+      SELECT
+        DISTINCT bazel_commit
+      FROM `{bq_project}.{bq_table}`
+      WHERE bazel_commit=project_commit
+        AND project_source = "{project_source}"
+        AND DATE(started_at) <= "{date_cutoff}"
+        LIMIT 10)
+    AND platform="{platform}")
+GROUP BY bazel_commit
+ORDER BY report_date ASC;
+""".format(bq_project=bq_project, bq_table=bq_table, project_source=project_source, date_cutoff=date_cutoff, platform=platform)
+
+  return bq_client.query(query)
+
+def _prepare_time_series_data(raw_data):
+  """Massage the data to fit a format suitable for graph generation.
+  """
+  wall_data = [["Date", "Wall Time", {"role": "interval"}, {"role": "interval"}]]      
+  memory_data = [["Date", "Memory", {"role": "interval"}, {"role": "interval"}]]
+
+  for row in raw_data:
+    # Commits on day X are benchmarked on day X + 1.
+    date_str = "{} ({})".format(
+      (row.report_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), row.bazel_commit[:7])
+    wall_data.append([date_str, row.median_wall, row.min_wall, row.max_wall])
+    memory_data.append([date_str, row.median_memory, row.min_memory, row.max_memory])
+
+  return wall_data, memory_data
+
+def _generate_report_for_date(project, date, storage_bucket, report_name, upload_report, bq_project, bq_table):
   """Generates a html report for the specified date & project.
 
   Args:
@@ -344,8 +454,11 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
     storage_bucket: the Storage bucket to fetch data from/upload the report to.
     report_name: the name of the report on GS.
     upload_report: whether to upload the report to GCS.
+    bq_project: the BigQuery project.
+    bq_table: the BigQuery table.
   """
   dated_subdir = _get_dated_subdir_for_project(project, date)
+  bq_date_cutoff = (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
   root_storage_url = _get_storage_url(storage_bucket, dated_subdir)
   metadata_file_url = "{}/METADATA".format(root_storage_url)
   metadata = _load_json_from_remote_file(metadata_file_url)
@@ -361,6 +474,7 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
             "col-sm-10",
             _commits_component(
                 metadata["all_commits"], metadata["benchmarked_commits"]))))
+
   for platform_measurement in sorted(metadata["platforms"], key=lambda k: k['platform']):
     # Get the data
     performance_data = _load_csv_from_remote_file(
@@ -374,6 +488,10 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
     wall_data, memory_data = _prepare_data_for_graph(
       performance_data, aggr_json_profile)
     platform = platform_measurement["platform"]
+    
+    historical_wall_data, historical_mem_data = _prepare_time_series_data(
+      _query_bq(bq_project, bq_table, metadata["project_source"], bq_date_cutoff, platform))
+    
     # Generate a graph for that platform.
     row_content = []
     row_content.append(
@@ -387,11 +505,31 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
     )
 
     row_content.append(
+        _col_component("col-sm-6", _historical_graph(
+            metric="wall",
+            metric_label="Wall Time (s)",
+            data=historical_wall_data,
+            platform=platform,
+            color="#dd4477"
+        ))
+    )
+
+    row_content.append(
         _col_component("col-sm-6", _single_graph(
             metric="memory",
             metric_label="Memory (MB)",
             data=memory_data,
             platform=platform,
+        ))
+    )
+
+    row_content.append(
+        _col_component("col-sm-6", _historical_graph(
+            metric="memory",
+            metric_label="Memory (MB)",
+            data=historical_mem_data,
+            platform=platform,
+            color="#3366cc"
         ))
     )
 
@@ -415,7 +553,7 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
                     dated_subdir,
                     platform))))
     graph_components.append(_row_component("\n".join(row_content)))
-
+    
 
   content = _full_report(
       project,
@@ -462,6 +600,9 @@ def main(args=None):
       "--upload_report", type=bool, default=False,
       help="Whether to upload the report.")
   parser.add_argument(
+      "--bigquery_table",
+      help="The BigQuery table to fetch data from. In the format: project:table_identifier.")
+  parser.add_argument(
       "--report_name", type=str,
       help="The name of the generated report.", default="report")
   parsed_args = parser.parse_args(args)
@@ -472,9 +613,11 @@ def main(args=None):
       else datetime.date.today()
   )
 
+  bq_project, bq_table = parsed_args.bigquery_table.split(':')
   for project in parsed_args.project:
     _generate_report_for_date(
-        project, date, parsed_args.storage_bucket, parsed_args.report_name, parsed_args.upload_report)
+        project, date, parsed_args.storage_bucket, parsed_args.report_name,
+        parsed_args.upload_report, bq_project, bq_table)
 
 
 if __name__ == "__main__":
