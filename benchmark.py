@@ -471,9 +471,9 @@ def create_summary(data):
            'excluded from the above result table.' % '\n '.join(
                '- run: %s/%s, exit_code: %s' % (k + 1, num_runs, v)
                for k, v in non_zero_runs.items())))
-    summary_builder.append('\n')
+    summary_builder.append('')
 
-    return '\n'.join(summary_builder)
+  return '\n'.join(summary_builder)
 
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
