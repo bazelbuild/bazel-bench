@@ -21,6 +21,7 @@ import subprocess
 import sys
 import hashlib
 import re
+import shlex
 import shutil
 import collections
 import tempfile
@@ -492,6 +493,9 @@ flags.DEFINE_string('project_source', None,
                     'a https url to a GitHub repository.')
 flags.DEFINE_list('project_commits', None,
                   'The commits from the git project to be benchmarked.')
+flags.DEFINE_string('env_configure', None,
+                    "The shell commands to configure the project's environment .")
+
 
 # Execution options.
 flags.DEFINE_integer('runs', 3, 'The number of benchmark runs.')
@@ -567,6 +571,8 @@ def main(argv):
   project_clone_repo = _setup_project_repo(
       PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(FLAGS.project_source),
       FLAGS.project_source)
+  if FLAGS.env_configure:
+    _exec_command(shlex.split(env_configure), cwd=project_clone_repo.working_dir)
 
   project_commits = _get_commits_topological(FLAGS.project_commits,
                                              project_clone_repo,
