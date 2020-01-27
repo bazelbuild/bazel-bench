@@ -21,7 +21,6 @@ import subprocess
 import sys
 import hashlib
 import re
-import shlex
 import shutil
 import collections
 import tempfile
@@ -58,7 +57,7 @@ def _get_clone_subdir(project_source):
 
 
 def _exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
-  logger.log('Executing: %s' % ' '.join(args))
+  logger.log('Executing: %s' % (args if shell else ' '.join(args)))
   if FLAGS.verbose:
     return subprocess.call(args, shell=shell, cwd=cwd)
 
@@ -600,7 +599,7 @@ def main(argv):
     for project_commit in project_commits:
       project_clone_repo.git.checkout('-f', project_commit)
       if FLAGS.env_configure:
-        _exec_command(shlex.split(FLAGS.env_configure), cwd=project_clone_repo.working_dir)
+        _exec_command(FLAGS.env_configure, shell=True, cwd=project_clone_repo.working_dir)
 
       results, args = _run_benchmark(
           bazel_bin_path=bazel_bin_path,
