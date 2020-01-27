@@ -571,8 +571,6 @@ def main(argv):
   project_clone_repo = _setup_project_repo(
       PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(FLAGS.project_source),
       FLAGS.project_source)
-  if FLAGS.env_configure:
-    _exec_command(shlex.split(env_configure), cwd=project_clone_repo.working_dir)
 
   project_commits = _get_commits_topological(FLAGS.project_commits,
                                              project_clone_repo,
@@ -601,6 +599,8 @@ def main(argv):
   for bazel_bin_path, bazel_identifier in bazel_bin_identifiers:
     for project_commit in project_commits:
       project_clone_repo.git.checkout('-f', project_commit)
+      if FLAGS.env_configure:
+        _exec_command(shlex.split(FLAGS.env_configure), cwd=project_clone_repo.working_dir)
 
       results, args = _run_benchmark(
           bazel_bin_path=bazel_bin_path,
