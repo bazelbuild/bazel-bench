@@ -58,12 +58,14 @@ def _get_clone_subdir(project_source):
 
 def _exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
   logger.log('Executing: %s' % (args if shell else ' '.join(args)))
-  if FLAGS.verbose:
-    return subprocess.call(args, shell=shell, cwd=cwd)
+  devnull_r = open(os.devnull, 'r')
 
-  fd_devnull = open(os.devnull, 'w')
+  if FLAGS.verbose:
+    return subprocess.call(args, shell=shell, cwd=cwd, stdin=devnull_r)
+
+  devnull_w = open(os.devnull, 'w')
   return subprocess.call(
-      args, shell=shell, stdout=fd_devnull, stderr=fd_devnull, cwd=cwd)
+      args, shell=shell, stdin=devnull_r, stdout=devnull_w, stderr=devnull_w, cwd=cwd)
 
 
 def _get_commits_topological(
