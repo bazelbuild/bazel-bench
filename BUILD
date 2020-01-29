@@ -5,6 +5,7 @@ load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
 py_binary(
     name = "benchmark",
     srcs = ["benchmark.py"],
+    python_version = "PY3",
     deps = [
         "//utils:utils",
         requirement("absl-py"),
