@@ -16,7 +16,7 @@ import csv
 import socket
 import getpass
 
-import logger
+import utils.logger as logger
 
 
 def export_csv(data_directory, filename, data, project_source, platform):

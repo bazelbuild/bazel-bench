@@ -7,13 +7,13 @@ git_repository(
 )
 
 # Only needed for PIP support:
-load("@rules_python//python:pip.bzl", "pip_repositories", "pip_import")
+load("@rules_python//python:pip.bzl", "pip_repositories", "pip3_import")
 
 pip_repositories()
 
 # This rule translates the specified requirements.txt into
 # @my_deps//:requirements.bzl, which itself exposes a pip_install method.
-pip_import(
+pip3_import(
     name = "third_party",
     requirements = "//third_party:requirements.txt",
 )

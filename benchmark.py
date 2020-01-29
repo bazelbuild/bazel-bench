@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import print_function
-
 import csv
 import collections
 import datetime
@@ -53,7 +51,7 @@ DEFAULT_AGGR_JSON_PROFILE_FILENAME = 'aggr_json_profiles.csv'
 
 def _get_clone_subdir(project_source):
   """Calculates a hexdigest of project_source to serve as a unique subdir name."""
-  return hashlib.md5(project_source).hexdigest()
+  return hashlib.md5(project_source.encode('utf-8')).hexdigest()
 
 
 def _exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
@@ -64,8 +62,10 @@ def _exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
     return subprocess.call(args, shell=shell, cwd=cwd, stdin=devnull_r)
 
   devnull_w = open(os.devnull, 'w')
-  return subprocess.call(
+  proc = subprocess.Popen(
       args, shell=shell, stdin=devnull_r, stdout=devnull_w, stderr=devnull_w, cwd=cwd)
+  return proc.communicate()
+  
 
 
 def _get_commits_topological(
