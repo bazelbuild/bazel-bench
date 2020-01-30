@@ -42,6 +42,9 @@ def main(argv):
   # Discard the first argument (the binary).
   input_profiles = argv[1:]
 
+  if not input_profiles:
+    raise ValueError('At least one profile must be provided!')
+
   aggregated_data = lib.aggregate_data(
       input_profiles,
       FLAGS.only_phases)
