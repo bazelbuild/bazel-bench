@@ -41,7 +41,7 @@ def write_to_csv(
     output_csv_path: a path to the output CSV file.
   """
   output_dir = os.path.dirname(output_csv_path)
-  if not os.path.exists(output_dir):
+  if output_dir and not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
   with open(output_csv_path, 'w') as csv_file:
