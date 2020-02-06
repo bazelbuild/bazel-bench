@@ -446,6 +446,7 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
 
 def _query_bq(bq_project, bq_table, project_source, date_cutoff, platform):
   bq_client = bigquery.Client(project=bq_project)
+  # Limit to the last 10 days.
   query = """
 SELECT
   MIN(wall) as min_wall,
@@ -474,6 +475,7 @@ FROM (
       )
       WHERE Rank=1
       ORDER BY started_at DESC
+      LIMIT 10
     )
 GROUP BY bazel_commit
 ORDER BY report_date ASC;
