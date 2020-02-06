@@ -19,7 +19,7 @@ import getpass
 import logger
 
 
-def export_csv(data_directory, filename, data, project_source, platform):
+def export_csv(data_directory, filename, data, project_source, platform, project_label):
   """Exports the content of data to a csv file in data_directory
 
   Args:
@@ -29,6 +29,8 @@ def export_csv(data_directory, filename, data, project_source, platform):
     project_source: either a path to the local git project to be built or a
       https url to a GitHub repository.
     platform: the platform on which benchmarking was run.
+    project_label: the label to identify the project. Only relevant for the
+      daily performance report.
 
   Returns:
     The path to the newly created csv file.
@@ -43,7 +45,7 @@ def export_csv(data_directory, filename, data, project_source, platform):
     username = getpass.getuser()
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow([
-        'project_source', 'project_commit', 'bazel_commit', 'run', 'cpu',
+        'project_label', 'project_source', 'project_commit', 'bazel_commit', 'run', 'cpu',
         'wall', 'system', 'memory', 'command', 'expressions', 'hostname',
         'username', 'options', 'exit_status', 'started_at', 'platform'
     ])
@@ -52,7 +54,7 @@ def export_csv(data_directory, filename, data, project_source, platform):
       command, expressions, options = results_and_args['args']
       for idx, run in enumerate(results_and_args['results'], start=1):
         csv_writer.writerow([
-            project_source, project_commit, bazel_commit, idx, run['cpu'],
+            project_label, project_source, project_commit, bazel_commit, idx, run['cpu'],
             run['wall'], run['system'], run['memory'], command, expressions,
             hostname, username, options, run['exit_status'], run['started_at'],
             platform
