@@ -446,6 +446,7 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
 
 def _query_bq(bq_project, bq_table, project_source, date_cutoff, platform):
   bq_client = bigquery.Client(project=bq_project)
+  # Limit to the last 10 days.
   query = """
 SELECT
   MIN(wall) as min_wall,
@@ -457,17 +458,33 @@ SELECT
   bazel_commit,
   DATE(MIN(started_at)) as report_date
 FROM (
-  SELECT wall, memory, bazel_commit, started_at FROM `{bq_project}.{bq_table}`
+  SELECT
+    wall, memory, bazel_commit, started_at
+  FROM `{bq_project}.{bq_table}`
   WHERE
     bazel_commit IN (
       SELECT
-        DISTINCT bazel_commit
-      FROM `{bq_project}.{bq_table}`
-      WHERE bazel_commit=project_commit
-        AND project_source = "{project_source}"
-        AND DATE(started_at) <= "{date_cutoff}"
-        LIMIT 10)
-    AND platform="{platform}")
+        bazel_commit
+      FROM (
+        SELECT
+          bazel_commit, started_at,
+          RANK() OVER (
+            PARTITION BY project_commit
+            ORDER BY started_at DESC
+          ) AS `Rank`
+        FROM `{bq_project}.{bq_table}`
+        WHERE
+          DATE(started_at) <= "{date_cutoff}"
+          AND project_source = "{project_source}"
+          AND exit_status = 0       
+      )
+      WHERE
+        Rank=1
+      ORDER BY started_at DESC
+      LIMIT 10
+    )
+    AND platform = "{platform}"
+)
 GROUP BY bazel_commit
 ORDER BY report_date ASC;
 """.format(bq_project=bq_project, bq_table=bq_table, project_source=project_source, date_cutoff=date_cutoff, platform=platform)
