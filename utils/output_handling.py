@@ -45,19 +45,20 @@ def export_csv(data_directory, filename, data, project_source, platform, project
     username = getpass.getuser()
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow([
-        'project_label', 'project_source', 'project_commit', 'bazel_commit', 'run', 'cpu',
+        'project_source', 'project_commit', 'bazel_commit', 'run', 'cpu',
         'wall', 'system', 'memory', 'command', 'expressions', 'hostname',
-        'username', 'options', 'exit_status', 'started_at', 'platform'
+        'username', 'options', 'exit_status', 'started_at', 'platform',
+        'project_label'
     ])
 
     for (bazel_commit, project_commit), results_and_args in data.items():
       command, expressions, options = results_and_args['args']
       for idx, run in enumerate(results_and_args['results'], start=1):
         csv_writer.writerow([
-            project_label, project_source, project_commit, bazel_commit, idx, run['cpu'],
+            project_source, project_commit, bazel_commit, idx, run['cpu'],
             run['wall'], run['system'], run['memory'], command, expressions,
             hostname, username, options, run['exit_status'], run['started_at'],
-            platform
+            platform, project_label
         ])
   return csv_file_path
 
