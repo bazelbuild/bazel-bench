@@ -490,6 +490,8 @@ flags.DEFINE_string('bazel_bin_dir', None,
                     'The directory to store the bazel binaries from each commit.')
 
 # Flags for the project to be built.
+flags.DEFINE_string('project_label', None,
+                    'The label of the project. Only relevant in the daily performance report.')
 flags.DEFINE_string('project_source', None,
                     'Either a path to the local git project to be built or ' \
                     'a https url to a GitHub repository.')
@@ -642,7 +644,8 @@ def main(argv):
         csv_file_name,
         csv_data,
         FLAGS.project_source,
-        FLAGS.platform)
+        FLAGS.platform,
+        FLAGS.project_label)
     output_handling.export_file(data_directory, txt_file_name, summary_text)
 
     if FLAGS.aggregate_json_profiles:
