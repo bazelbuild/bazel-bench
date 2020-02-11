@@ -95,7 +95,15 @@ def _historical_graph(metric, metric_label, data, platform):
 <script type="text/javascript">
   google.charts.setOnLoadCallback(drawChart);
   function drawChart() {{
-    var data = google.visualization.arrayToDataTable({data})
+    var rawDataFromScript = {data}
+    for (var i = 0; i < rawDataFromScript.length; i++) {{
+      for (var j = 0; j < rawDataFromScript[0].length; j++) {{
+        if (rawDataFromScript[i][j] === "null") {{
+          rawDataFromScript[i][j] = null
+        }}
+      }}
+    }}
+    var data = google.visualization.arrayToDataTable(rawDataFromScript)
 
     var options = {{
       title: "{title}",
@@ -109,14 +117,10 @@ def _historical_graph(metric, metric_label, data, platform):
         title: "{vAxis}",
         titleTextStyle: {{ color: "darkgray" }},
         textStyle: {{ color: "darkgray" }},
-        viewWindow: {{
-          min: {viewWindowMin},
-          max: {viewWindowMax},
-        }}
       }},
       axes: {{
         y: {{
-          wall: {{ label: {metric_label}}},
+          wall: {{ label: "{metric_label}"}},
         }}
       }},
       intervals: {{ 'style':'area' }},
@@ -132,7 +136,7 @@ def _historical_graph(metric, metric_label, data, platform):
     viewWindowMin=viewWindowMin, viewWindowMax=viewWindowMax, metric_label=metric_label)
 
 
-def _full_report(date, command, graph_components):
+def _full_report(date, graph_components):
   """Returns the full HTML of a complete report, from the graph components.
   """
   return """
@@ -193,20 +197,12 @@ def _full_report(date, command, graph_components):
       </div>
       <br>
 
-      <div class="row">
-        <div class="col-sm-12">
-          <b>Command: </b><span style="font-family: monospace">{command}</span>
-        </div>
-      </div>
       {graphs}
-      <h2>Raw Files:</h2>
-      {files}
     </div>
   </body>
 </html>
 """.format(
     date=date.strftime("%Y/%m/%d"),
-    command=command,
     graphs=graph_components
   )
 
@@ -222,10 +218,10 @@ SELECT
   APPROX_QUANTILES(memory, 101)[OFFSET(50)] AS median_memory,
   MAX(memory) as max_memory,
   bazel_commit,
-  MIN(started_at) as started_at,
-  project_source
+  DATE(MIN(started_at)) as report_date,
+  project_label
 FROM (
-  SELECT wall, memory, started_at, bazel_commit, project_source FROM `{bq_project}.{bq_table}`
+  SELECT wall, memory, started_at, bazel_commit, project_label FROM `{bq_project}.{bq_table}`
   WHERE bazel_commit IN (
     SELECT bazel_commit
     FROM (
@@ -233,19 +229,20 @@ FROM (
             RANK() OVER (PARTITION BY project_commit
                              ORDER BY started_at DESC
                         ) AS `Rank`
-        FROM `bazel-public.bazel_bench.bazel_bench_daily`
-        WHERE DATE(started_at) <= "2020-02-06"
-        AND platform = "macos"
+        FROM `{bq_project}.{bq_table}`
+        WHERE DATE(started_at) <= "{date_cutoff}"
+        AND platform = "{platform}"
         AND exit_status = 0       
     )
     WHERE Rank=1
     ORDER BY started_at DESC
+    LIMIT 10
   )
   AND platform = "{platform}"
   AND exit_status = 0       
 )
-GROUP BY bazel_commit, project_source
-ORDER BY started_at ASC;
+GROUP BY bazel_commit, project_label
+ORDER BY report_date, project_label ASC;
 """.format(bq_project=bq_project, bq_table=bq_table, date_cutoff=date_cutoff, platform=platform)
 
   return bq_client.query(query)
@@ -258,25 +255,39 @@ def _project_source_to_name(source):
 def _prepare_time_series_data(raw_data):
   """Massage the data to fit a format suitable for graph generation.
   """
-  wall_data = [["Date"]]      
-  memory_data = [["Date"]]
-  project_to_data = {}
+  headers = ["Date"]
+  project_to_pos = {}
+  date_to_wall = {}
+  date_to_mem = {}
+
+  # First pass to gather the projects and form the headers.
+  for row in raw_data:
+    if row.project_label not in project_to_pos:
+      project_to_pos[row.project_label] = len(project_to_pos)
+      headers.extend([row.project_label, {"role": "interval"}, {"role": "interval"}])
 
   for row in raw_data:
-    project_name = _project_source_to_name(row.project_source)
-    if project_name not in project_to_data:
-      project_to_data[project_name] = []
-      wall_data[0].extend([project_name, {"role": "interval"}, {"role": "interval"}])
-      memory_data[0].extend([project_name, {"role": "interval"}, {"role": "interval"}])
-    
+    if row.report_date not in date_to_wall:
+      # Commits on day X are benchmarked on day X + 1.
+      date_str = "{} ({})".format(
+        (row.report_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+        row.bazel_commit[:7])
+      
+      date_to_wall[row.report_date] = ["null"] * len(headers)
+      date_to_mem[row.report_date] = ["null"] * len(headers)
 
-    # Commits on day X are benchmarked on day X + 1.
-    date_str = "{} ({})".format(
-      (row.report_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), row.bazel_commit[:7])
-    wall_data.append([date_str, row.median_wall, row.min_wall, row.max_wall])
-    memory_data.append([date_str, row.median_memory, row.min_memory, row.max_memory])
+      date_to_wall[row.report_date][0] = date_str
+      date_to_mem[row.report_date][0] = date_str
 
-  return wall_data, memory_data
+    base_pos = project_to_pos[row.project_label] * 3
+    date_to_wall[row.report_date][base_pos + 1] = row.median_wall
+    date_to_wall[row.report_date][base_pos + 2] = row.min_wall
+    date_to_wall[row.report_date][base_pos + 3] = row.max_wall
+    date_to_mem[row.report_date][base_pos + 1] = row.median_memory
+    date_to_mem[row.report_date][base_pos + 2] = row.min_memory
+    date_to_mem[row.report_date][base_pos + 3] = row.max_memory
+
+  return [headers] + list(date_to_wall.values()), [headers] + list(date_to_mem.values())
 
 
 def _generate_report_for_date(date, storage_bucket, report_name, upload_report, bq_project, bq_table):
@@ -291,10 +302,8 @@ def _generate_report_for_date(date, storage_bucket, report_name, upload_report, 
     bq_table: the BigQuery table.
   """
   bq_date_cutoff = (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-  root_storage_url = _get_storage_url(storage_bucket, dated_subdir)
 
   graph_components = []
-  raw_files_components = []
 
   for platform in PLATFORMS:
 
@@ -310,7 +319,6 @@ def _generate_report_for_date(date, storage_bucket, report_name, upload_report, 
             metric_label="Wall Time (s)",
             data=historical_wall_data,
             platform=platform,
-            color="#dd4477"
         ))
     )
 
@@ -320,25 +328,19 @@ def _generate_report_for_date(date, storage_bucket, report_name, upload_report, 
             metric_label="Memory (MB)",
             data=historical_mem_data,
             platform=platform,
-            color="#3366cc"
         ))
     )
 
     graph_components.append(_row_component("\n".join(row_content)))
     
 
-  content = _full_report(
-      metadata["project_source"],
-      date,
-      command=metadata["command"],
-      graph_components="\n".join(graph_components),
-      raw_files_components="\n".join(raw_files_components))
+  content = _full_report(date, graph_components="\n".join(graph_components))
 
   if not os.path.exists(REPORTS_DIRECTORY):
     os.makedirs(REPORTS_DIRECTORY)
 
-  report_tmp_file = "{}/report_{}_{}.html".format(
-      REPORTS_DIRECTORY, project, date.strftime("%Y%m%d")
+  report_tmp_file = "{}/report_master_{}.html".format(
+      REPORTS_DIRECTORY, date.strftime("%Y%m%d")
   )
   with open(report_tmp_file, "w") as fo:
     fo.write(content)
