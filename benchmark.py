@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import print_function
 
 import csv
 import collections
@@ -53,7 +52,7 @@ DEFAULT_AGGR_JSON_PROFILE_FILENAME = 'aggr_json_profiles.csv'
 
 def _get_clone_subdir(project_source):
   """Calculates a hexdigest of project_source to serve as a unique subdir name."""
-  return hashlib.md5(project_source).hexdigest()
+  return hashlib.md5(project_source.encode('utf-8')).hexdigest()
 
 
 def _exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):

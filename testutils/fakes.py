@@ -22,7 +22,7 @@ def fake_log(text):
 
 def fake_exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
   """Fakes the _exec_command function."""
-  fake_log(args)
+  fake_log(' '.join(args))
 
 
 class FakeBazel(object):

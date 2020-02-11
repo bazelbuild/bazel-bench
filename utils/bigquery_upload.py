@@ -13,9 +13,9 @@
 # limitations under the License.
 """Handles the uploading of result CSV to BigQuery.
 """
-import logger
 import re
 import sys
+import utils.logger as logger
 
 from absl import app
 from absl import flags

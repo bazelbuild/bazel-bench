@@ -97,7 +97,7 @@ class BazelArgsParserTest(unittest.TestCase):
     self.assertEqual(options, ["--option1", "--option2=xyz"])
 
   def test_parse_bazel_args_from_build_event(self):
-    fake_file_content = "\n".join([json.dumps(event) for event in fake_events])
+    fake_file_content = ("\n".join([json.dumps(event) for event in fake_events])).encode("utf-8")
     with tempfile.NamedTemporaryFile() as bep_json:
       bep_json.write(fake_file_content)
       bep_json.flush()
