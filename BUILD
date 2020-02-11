@@ -16,10 +16,9 @@ py_binary(
 py_test(
     name = "benchmark_test",
     srcs = ["benchmark_test.py"],
-    python_version = "PY2",
     deps = [
         ":benchmark",
-        "//testutils",
+        "//testutils:testutils",
         requirement("mock"),
     ],
 )

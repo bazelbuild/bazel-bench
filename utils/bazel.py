@@ -17,6 +17,7 @@ import os
 import time
 import psutil
 import datetime
+import utils.logger as logger
 
 import utils.logger as logger
 

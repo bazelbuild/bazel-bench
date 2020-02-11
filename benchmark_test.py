@@ -114,9 +114,9 @@ class BenchmarkFunctionTests(absltest.TestCase):
     self.assertEqual(
         ''.join([
             'Building Bazel binary at commit commit',
-            "['bazel', 'build', '//src:bazel']",
+            'bazel build //src:bazel',
             'Copying bazel binary to outroot/commit/bazel',
-            "['chmod', '+x', 'outroot/commit/bazel']"
+            'chmod +x outroot/commit/bazel'
         ]), mock_stderr.getvalue())
 
   def test_single_run(self):
@@ -259,7 +259,7 @@ class BenchmarkFlagsTest(absltest.TestCase):
       benchmark._flag_checks()
     value_err = context.exception
     self.assertEqual(
-        value_err.message,
+        str(value_err),
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
