@@ -90,6 +90,8 @@ $ bazel run :benchmark -- --helpshort
 Some useful flags are:
 
 ```
+  --bazel_binaries: The pre-built bazel binaries to benchmark.
+    (a comma separated list)
   --bazel_commits: The commits at which bazel is built.
     (default: 'latest')
     (a comma separated list)

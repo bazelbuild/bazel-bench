@@ -13,9 +13,9 @@
 # limitations under the License.
 """Handles the uploading of results to Storage.
 """
-import logger
 import os
 import re
+import utils.logger as logger
 
 from absl import app
 from absl import flags

@@ -22,7 +22,7 @@ parse_bazel_args_from_canonical_str.
 """
 
 import json
-import logger
+import utils.logger as logger
 
 
 def _to_str_list(unicode_str_list):

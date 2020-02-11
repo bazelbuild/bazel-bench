@@ -68,6 +68,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
       mock_C = mock.MagicMock()
       mock_C.hexsha = 'C'
       mock_repo.iter_commits.return_value = [mock_C, mock_B, mock_A]
+      mock_repo.git.rev_parse.side_effect = lambda x: x
       result = benchmark._get_commits_topological(['B', 'A'], mock_repo,
                                                   'flag_name')
 
@@ -113,9 +114,9 @@ class BenchmarkFunctionTests(absltest.TestCase):
     self.assertEqual(
         ''.join([
             'Building Bazel binary at commit commit',
-            "['bazel', 'build', '//src:bazel']",
+            'bazel build //src:bazel',
             'Copying bazel binary to outroot/commit/bazel',
-            "['chmod', '+x', 'outroot/commit/bazel']"
+            'chmod +x outroot/commit/bazel'
         ]), mock_stderr.getvalue())
 
   def test_single_run(self):
@@ -152,6 +153,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
 
     self.assertEqual(
         ''.join([
+            '=== BENCHMARKING BAZEL: None, PROJECT: None ===',
             'Parsing arguments from command line...',
             'Starting benchmark run 1/2:',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
@@ -181,6 +183,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
 
     self.assertEqual(
         ''.join([
+            '=== BENCHMARKING BAZEL: None, PROJECT: None ===',
             'Pre-fetching external dependencies & exporting build event json to some_out_path/build_env.json...',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=some_out_path/build_env.json',
             'Executing Bazel command: bazel clean --color=no',
@@ -212,11 +215,12 @@ class BenchmarkFunctionTests(absltest.TestCase):
           prefetch_ext_deps=True,
           collect_json_profile=True,
           data_directory='fake_dir',
-          bazel_commit='fake_bazel_commit',
+          bazel_identifier='fake_bazel_commit',
           project_commit='fake_project_commit')
 
     self.assertEqual(
         ''.join([
+            '=== BENCHMARKING BAZEL: fake_bazel_commit, PROJECT: fake_project_commit ===',
             'Pre-fetching external dependencies & exporting build event json to some_out_path/build_env.json...',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=some_out_path/build_env.json',
             'Executing Bazel command: bazel clean --color=no',
@@ -255,7 +259,7 @@ class BenchmarkFlagsTest(absltest.TestCase):
       benchmark._flag_checks()
     value_err = context.exception
     self.assertEqual(
-        value_err.message,
+        str(value_err),
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 

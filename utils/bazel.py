@@ -16,8 +16,8 @@ import subprocess
 import os
 import time
 import psutil
-import logger
 import datetime
+import utils.logger as logger
 
 
 class Bazel(object):
