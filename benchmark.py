@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import csv
 import collections
 import datetime
@@ -56,13 +55,17 @@ def _get_clone_subdir(project_source):
 
 
 def _exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
-  logger.log('Executing: %s' % ' '.join(args))
-  if FLAGS.verbose:
-    return subprocess.call(args, shell=shell, cwd=cwd)
+  logger.log('Executing: %s' % (args if shell else ' '.join(args)))
+  devnull_r = open(os.devnull, 'r')
 
-  fd_devnull = open(os.devnull, 'w')
-  return subprocess.call(
-      args, shell=shell, stdout=fd_devnull, stderr=fd_devnull, cwd=cwd)
+  if FLAGS.verbose:
+    return subprocess.call(args, shell=shell, cwd=cwd, stdin=devnull_r)
+
+  devnull_w = open(os.devnull, 'w')
+  proc = subprocess.Popen(
+      args, shell=shell, stdin=devnull_r, stdout=devnull_w, stderr=devnull_w, cwd=cwd)
+  return proc.communicate()
+  
 
 
 def _get_commits_topological(
@@ -495,6 +498,9 @@ flags.DEFINE_string('project_source', None,
                     'a https url to a GitHub repository.')
 flags.DEFINE_list('project_commits', None,
                   'The commits from the git project to be benchmarked.')
+flags.DEFINE_string('env_configure', None,
+                    "The shell commands to configure the project's environment .")
+
 
 # Execution options.
 flags.DEFINE_integer('runs', 3, 'The number of benchmark runs.')
@@ -598,6 +604,8 @@ def main(argv):
   for bazel_bin_path, bazel_identifier in bazel_bin_identifiers:
     for project_commit in project_commits:
       project_clone_repo.git.checkout('-f', project_commit)
+      if FLAGS.env_configure:
+        _exec_command(FLAGS.env_configure, shell=True, cwd=project_clone_repo.working_dir)
 
       results, args = _run_benchmark(
           bazel_bin_path=bazel_bin_path,
