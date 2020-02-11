@@ -19,8 +19,6 @@ import psutil
 import datetime
 import utils.logger as logger
 
-import utils.logger as logger
-
 
 class Bazel(object):
   """Class to handle Bazel invocations.
