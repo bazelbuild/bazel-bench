@@ -146,7 +146,7 @@ def _setup_project_repo(repo_path, project_source):
   return repo
 
 
-def _build_bazel_binary(commit, repo, outroot, platform):
+def _build_bazel_binary(commit, repo, outroot, platform=None):
   """Builds bazel at the specified commit and copy the output binary to outroot.
 
   If the binary for this commit already exists at the destination path, simply
@@ -161,7 +161,8 @@ def _build_bazel_binary(commit, repo, outroot, platform):
   Returns:
     The path to the resulting binary (copied to outroot).
   """
-  outroot_for_commit = '%s/%s/%s' % (outroot, platform, commit)
+  outroot_for_commit = '%s/%s/%s' % (
+    outroot, platform, commit) if platform else '%s/%s' % (outroot, commit)
   destination = '%s/bazel' % outroot_for_commit
   if os.path.exists(destination):
     logger.log('Binary exists at %s, reusing...' % destination)
