@@ -81,15 +81,6 @@ def _historical_graph(metric, metric_label, data, platform):
   hAxis = "Date (commmit)"
   vAxis = metric_label
   chart_id = "{}-{}-time".format(platform, metric)
-  
-  # Set viewWindow margins.
-  minVal = sys.maxsize
-  maxVal = 0
-  for row in data[1:]:
-    minVal = min(minVal, row[2])
-    maxVal = max(maxVal, row[3])
-  viewWindowMin = minVal * 0.95
-  viewWindowMax = maxVal * 1.05
 
   return """
 <script type="text/javascript">
@@ -133,10 +124,10 @@ def _historical_graph(metric, metric_label, data, platform):
 <div id="{chart_id}" style="min-height: 400px"></div>
 """.format(
     title=title, data=data, hAxis=hAxis, vAxis=vAxis, chart_id=chart_id,
-    viewWindowMin=viewWindowMin, viewWindowMax=viewWindowMax, metric_label=metric_label)
+    metric_label=metric_label)
 
 
-def _full_report(date, graph_components):
+def _full_report(date, graph_components, project_reports_components):
   """Returns the full HTML of a complete report, from the graph components.
   """
   return """
@@ -165,6 +156,11 @@ def _full_report(date, graph_components):
       <div class="row">
         <div class="col-sm-12">
           <h1>Report for {date}</h1>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-12">
+          {reports}
         </div>
       </div>
 
@@ -203,7 +199,8 @@ def _full_report(date, graph_components):
 </html>
 """.format(
     date=date.strftime("%Y/%m/%d"),
-    graphs=graph_components
+    graphs=graph_components,
+    reports=project_reports_components
   )
 
 
@@ -248,10 +245,7 @@ ORDER BY report_date, project_label ASC;
   return bq_client.query(query)
 
 
-def _project_source_to_name(source):
-  return PROJECT_SOURCE_TO_NAME[source] if source in PROJECT_SOURCE_TO_NAME else source
-
-
+# TODO(leba): Normalize data between projects.
 def _prepare_time_series_data(raw_data):
   """Massage the data to fit a format suitable for graph generation.
   """
@@ -287,7 +281,14 @@ def _prepare_time_series_data(raw_data):
     date_to_mem[row.report_date][base_pos + 2] = row.min_memory
     date_to_mem[row.report_date][base_pos + 3] = row.max_memory
 
-  return [headers] + list(date_to_wall.values()), [headers] + list(date_to_mem.values())
+  return [headers] + list(date_to_wall.values()), [headers] + list(date_to_mem.values()), project_to_pos.keys()
+
+
+def _project_reports_components(date, projects):
+  links = " • ".join(
+    ['<a href="https://perf.bazel.build/{project_label}/{date_subdir}/report.html">{project_label}</a>'.format(
+      date_subdir=date.strftime("%Y/%m/%d"), project_label=label) for label in projects])
+  return "<p><b>Individual Project Reports:</b> {}</p>".format(links)
 
 
 def _generate_report_for_date(date, storage_bucket, report_name, upload_report, bq_project, bq_table):
@@ -304,12 +305,14 @@ def _generate_report_for_date(date, storage_bucket, report_name, upload_report, 
   bq_date_cutoff = (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 
   graph_components = []
+  projects = set()
 
   for platform in PLATFORMS:
 
-    historical_wall_data, historical_mem_data = _prepare_time_series_data(
+    historical_wall_data, historical_mem_data, platform_projects = _prepare_time_series_data(
       _query_bq(bq_project, bq_table, bq_date_cutoff, platform))
-    
+
+    projects = projects.union(set(platform_projects))
     # Generate a graph for that platform.
     row_content = []
 
@@ -333,8 +336,10 @@ def _generate_report_for_date(date, storage_bucket, report_name, upload_report, 
 
     graph_components.append(_row_component("\n".join(row_content)))
     
-
-  content = _full_report(date, graph_components="\n".join(graph_components))
+  content = _full_report(
+    date,
+    graph_components="\n".join(graph_components),
+    project_reports_components=_project_reports_components(date, projects))
 
   if not os.path.exists(REPORTS_DIRECTORY):
     os.makedirs(REPORTS_DIRECTORY)
