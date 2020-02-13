@@ -18,6 +18,7 @@ import output_handling
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('output_path', None, 'The path to the output file.')
+flags.mark_flag_as_required('output_path')
 flags.DEFINE_string(
     'bazel_source', None,
     ('(Optional) The bazel commit or path to the bazel binary from which these'
@@ -41,6 +42,9 @@ flags.DEFINE_boolean(
 def main(argv):
   # Discard the first argument (the binary).
   input_profiles = argv[1:]
+
+  if not input_profiles:
+    raise ValueError('At least one profile must be provided!')
 
   aggregated_data = lib.aggregate_data(
       input_profiles,
