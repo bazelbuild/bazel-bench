@@ -285,7 +285,7 @@ def _prepare_time_series_data(raw_data):
 
 
 def _project_reports_components(date, projects):
-  links = " • ".join(
+  links = " - ".join(
     ['<a href="https://perf.bazel.build/{project_label}/{date_subdir}/report.html">{project_label}</a>'.format(
       date_subdir=date.strftime("%Y/%m/%d"), project_label=label) for label in projects])
   return "<p><b>Individual Project Reports:</b> {}</p>".format(links)
