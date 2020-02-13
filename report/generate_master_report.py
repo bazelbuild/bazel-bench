@@ -58,7 +58,7 @@ def _get_storage_url(storage_bucket, dated_subdir):
   return "https://{}/{}".format(storage_bucket, dated_subdir)
 
 
-def _short_form(commit):
+def _short_hash(commit):
   return commit[:7]
 
 
@@ -88,7 +88,7 @@ def _historical_graph(metric, metric_label, data, platform):
   function drawChart() {{
     var rawDataFromScript = {data}
     for (var i = 0; i < rawDataFromScript.length; i++) {{
-      for (var j = 0; j < rawDataFromScript[0].length; j++) {{
+      for (var j = 0; j < rawDataFromScript[i].length; j++) {{
         if (rawDataFromScript[i][j] === "null") {{
           rawDataFromScript[i][j] = null
         }}
@@ -141,6 +141,7 @@ def _full_report(date, graph_components, project_reports_components):
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  <!-- For the datepicker. -->
   <script src="https://unpkg.com/gijgo@1.9.13/js/gijgo.min.js" type="text/javascript"></script>
   <link href="https://unpkg.com/gijgo@1.9.13/css/gijgo.min.css" rel="stylesheet" type="text/css" />
 
@@ -265,7 +266,7 @@ def _prepare_time_series_data(raw_data):
       # Commits on day X are benchmarked on day X + 1.
       date_str = "{} ({})".format(
         (row.report_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
-        row.bazel_commit[:7])
+        _short_hash(row.bazel_commit))
       
       date_to_wall[row.report_date] = ["null"] * len(headers)
       date_to_mem[row.report_date] = ["null"] * len(headers)
@@ -361,7 +362,7 @@ def main(args=None):
   if args is None:
     args = sys.argv[1:]
 
-  parser = argparse.ArgumentParser(description="Bazel Bench Daily Report")
+  parser = argparse.ArgumentParser(description="Bazel Bench Daily Master Report")
   parser.add_argument("--date", type=str, help="Date in YYYY-mm-dd format.")
   parser.add_argument(
       "--storage_bucket",
@@ -391,4 +392,3 @@ def main(args=None):
 
 if __name__ == "__main__":
   sys.exit(main())
-
