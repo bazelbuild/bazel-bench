@@ -4,6 +4,8 @@
 
 **Status**: WIP
 
+![logo](bb-icon.png)
+
 # Setup
 
 This script works for `Python 2.7` and `3.x`.
