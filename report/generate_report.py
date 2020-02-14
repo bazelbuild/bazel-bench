@@ -483,6 +483,8 @@ FROM (
       ORDER BY started_at DESC
       LIMIT 10
     )
+    AND project_source = "{project_source}"
+    AND exit_status = 0
     AND platform = "{platform}"
 )
 GROUP BY bazel_commit
