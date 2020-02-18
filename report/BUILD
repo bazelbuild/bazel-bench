@@ -11,6 +11,7 @@ py_binary(
         # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-bigquery must be listed first.
         requirement("google-cloud-bigquery"),
+        requirement("cryptography"),
         requirement("cachetools"),
         requirement("google-api-core"),
         requirement("google-auth"),
@@ -20,7 +21,6 @@ py_binary(
         requirement("protobuf"),
         requirement("pytz"),
         requirement("requests"),
-        requirement("cryptography"),
     ],
 )
 
@@ -32,6 +32,7 @@ py_binary(
         # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-bigquery must be listed first.
         requirement("google-cloud-bigquery"),
+        requirement("cryptography"),
         requirement("cachetools"),
         requirement("google-api-core"),
         requirement("google-auth"),
@@ -41,6 +42,5 @@ py_binary(
         requirement("protobuf"),
         requirement("pytz"),
         requirement("requests"),
-        requirement("cryptography"),
     ],
 )
