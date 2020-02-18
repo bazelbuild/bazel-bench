@@ -20,6 +20,7 @@ py_binary(
         requirement("protobuf"),
         requirement("pytz"),
         requirement("requests"),
+        requirement("cryptography"),
     ],
 )
 
@@ -40,5 +41,6 @@ py_binary(
         requirement("protobuf"),
         requirement("pytz"),
         requirement("requests"),
+        requirement("cryptography"),
     ],
 )
