@@ -8,19 +8,7 @@ py_binary(
     srcs = ["generate_report.py"],
     python_version = "PY3",
     deps = [
-        # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
-        # google-cloud-bigquery must be listed first.
-        requirement("google-cloud-bigquery"),
-        requirement("cryptography"),
-        requirement("cachetools"),
-        requirement("google-api-core"),
-        requirement("google-auth"),
-        requirement("google-cloud-core"),
-        requirement("google-resumable-media"),
-        requirement("googleapis-common-protos"),
-        requirement("protobuf"),
-        requirement("pytz"),
-        requirement("requests"),
+        ":external_deps",
     ],
 )
 
@@ -29,9 +17,17 @@ py_binary(
     srcs = ["generate_master_report.py"],
     python_version = "PY3",
     deps = [
+        ":external_deps",
+    ],
+)
+
+py_library(
+    name = "external_deps",
+    deps = [
         # This is a workaround for https://github.com/bazelbuild/rules_python/issues/14,
         # google-cloud-bigquery must be listed first.
         requirement("google-cloud-bigquery"),
+        requirement("asn1crypto"),
         requirement("cryptography"),
         requirement("cachetools"),
         requirement("google-api-core"),
@@ -42,5 +38,5 @@ py_binary(
         requirement("protobuf"),
         requirement("pytz"),
         requirement("requests"),
-    ],
+    ]
 )
