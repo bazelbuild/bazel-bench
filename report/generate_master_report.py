@@ -221,11 +221,11 @@ SELECT
   DATE(MIN(started_at)) as report_date,
   project_label
 FROM (
-  SELECT wall, memory, started_at, bazel_commit, project_label FROM `{bq_project}.{bq_table}`
-  WHERE bazel_commit IN (
-    SELECT bazel_commit
+  SELECT wall, memory, started_at, t1.bazel_commit, project_label FROM `{bq_project}.{bq_table}` t1
+  JOIN (
+    SELECT DISTINCT bazel_commit, started_at_date
     FROM (
-      SELECT bazel_commit, started_at,
+      SELECT bazel_commit, DATE(started_at) started_at_date,
             RANK() OVER (PARTITION BY project_commit
                              ORDER BY started_at DESC
                         ) AS `Rank`
@@ -235,11 +235,12 @@ FROM (
         AND exit_status = 0       
     )
     WHERE Rank=1
-    ORDER BY started_at DESC
+    ORDER BY started_at_date DESC
     LIMIT 10
-  )
-  AND platform = "{platform}"
-  AND exit_status = 0       
+  ) t2
+  ON t1.bazel_commit = t2.bazel_commit
+  WHERE platform = "{platform}"
+  AND exit_status = 0 
 )
 GROUP BY bazel_commit, project_label
 ORDER BY report_date, project_label ASC;
