@@ -5,7 +5,7 @@ tasks:
       - build
       - test
     shell_commands:
-    - pip3 install gitdb
+    - pip3 install -r third_party/requirements.txt
     build_targets:
       - "..."
     test_targets:
@@ -15,7 +15,7 @@ tasks:
       - build
       - test
     shell_commands:
-    - pip3 install gitdb
+    - pip3 install -r third_party/requirements.txt
     build_targets:
       - "..."
     test_targets:
@@ -25,7 +25,7 @@ tasks:
       - build
       - test
     shell_commands:
-    - pip3 install gitdb
+    - pip3 install -r third_party/requirements.txt
     build_targets:
       - "..."
     test_targets:
