@@ -1,16 +1,22 @@
 ---
 tasks:
   ubuntu1604:
+    shell_commands:
+    - pip3 install -r third_party/requirements.txt
     build_targets:
       - "..."
     test_targets:
       - "..."
   ubuntu1804:
+    shell_commands:
+    - pip3 install -r third_party/requirements.txt
     build_targets:
       - "..."
     test_targets:
       - "..."
   macos:
+    shell_commands:
+    - pip3 install -r third_party/requirements.txt
     build_targets:
       - "..."
     test_targets:
