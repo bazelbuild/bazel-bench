@@ -1,16 +1,22 @@
 ---
 tasks:
   ubuntu1604:
+    shell_commands:
+    - pip3 install gitdb
     build_targets:
       - "..."
     test_targets:
       - "..."
   ubuntu1804:
+    shell_commands:
+    - pip3 install gitdb
     build_targets:
       - "..."
     test_targets:
       - "..."
   macos:
+    shell_commands:
+    - pip3 install gitdb
     build_targets:
       - "..."
     test_targets:
