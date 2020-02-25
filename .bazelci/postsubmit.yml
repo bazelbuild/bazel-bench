@@ -4,6 +4,8 @@ tasks:
     include_json_profile:
       - build
       - test
+    shell_commands:
+    - pip3 install gitdb
     build_targets:
       - "..."
     test_targets:
@@ -12,6 +14,8 @@ tasks:
     include_json_profile:
       - build
       - test
+    shell_commands:
+    - pip3 install gitdb
     build_targets:
       - "..."
     test_targets:
@@ -20,6 +24,8 @@ tasks:
     include_json_profile:
       - build
       - test
+    shell_commands:
+    - pip3 install gitdb
     build_targets:
       - "..."
     test_targets:
