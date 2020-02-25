@@ -17,7 +17,7 @@ import sys
 
 def fake_log(text):
   """Fakes the log function. Prints to stderr."""
-  sys.stderr.write(text)
+  print(text, file=sys.stderr)
 
 
 def fake_exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
