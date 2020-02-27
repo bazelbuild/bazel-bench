@@ -102,7 +102,7 @@ def _historical_graph(metric, metric_label, data, platform):
       hAxis: {{
         title: "{hAxis}",
         titleTextStyle: {{ color: "darkgray" }},
-        textStyle: {{ color: "darkgray" }},
+        textStyle: {{ color: "darkgray", fontSize: 10 }},
       }},
       vAxis: {{
         title: "{vAxis}",

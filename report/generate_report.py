@@ -264,7 +264,7 @@ def _single_graph(metric, metric_label, data, platform, median_series=None):
       hAxis: {{
         title: "{hAxis}",
         titleTextStyle: {{ color: "darkgray" }},
-        textStyle: {{ color: "darkgray" }},
+        textStyle: {{ color: "darkgray", fontSize: 10 }},
         minValue: 0,
       }},
       vAxis: {{
@@ -322,7 +322,7 @@ def _historical_graph(metric, metric_label, data, platform, color):
       hAxis: {{
         title: "{hAxis}",
         titleTextStyle: {{ color: "darkgray" }},
-        textStyle: {{ color: "darkgray" }},
+        textStyle: {{ color: "darkgray", fontSize: 10 }},
       }},
       vAxis: {{
         title: "{vAxis}",
