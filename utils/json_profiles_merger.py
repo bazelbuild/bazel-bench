@@ -12,6 +12,7 @@ Usage:
 """
 from absl import app
 from absl import flags
+from glob import glob
 
 import json_profiles_merger_lib as lib
 import output_handling
@@ -35,6 +36,10 @@ flags.DEFINE_string(
     'Uploads data to bigquery, requires output_path to be set. '
     'The details of the BigQuery table to upload results to specified in '
     'the form: <project_id>:<dataset_id>:<table_id>:<location>.')
+flags.DEFINE_string(
+    'input_profile_dir', None,
+    '(Optional) Folder to load input profiles from.'
+    'This is useful for when your list of input profiles is quite large.')
 flags.DEFINE_boolean(
     'only_phases', False,
     'Whether to only include events from phase markers in the final output.')
@@ -42,6 +47,10 @@ flags.DEFINE_boolean(
 def main(argv):
   # Discard the first argument (the binary).
   input_profiles = argv[1:]
+
+  if FLAGS.input_profile_dir:
+    # Add any globbed files from the input_dir to the list.
+    input_profiles += glob(FLAGS.input_profile_dir + "/*.profile.gz")
 
   if not input_profiles:
     raise ValueError('At least one profile must be provided!')
