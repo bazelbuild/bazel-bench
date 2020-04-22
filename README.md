@@ -8,9 +8,16 @@
 
 # Setup
 
-This script works for `Python 2.7` and `3.x`.
+This script works with python3.
 
-Pre-requisites: `python`, `git`, `bazel`
+Pre-requisites: `python`, `pip`, `git`, `bazel`, `virtualenv` (strongly recommended).
+
+Before you do anything, install the dependencies:
+
+```
+# pip or pip3, depends on your setup.
+$ pip install -r third_party/requirements.txt
+```
 
 To do a test run, run the following command (if you're on Windows, populate
 `--data_directory` with an appropriate Windows-style path):
