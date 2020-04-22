@@ -16,7 +16,7 @@ Before you do anything, install the dependencies:
 
 ```
 # pip or pip3, depends on your setup.
-$ pip install -r third_party/requirements.txt
+$ pip3 install -r third_party/requirements.txt
 ```
 
 To do a test run, run the following command (if you're on Windows, populate
