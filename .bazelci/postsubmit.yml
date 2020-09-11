@@ -1,15 +1,5 @@
 ---
 tasks:
-  ubuntu1604:
-    include_json_profile:
-      - build
-      - test
-    shell_commands:
-    - pip3 install -r third_party/requirements.txt
-    build_targets:
-      - "..."
-    test_targets:
-      - "..."
   ubuntu1804:
     include_json_profile:
       - build
