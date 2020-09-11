@@ -59,8 +59,8 @@ class ValuesTest(unittest.TestCase):
     self.assertEqual(0, values.pval(identical_list))
 
   def test_pval_significant(self):
-    values = Values([1, 1, 1])
-    self.assertAlmostEqual(0.900, values.pval([10, 10, 10]), places=3)
+    values = Values([1, 1, 1, 1, 1])
+    self.assertAlmostEqual(0.992, values.pval([10, 10, 10, 10, 10]), places=3)
 
 
 if __name__ == '__main__':
