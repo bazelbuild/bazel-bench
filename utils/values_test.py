@@ -60,7 +60,7 @@ class ValuesTest(unittest.TestCase):
 
   def test_pval_significant(self):
     values = Values([1, 1, 1])
-    self.assertAlmostEqual(0.967, values.pval([10, 10, 10]), places=3)
+    self.assertAlmostEqual(0.900, values.pval([10, 10, 10]), places=3)
 
 
 if __name__ == '__main__':
