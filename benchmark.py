@@ -33,6 +33,7 @@ from absl import flags
 
 from utils.values import Values
 from utils.bazel import Bazel
+from utils.benchmark_config import BenchmarkConfig
 
 # BB_ROOT has different values, depending on the platform.
 BB_ROOT = os.path.join(os.path.expanduser('~'), '.bazel-bench')
@@ -221,17 +222,18 @@ def json_profile_filename(data_directory, bazel_bench_uid, bazel_commit,
 
 def _single_run(bazel_bin_path,
                 command,
-                args,
-                bazelrc=None,
+                options,
+                targets,
+                startup_options,
                 collect_memory=False):
   """Runs the benchmarking for a combination of (bazel version, project version).
 
   Args:
     bazel_bin_path: the path to the bazel binary to be run.
     command: the command to be run with Bazel.
-    args: the list of arguments (options and expressions) to pass to the Bazel
-      command.
-    bazelrc: the path to a .bazelrc file.
+    options: the list of options.
+    targets: the list of targets.
+    startup_options: the list of target options.
     collect_memory: whether the benchmarking should collect memory info.
 
   Returns:
@@ -245,19 +247,16 @@ def _single_run(bazel_bin_path,
       'started_at': datetime.datetime(2019, 1, 1, 0, 0, 0, 000000),
     }
   """
-  bazel = Bazel(bazel_bin_path, bazelrc)
+  bazel = Bazel(bazel_bin_path, startup_options)
 
   default_arguments = collections.defaultdict(list)
 
   # Prepend some default options if the command is 'build'.
   # The order in which the options appear matters.
   if command == 'build':
-    default_options = list(
-        filter(lambda x: x not in args,
-               ['--nostamp', '--noshow_progress', '--color=no']))
-    args = default_options + args
+    options = options + ['--nostamp', '--noshow_progress', '--color=no']
   measurements = bazel.command(
-      command_name=command, args=args, collect_memory=collect_memory)
+      command=command, args=options + targets, collect_memory=collect_memory)
 
   # Get back to a clean state.
   bazel.command('clean', ['--color=no'])
@@ -269,8 +268,10 @@ def _run_benchmark(bazel_bin_path,
                    project_path,
                    runs,
                    collect_memory,
-                   bazel_args,
-                   bazelrc,
+                   command,
+                   options,
+                   targets,
+                   startup_options,
                    prefetch_ext_deps,
                    bazel_bench_uid,
                    bep_json_dir=None,
@@ -286,7 +287,6 @@ def _run_benchmark(bazel_bin_path,
     runs: the number of runs.
     collect_memory: whether the benchmarking should collect memory info.
     bazel_args: the unparsed list of arguments to be passed to Bazel binary.
-    bazelrc: the path to a .bazelrc file.
     prefetch_ext_deps: whether to do a first non-benchmarked run to fetch the
       external dependencies.
     bazel_bench_uid: a unique string identifier of this entire bazel-bench run.
@@ -309,36 +309,10 @@ def _run_benchmark(bazel_bin_path,
   logger.log('=== BENCHMARKING BAZEL: %s, PROJECT: %s ===' %
              (bazel_identifier, project_commit))
   # Runs the command once to make sure external dependencies are fetched.
-  # If prefetch_ext_deps, run the command with --build_event_json_file to get the
-  # command arguments.
-  # Else, fall back to manually parsing it from bazel_args.
   if prefetch_ext_deps:
-    bep_json_dir = bep_json_dir or DEFAULT_OUT_BASE_PATH
-    if not os.path.exists(bep_json_dir):
-      os.makedirs(bep_json_dir)
-    bep_json_path = bep_json_dir + '/build_env.json'
-
-    logger.log('Pre-fetching external dependencies & exporting build event json ' \
-        'to %s...' % bep_json_path)
-
-    # The command is guaranteed to be the first element since we don't support
-    # startup options.
-    command = bazel_args[0]
-
-    # It's important to have --build_event_json_file as the last argument, since
-    # we exclude this injected flag when parsing command options by simply
-    # discarding the last argument.
-    command_args = bazel_args[1:] + [
-        '--build_event_json_file=%s' % bep_json_path
-    ]
-
-    _single_run(bazel_bin_path, command, command_args, bazelrc, collect_memory)
-    command, expressions, options = args_parser.parse_bazel_args_from_build_event(
-        bep_json_path)
-  else:
-    logger.log('Parsing arguments from command line...')
-    command, expressions, options = args_parser.parse_bazel_args_from_canonical_str(
-        bazel_args)
+    logger.log('Pre-fetching external dependencies...')
+    _single_run(bazel_bin_path, command, options, targets, startup_options,
+                collect_memory)
 
   if collect_json_profile:
     if not os.path.exists(data_directory):
@@ -357,12 +331,11 @@ def _run_benchmark(bazel_bin_path,
           json_profile_filename(data_directory, bazel_bench_uid,
                                 bazel_identifier.replace('/', '_'),
                                 project_commit, i, runs))
-    parsed_args = maybe_include_json_profile_flags + expressions
     collected.append(
-        _single_run(bazel_bin_path, command, parsed_args, bazelrc,
-                    collect_memory))
+        _single_run(bazel_bin_path, command, maybe_include_json_profile_flags,
+                    targets, startup_options, collect_memory))
 
-  return collected, (command, expressions, options)
+  return collected, (command, targets, options)
 
 
 def handle_json_profiles_aggr(bazel_commits, project_source, project_commits,
@@ -522,6 +495,9 @@ flags.DEFINE_boolean('collect_json_profile', False,
 flags.DEFINE_boolean('aggregate_json_profiles', False,
                      'Whether to aggregate the collected JSON profiles. Requires '\
                      '--collect_json_profile to be set.')
+flags.DEFINE_string(
+    'benchmark_config', None,
+    'Whether to use the config-file interface to define benchmark units.')
 
 # Output storage flags.
 flags.DEFINE_string('data_directory', None,
@@ -536,8 +512,9 @@ flags.DEFINE_string('csv_file_name', None,
 
 def _flag_checks():
   """Verify flags requirements."""
-  if (FLAGS.bazel_commits and FLAGS.project_commits and
-      len(FLAGS.bazel_commits) > 1 and len(FLAGS.project_commits) > 1):
+  if (not FLAGS.benchmark_config and FLAGS.bazel_commits and
+      FLAGS.project_commits and len(FLAGS.bazel_commits) > 1 and
+      len(FLAGS.project_commits) > 1):
     raise ValueError(
         'Either --bazel_commits or --project_commits should be a single element.'
     )
@@ -547,16 +524,33 @@ def _flag_checks():
                      '--collect_json_profile to be set.')
 
 
-def main(argv):
-  _flag_checks()
+def _get_benchmark_config_and_clone_repos(argv):
+  """From the flags/config file, get the benchmark units.
+
+  Args:
+    argv: the command line arguments.
+
+  Returns:
+    An instance of BenchmarkConfig that contains the benchmark units.
+  """
+  if FLAGS.benchmark_config:
+    config = BenchmarkConfig.from_file(FLAGS.benchmark_config)
+    # We don't allow multiple project_source for now.
+    first_unit = config.get_units()[0]
+    project_source = first_unit['project_source']
+    project_clone_repo = _setup_project_repo(
+        PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
+        project_source)
+    bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH,
+                                           first_unit['bazel_source'])
+
+    print(vars(config))
+    return config, bazel_clone_repo, project_clone_repo
 
   # Strip off 'benchmark.py' from argv
   # argv would be something like:
   # ['benchmark.py', 'build', '--nobuild', '//:all']
   bazel_args = argv[1:]
-  # This is a workaround for https://github.com/bazelbuild/bazel/issues/3236.
-  if sys.platform.startswith('linux'):
-    bazel_args.append('--sandbox_tmpfs_path=/tmp')
 
   # Building Bazel binaries
   bazel_binaries = FLAGS.bazel_binaries or []
@@ -578,6 +572,21 @@ def main(argv):
   project_commits = _get_commits_topological(FLAGS.project_commits,
                                              project_clone_repo,
                                              'project_commits')
+  config = BenchmarkConfig.from_flags(bazel_commits, bazel_binaries,
+                                      project_commits, bazel_source,
+                                      FLAGS.project_source, FLAGS.runs,
+                                      FLAGS.collect_memory,
+                                      FLAGS.collect_json_profile,
+                                      ' '.join(bazel_args))
+
+  return config, bazel_clone_repo, project_clone_repo
+
+
+def main(argv):
+  _flag_checks()
+
+  config, bazel_clone_repo, project_clone_repo = _get_benchmark_config_and_clone_repos(
+      argv)
 
   # A dictionary that maps a (bazel_commit, project_commit) tuple
   # to its benchmarking result.
@@ -591,46 +600,53 @@ def main(argv):
   bazel_bin_base_path = FLAGS.bazel_bin_dir or BAZEL_BINARY_BASE_PATH
   bazel_bin_identifiers = []
 
-  for bazel_commit in bazel_commits:
-    bazel_bin_path = _build_bazel_binary(bazel_commit, bazel_clone_repo,
-                                         bazel_bin_base_path, FLAGS.platform)
-    bazel_bin_identifiers.append((bazel_bin_path, bazel_commit))
+  # Build the bazel binaries, if necessary.
+  for unit in config.get_units():
+    if 'bazel_binary' in unit:
+      unit['bazel_bin_path'] = unit['bazel_binary']
+    elif 'bazel_commit' in unit:
+      bazel_bin_path = _build_bazel_binary(unit['bazel_commit'],
+                                           bazel_clone_repo,
+                                           bazel_bin_base_path, FLAGS.platform)
+      unit['bazel_bin_path'] = bazel_bin_path
 
-  for bazel_bin_path in bazel_binaries:
-    bazel_bin_identifiers.append((bazel_bin_path, bazel_bin_path))
+  for unit in config.get_units():
+    bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit[
+        'bazel_binary']
+    project_commit = unit['project_commit']
 
-  for bazel_bin_path, bazel_identifier in bazel_bin_identifiers:
-    for project_commit in project_commits:
-      project_clone_repo.git.checkout('-f', project_commit)
-      if FLAGS.env_configure:
-        _exec_command(
-            FLAGS.env_configure, shell=True, cwd=project_clone_repo.working_dir)
+    project_clone_repo.git.checkout('-f', project_commit)
+    if FLAGS.env_configure:
+      _exec_command(
+          FLAGS.env_configure, shell=True, cwd=project_clone_repo.working_dir)
 
-      results, args = _run_benchmark(
-          bazel_bin_path=bazel_bin_path,
-          project_path=project_clone_repo.working_dir,
-          runs=FLAGS.runs,
-          collect_memory=FLAGS.collect_memory or FLAGS.data_directory,
-          bazel_args=bazel_args,
-          bazelrc=FLAGS.bazelrc,
-          prefetch_ext_deps=FLAGS.prefetch_ext_deps,
-          bazel_bench_uid=bazel_bench_uid,
-          collect_json_profile=FLAGS.collect_json_profile,
-          data_directory=data_directory,
-          bazel_identifier=bazel_identifier,
-          project_commit=project_commit)
-      collected = {}
-      for benchmarking_result in results:
-        for metric, value in benchmarking_result.items():
-          if metric not in collected:
-            collected[metric] = Values()
-          collected[metric].add(value)
+    results, args = _run_benchmark(
+        bazel_bin_path=unit['bazel_bin_path'],
+        project_path=project_clone_repo.working_dir,
+        runs=unit['runs'],
+        collect_memory=unit['collect_memory'] or FLAGS.data_directory,
+        command=unit['command'],
+        options=unit['options'],
+        targets=unit['targets'],
+        startup_options=unit['startup_options'],
+        prefetch_ext_deps=FLAGS.prefetch_ext_deps,
+        bazel_bench_uid=bazel_bench_uid,
+        collect_json_profile=unit['collect_profile'],
+        data_directory=data_directory,
+        bazel_identifier=bazel_identifier,
+        project_commit=project_commit)
+    collected = {}
+    for benchmarking_result in results:
+      for metric, value in benchmarking_result.items():
+        if metric not in collected:
+          collected[metric] = Values()
+        collected[metric].add(value)
 
-      data[(bazel_identifier, project_commit)] = collected
-      csv_data[(bazel_identifier, project_commit)] = {
-          'results': results,
-          'args': args
-      }
+    data[(bazel_identifier, project_commit)] = collected
+    csv_data[(bazel_identifier, project_commit)] = {
+        'results': results,
+        'args': args
+    }
 
   summary_text = create_summary(data)
   print(summary_text)
@@ -660,5 +676,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-  flags.mark_flag_as_required('project_source')
   app.run(main)

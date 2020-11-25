@@ -32,16 +32,16 @@ class Bazel(object):
       /dev/null if not set explicitly.
   """
 
-  def __init__(self, bazel_binary_path, bazelrc):
+  def __init__(self, bazel_binary_path, startup_options):
     self._bazel_binary_path = str(bazel_binary_path)
-    self._bazelrc_flag = '--bazelrc=%s' % (bazelrc or '/dev/null')
+    self._startup_options = startup_options
     self._pid = None
 
-  def command(self, command_name, args=None, collect_memory=False):
+  def command(self, command, args=None, collect_memory=False):
     """Invokes a command with a bazel binary.
 
     Args:
-      command_name: A string specifying the bazel command to invoke.
+      command: A string specifying the bazel command to invoke.
       args: An optional list of strings representing additional arguments to the
         bazel command.
       collect_memory: A boolean specifying whether to collect memory information
@@ -55,8 +55,8 @@ class Bazel(object):
       Returns None instead if the command equals 'shutdown'.
     """
     args = args or []
-    logger.log('Executing Bazel command: bazel %s %s' %
-               (command_name, ' '.join(args)))
+    logger.log('Executing Bazel command: bazel %s %s %s' %
+               (' '.join(self._startup_options), command, ' '.join(args)))
 
     result = dict()
     result['started_at'] = datetime.datetime.utcnow()
@@ -67,14 +67,14 @@ class Bazel(object):
 
     try:
       subprocess.check_call(
-          [self._bazel_binary_path, self._bazelrc_flag, command_name] + args,
+          [self._bazel_binary_path] + self._startup_options + [command] + args,
           stdout=dev_null,
           stderr=dev_null)
     except subprocess.CalledProcessError as e:
       exit_status = e.returncode
       logger.log_error('Bazel command failed with exit code %s' % e.returncode)
 
-    if command_name == 'shutdown':
+    if command == 'shutdown':
       return None
     after_times = self._get_times()
 
@@ -96,9 +96,9 @@ class Bazel(object):
     """
     if not self._pid:
       self._pid = (int)(
-          subprocess.check_output([
-              self._bazel_binary_path, self._bazelrc_flag, 'info', 'server_pid'
-          ]))
+          subprocess.check_output([self._bazel_binary_path] +
+                                  self._startup_options +
+                                  ['info', 'server_pid']))
     return self._pid
 
   def _get_times(self):
@@ -117,7 +117,6 @@ class Bazel(object):
   def _get_heap_size(self):
     """Retrieves and returns the used heap size."""
     return (int)(
-        subprocess.check_output([
-            self._bazel_binary_path, self._bazelrc_flag, 'info',
-            'used-heap-size-after-gc'
-        ])[:-3])
+        subprocess.check_output([self._bazel_binary_path] +
+                                self._startup_options +
+                                ['info', 'used-heap-size-after-gc'])[:-3])
