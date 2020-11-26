@@ -24,7 +24,6 @@ import collections
 import tempfile
 import git
 import utils.logger as logger
-import utils.bazel_args_parser as args_parser
 import utils.json_profiles_merger_lib as json_profiles_merger_lib
 import utils.output_handling as output_handling
 

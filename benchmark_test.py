@@ -136,10 +136,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
         ]), mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os, 'chdir')
-  @mock.patch.object(benchmark.args_parser,
-                     'parse_bazel_args_from_canonical_str')
-  def test_run_benchmark_no_prefetch(self, args_parser_mock, _):
-    args_parser_mock.return_value = ('build', ['//:all'], [])
+  def test_run_benchmark_no_prefetch(self, _):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._run_benchmark(
           'bazel_binary_path',
@@ -167,9 +164,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
         ]), mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os, 'chdir')
-  @mock.patch.object(benchmark.args_parser, 'parse_bazel_args_from_build_event')
-  def test_run_benchmark_prefetch(self, args_parser_mock, _):
-    args_parser_mock.return_value = ('build', ['//:all'], [])
+  def test_run_benchmark_prefetch(self, _):
     benchmark.DEFAULT_OUT_BASE_PATH = 'some_out_path'
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._run_benchmark(
@@ -202,9 +197,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
         ]), mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os, 'chdir')
-  @mock.patch.object(benchmark.args_parser, 'parse_bazel_args_from_build_event')
-  def test_run_benchmark_collect_json_profile(self, args_parser_mock, _):
-    args_parser_mock.return_value = ('build', ['//:all'], [])
+  def test_run_benchmark_collect_json_profile(self, _):
     benchmark.DEFAULT_OUT_BASE_PATH = 'some_out_path'
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._run_benchmark(
