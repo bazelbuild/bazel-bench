@@ -384,6 +384,12 @@ def create_summary(data):
 
   Excludes runs with non-zero exit codes from the final summary table.
   """
+  unit = {
+    'wall': 's ',
+    'cpu': 's ',
+    'system': 's ',
+    'memory': 'MB'
+  }
   summary_builder = []
   summary_builder.append('\nRESULTS:')
   last_collected = None
@@ -427,11 +433,11 @@ def create_summary(data):
       summary_builder.append(
           '%s: %s %s %s %s' %
           (metric.rjust(8),
-           ('% 8.3fs %s' %
-            (values_exclude_failures.mean(), mean_diff)).center(20),
-           ('% 8.3fs %s' %
-            (values_exclude_failures.median(), median_diff)).center(20),
-           ('% 7.3fs' % values_exclude_failures.stddev()).center(10),
+           ('% 8.3f%s %s' %
+            (values_exclude_failures.mean(), unit[metric], mean_diff)).center(20),
+           ('% 8.3f%s %s' %
+            (values_exclude_failures.median(), unit[metric], median_diff)).center(20),
+           ('% 7.3f%s' % (values_exclude_failures.stddev(), unit[metric])).center(10),
            pval.center(10)))
     last_collected = collected
     if non_zero_runs:
