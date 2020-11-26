@@ -385,9 +385,9 @@ def create_summary(data):
   Excludes runs with non-zero exit codes from the final summary table.
   """
   unit = {
-    'wall': 's',
-    'cpu': 's',
-    'system': 's',
+    'wall': 's ',
+    'cpu': 's ',
+    'system': 's ',
     'memory': 'MB'
   }
   summary_builder = []
