@@ -19,20 +19,14 @@ import getpass
 import utils.logger as logger
 
 
-def export_csv(data_directory, filename, data, project_source, platform,
-               project_label):
+def export_csv(data_directory, filename, data):
   """Exports the content of data to a csv file in data_directory
 
   Args:
     data_directory: the directory to store the csv file.
     filename: the name of the .csv file.
     data: the collected data to be exported.
-    project_source: either a path to the local git project to be built or a
-      https url to a GitHub repository.
-    platform: the platform on which benchmarking was run.
-    project_label: the label to identify the project. Only relevant for the
-      daily performance report.
-
+    
   Returns:
     The path to the newly created csv file.
   """
@@ -52,14 +46,16 @@ def export_csv(data_directory, filename, data, project_source, platform,
         'project_label'
     ])
 
-    for (bazel_commit, project_commit), results_and_args in data.items():
-      command, expressions, options = results_and_args['args']
-      for idx, run in enumerate(results_and_args['results'], start=1):
+    for (bazel_commit, project_commit), data_item in data.items():
+      command, expressions, options = data_item['args']
+      non_measurables = data_item['non_measurables']
+      for idx, run in enumerate(data_item['results'], start=1):
         csv_writer.writerow([
-            project_source, project_commit, bazel_commit, idx, run['cpu'],
-            run['wall'], run['system'], run['memory'], command, expressions,
-            hostname, username, options, run['exit_status'], run['started_at'],
-            platform, project_label
+            non_measurables['project_source'], project_commit, bazel_commit,
+            idx, run['cpu'], run['wall'], run['system'], run['memory'], command,
+            expressions, hostname, username, options, run['exit_status'],
+            run['started_at'], non_measurables['platform'],
+            non_measurables['project_label']
         ])
   return csv_file_path
 

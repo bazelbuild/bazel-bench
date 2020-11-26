@@ -87,16 +87,6 @@ py_binary(
 )
 
 py_test(
-    name = "bazel_args_parser_test",
-    size = "small",
-    srcs = ["bazel_args_parser_test.py"],
-    deps = [
-        ":utils",
-        requirement("mock"),
-    ],
-)
-
-py_test(
     name = "bazel_test",
     size = "small",
     srcs = ["bazel_test.py"],

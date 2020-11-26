@@ -53,6 +53,7 @@ import copy
 import shlex
 import sys
 import yaml
+import sys
 
 
 class BenchmarkConfig(object):
@@ -139,6 +140,10 @@ class BenchmarkConfig(object):
       bazel_commits: the bazel commits.
       bazel_binaries: paths to pre-built bazel binaries.
       project_commits: the project commits.
+      bazel_source: Either a path to the local Bazel repo or a https url to a
+        GitHub repository
+      project_source: Either a path to the local git project to be built or a
+        https url to a GitHub repository
       runs: The number of benchmark runs to perform for each combination.
       collect_memory: Whether to collect Blaze memory consumption.
       collect_profile: Whether to collect a JSON profile.
