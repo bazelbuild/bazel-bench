@@ -643,9 +643,15 @@ def main(argv):
         collected[metric].add(value)
 
     data[(bazel_identifier, project_commit)] = collected
+    non_measurables = {
+      'project_source': unit['project_source'],
+      'platform': FLAGS.platform,
+      'project_label': FLAGS.project_label
+    }
     csv_data[(bazel_identifier, project_commit)] = {
         'results': results,
-        'args': args
+        'args': args,
+        'non_measurables': non_measurables
     }
 
   summary_text = create_summary(data)
@@ -655,9 +661,7 @@ def main(argv):
     csv_file_name = FLAGS.csv_file_name or '{}.csv'.format(bazel_bench_uid)
     txt_file_name = csv_file_name.replace('.csv', '.txt')
 
-    output_handling.export_csv(data_directory, csv_file_name, csv_data,
-                               FLAGS.project_source, FLAGS.platform,
-                               FLAGS.project_label)
+    output_handling.export_csv(data_directory, csv_file_name, csv_data)
     output_handling.export_file(data_directory, txt_file_name, summary_text)
 
     if FLAGS.aggregate_json_profiles:
