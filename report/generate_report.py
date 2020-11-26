@@ -13,8 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Generates a daily HTML report for the projects.
+"""Generates a daily HTML report for the projects.
+
 The steps:
   1. Get the necessary data from Storage for projects/date.
   2. Manipulate the data to a format suitable for graphs.
@@ -35,24 +35,26 @@ import tempfile
 import urllib.request
 from google.cloud import bigquery
 
-
 TMP = tempfile.gettempdir()
 REPORTS_DIRECTORY = os.path.join(TMP, ".bazel_bench", "reports")
 EVENTS_ORDER = [
-  "Launch Blaze",
-  "Initialize command",
-  "Load packages",
-  "Analyze dependencies",
-  "Analyze licenses",
-  "Prepare for build",
-  "Build artifacts",
-  "Complete build",
+    "Launch Blaze",
+    "Initialize command",
+    "Load packages",
+    "Analyze dependencies",
+    "Analyze licenses",
+    "Prepare for build",
+    "Build artifacts",
+    "Complete build",
 ]
 
+
 def _upload_to_storage(src_file_path, storage_bucket, destination_dir):
-  """Uploads the file from src_file_path to the specified location on Storage.
-  """
-  args = ["gsutil", "cp", src_file_path, "gs://{}/{}".format(storage_bucket, destination_dir)]
+  """Uploads the file from src_file_path to the specified location on Storage."""
+  args = [
+      "gsutil", "cp", src_file_path,
+      "gs://{}/{}".format(storage_bucket, destination_dir)
+  ]
   subprocess.run(args)
 
 
@@ -71,7 +73,7 @@ def _load_json_from_remote_file(http_url):
 
 def _load_txt_from_remote_file(http_url):
   with urllib.request.urlopen(http_url) as resp:
-    return resp.read().decode(resp.headers.get_content_charset() or 'utf-8')
+    return resp.read().decode(resp.headers.get_content_charset() or "utf-8")
 
 
 def _get_storage_url(storage_bucket, dated_subdir):
@@ -88,6 +90,7 @@ def _get_bazel_github_a_component(commit):
   return '<a href="{}">{}</a>'.format(
       "https://github.com/bazelbuild/bazel/commit/" + commit, commit)
 
+
 def _get_file_list_from_gs(bucket_name, gs_subdir):
   args = ["gsutil", "ls", "gs://{}/{}".format(bucket_name, gs_subdir)]
   command_output = subprocess.check_output(args)
@@ -102,7 +105,8 @@ def _get_file_list_component(bucket_name, dated_subdir, platform):
   links = _get_file_list_from_gs(bucket_name, gs_subdir)
   li_components = [
       '<li><a href="{}">{}</a></li>'.format(link, os.path.basename(link))
-      for link in links]
+      for link in links
+  ]
   return """
 <div class="collapse" id="raw_files_{}">
 <ul>{}</ul>
@@ -127,7 +131,8 @@ def _get_proportion_breakdown(aggr_json_profile):
         [float(entry["dur"]) for entry in bazel_commit_to_phases[bazel_commit]])
     bazel_commit_to_phase_proportion[bazel_commit] = {
         entry["name"]: float(entry["dur"]) / total_time
-        for entry in bazel_commit_to_phases[bazel_commit]}
+        for entry in bazel_commit_to_phases[bazel_commit]
+    }
 
   return bazel_commit_to_phase_proportion
 
@@ -147,8 +152,7 @@ def _short_form(commit):
 
 
 def _prepare_data_for_graph(performance_data, aggr_json_profile):
-  """Massage the data to fit a format suitable for graph generation.
-  """
+  """Massage the data to fit a format suitable for graph generation."""
   bazel_commit_to_phase_proportion = _get_proportion_breakdown(
       aggr_json_profile)
   ordered_commit_to_readings = collections.OrderedDict()
@@ -156,7 +160,7 @@ def _prepare_data_for_graph(performance_data, aggr_json_profile):
     # Exclude measurements from failed runs in the graphs.
     # TODO(leba): Print the summary table, which includes info on which runs
     # failed.
-    if entry['exit_status'] != '0':
+    if entry["exit_status"] != "0":
       continue
 
     bazel_commit = entry["bazel_commit"]
@@ -166,18 +170,26 @@ def _prepare_data_for_graph(performance_data, aggr_json_profile):
           "wall_readings": [],
           "memory_readings": [],
       }
-    ordered_commit_to_readings[bazel_commit]["wall_readings"].append(float(entry["wall"]))
-    ordered_commit_to_readings[bazel_commit]["memory_readings"].append(float(entry["memory"]))
+    ordered_commit_to_readings[bazel_commit]["wall_readings"].append(
+        float(entry["wall"]))
+    ordered_commit_to_readings[bazel_commit]["memory_readings"].append(
+        float(entry["memory"]))
 
   wall_data = [
-      ["Bazel Commit"]
-      + EVENTS_ORDER
-      + ["Median [Min, Max]", { "role": "interval" }, { "role": "interval" }]]
-  memory_data = [
-      ["Bazel Commit",
-       "Memory (MB)",
-       { "role": "interval" },
-       { "role": "interval" }]]
+      ["Bazel Commit"] + EVENTS_ORDER +
+      ["Median [Min, Max]", {
+          "role": "interval"
+      }, {
+          "role": "interval"
+      }]
+  ]
+  memory_data = [[
+      "Bazel Commit", "Memory (MB)", {
+          "role": "interval"
+      }, {
+          "role": "interval"
+      }
+  ]]
 
   for obj in ordered_commit_to_readings.values():
     commit = _short_form(obj["bazel_commit"])
@@ -185,23 +197,17 @@ def _prepare_data_for_graph(performance_data, aggr_json_profile):
     median_wall = statistics.median(obj["wall_readings"])
     min_wall = min(obj["wall_readings"])
     max_wall = max(obj["wall_readings"])
-    wall_data.append(
-        [commit]
-        + _fit_data_to_phase_proportion(
-            median_wall, bazel_commit_to_phase_proportion[bazel_commit])
-        + [median_wall, min_wall, max_wall])
+    wall_data.append([commit] + _fit_data_to_phase_proportion(
+        median_wall, bazel_commit_to_phase_proportion[bazel_commit]) +
+                     [median_wall, min_wall, max_wall])
 
     median_memory = statistics.median(obj["memory_readings"])
     min_memory = min(obj["memory_readings"])
     max_memory = max(obj["memory_readings"])
-    memory_data.append([
-        commit,
-        median_memory,
-        min_memory,
-        max_memory
-    ])
+    memory_data.append([commit, median_memory, min_memory, max_memory])
 
   return wall_data, memory_data
+
 
 def _uncollapse_button(element_id, text):
   return """
@@ -210,8 +216,8 @@ def _uncollapse_button(element_id, text):
         aria-controls="{element_id}" style="margin-bottom: 5px;">
 {text}
 </button>
-""".format(element_id=element_id,
-           text=text)
+""".format(
+    element_id=element_id, text=text)
 
 
 def _row_component(content):
@@ -223,16 +229,19 @@ def _row_component(content):
 def _col_component(col_class, content):
   return """
 <div class="{col_class}">{content}</div>
-""".format(col_class=col_class, content=content)
+""".format(
+    col_class=col_class, content=content)
 
 
 def _commits_component(full_list, benchmarked_list):
   li_components = []
   for commit in full_list:
     if commit in benchmarked_list:
-      li_components.append('<li><b>{}</b></li>'.format(_get_bazel_github_a_component(commit)))
+      li_components.append("<li><b>{}</b></li>".format(
+          _get_bazel_github_a_component(commit)))
     else:
-      li_components.append('<li>{}</li>'.format(_get_bazel_github_a_component(commit)))
+      li_components.append("<li>{}</li>".format(
+          _get_bazel_github_a_component(commit)))
   return """
 <div class="collapse" id="commits">
 <b>Commits:</b>
@@ -245,8 +254,7 @@ def _commits_component(full_list, benchmarked_list):
 
 
 def _single_graph(metric, metric_label, data, platform, median_series=None):
-  """Returns the HTML <div> component of a single graph.
-  """
+  """Returns the HTML <div> component of a single graph."""
   title = "[{}] Bar Chart of {} vs Bazel commits".format(platform, metric_label)
   hAxis = "Bazel Commits (chronological order)"
   vAxis = metric_label
@@ -289,18 +297,21 @@ def _single_graph(metric, metric_label, data, platform, median_series=None):
 </script>
 <div id="{chart_id}" style="min-height: 400px"></div>
 """.format(
-    title=title, data=data, hAxis=hAxis, vAxis=vAxis, chart_id=chart_id, median_series=median_series
-  )
-  
+    title=title,
+    data=data,
+    hAxis=hAxis,
+    vAxis=vAxis,
+    chart_id=chart_id,
+    median_series=median_series)
+
 
 def _historical_graph(metric, metric_label, data, platform, color):
-  """Returns the HTML <div> component of a single graph.
-  """
+  """Returns the HTML <div> component of a single graph."""
   title = "[{}] Historical values of {}".format(platform, metric_label)
   hAxis = "Date (commmit)"
   vAxis = metric_label
   chart_id = "{}-{}-time".format(platform, metric)
-  
+
   # Set viewWindow margins.
   minVal = sys.maxsize
   maxVal = 0
@@ -350,8 +361,14 @@ def _historical_graph(metric, metric_label, data, platform, color):
   </script>
 <div id="{chart_id}" style="min-height: 400px"></div>
 """.format(
-    title=title, data=data, hAxis=hAxis, vAxis=vAxis, chart_id=chart_id,
-    viewWindowMin=viewWindowMin, viewWindowMax=viewWindowMax, color=color)
+    title=title,
+    data=data,
+    hAxis=hAxis,
+    vAxis=vAxis,
+    chart_id=chart_id,
+    viewWindowMin=viewWindowMin,
+    viewWindowMax=viewWindowMax,
+    color=color)
 
 
 def _summary_table(content, platform):
@@ -359,12 +376,13 @@ def _summary_table(content, platform):
   return """
 <pre class="collapse" id="summary-{platform}"  style="font-size:0.75em; color:gray">{content}</pre>
 <br>
-""".format(platform=platform, content=content)
+""".format(
+    platform=platform, content=content)
 
 
-def _full_report(project, project_source, date, command, graph_components, raw_files_components):
-  """Returns the full HTML of a complete report, from the graph components.
-  """
+def _full_report(project, project_source, date, command, graph_components,
+                 raw_files_components):
+  """Returns the full HTML of a complete report, from the graph components."""
   return """
 <html>
   <head>
@@ -442,8 +460,7 @@ def _full_report(project, project_source, date, command, graph_components, raw_f
     date=date.strftime("%Y/%m/%d"),
     command=command,
     graphs=graph_components,
-    files=raw_files_components
-  )
+    files=raw_files_components)
 
 
 def _query_bq(bq_project, bq_table, project_source, date_cutoff, platform):
@@ -491,28 +508,41 @@ FROM (
 )
 GROUP BY bazel_commit
 ORDER BY report_date ASC;
-""".format(bq_project=bq_project, bq_table=bq_table, project_source=project_source, date_cutoff=date_cutoff, platform=platform)
+""".format(
+    bq_project=bq_project,
+    bq_table=bq_table,
+    project_source=project_source,
+    date_cutoff=date_cutoff,
+    platform=platform)
 
   return bq_client.query(query)
 
 
 def _prepare_time_series_data(raw_data):
-  """Massage the data to fit a format suitable for graph generation.
-  """
-  wall_data = [["Date", "Wall Time", {"role": "interval"}, {"role": "interval"}]]      
+  """Massage the data to fit a format suitable for graph generation."""
+  wall_data = [[
+      "Date", "Wall Time", {
+          "role": "interval"
+      }, {
+          "role": "interval"
+      }
+  ]]
   memory_data = [["Date", "Memory", {"role": "interval"}, {"role": "interval"}]]
 
   for row in raw_data:
     # Commits on day X are benchmarked on day X + 1.
     date_str = "{} ({})".format(
-      (row.report_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d"), row.bazel_commit[:7])
+        (row.report_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+        row.bazel_commit[:7])
     wall_data.append([date_str, row.median_wall, row.min_wall, row.max_wall])
-    memory_data.append([date_str, row.median_memory, row.min_memory, row.max_memory])
+    memory_data.append(
+        [date_str, row.median_memory, row.min_memory, row.max_memory])
 
   return wall_data, memory_data
 
 
-def _generate_report_for_date(project, date, storage_bucket, report_name, upload_report, bq_project, bq_table):
+def _generate_report_for_date(project, date, storage_bucket, report_name,
+                              upload_report, bq_project, bq_table):
   """Generates a html report for the specified date & project.
 
   Args:
@@ -525,95 +555,90 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
     bq_table: the BigQuery table.
   """
   dated_subdir = _get_dated_subdir_for_project(project, date)
-  bq_date_cutoff = (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+  bq_date_cutoff = (date + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
   root_storage_url = _get_storage_url(storage_bucket, dated_subdir)
   metadata_file_url = "{}/METADATA".format(root_storage_url)
   metadata = _load_json_from_remote_file(metadata_file_url)
 
   graph_components = []
   raw_files_components = []
+  graph_components.append(_uncollapse_button("commits", "Show commits"))
   graph_components.append(
-      _uncollapse_button('commits', 'Show commits')
-  )
-  graph_components.append(
-    _row_component(
-        _col_component(
-            "col-sm-10",
-            _commits_component(
-                metadata["all_commits"], metadata["benchmarked_commits"]))))
+      _row_component(
+          _col_component(
+              "col-sm-10",
+              _commits_component(metadata["all_commits"],
+                                 metadata["benchmarked_commits"]))))
 
-  for platform_measurement in sorted(metadata["platforms"], key=lambda k: k['platform']):
+  for platform_measurement in sorted(
+      metadata["platforms"], key=lambda k: k["platform"]):
     # Get the data
-    performance_data = _load_csv_from_remote_file(
-        "{}/{}".format(root_storage_url, platform_measurement["perf_data"])
-    )
-    aggr_json_profile = _load_csv_from_remote_file(
-        "{}/{}".format(
-            root_storage_url, platform_measurement["aggr_json_profiles"])
-    )
-    summary_text = _load_txt_from_remote_file(
-        "{}/{}".format(root_storage_url, platform_measurement["perf_data"].replace('.csv', '.txt'))
-    )
+    performance_data = _load_csv_from_remote_file("{}/{}".format(
+        root_storage_url, platform_measurement["perf_data"]))
+    aggr_json_profile = _load_csv_from_remote_file("{}/{}".format(
+        root_storage_url, platform_measurement["aggr_json_profiles"]))
+    summary_text = _load_txt_from_remote_file("{}/{}".format(
+        root_storage_url,
+        platform_measurement["perf_data"].replace(".csv", ".txt")))
 
-    wall_data, memory_data = _prepare_data_for_graph(
-      performance_data, aggr_json_profile)
+    wall_data, memory_data = _prepare_data_for_graph(performance_data,
+                                                     aggr_json_profile)
     platform = platform_measurement["platform"]
-    
+
     historical_wall_data, historical_mem_data = _prepare_time_series_data(
-      _query_bq(bq_project, bq_table, metadata["project_source"], bq_date_cutoff, platform))
-    
+        _query_bq(bq_project, bq_table, metadata["project_source"],
+                  bq_date_cutoff, platform))
+
     # Generate a graph for that platform.
     row_content = []
     row_content.append(
-        _col_component("col-sm-6", _single_graph(
-            metric="wall",
-            metric_label="Wall Time (s)",
-            data=wall_data,
-            platform=platform,
-            median_series=len(EVENTS_ORDER)
-        ))
-    )
+        _col_component(
+            "col-sm-6",
+            _single_graph(
+                metric="wall",
+                metric_label="Wall Time (s)",
+                data=wall_data,
+                platform=platform,
+                median_series=len(EVENTS_ORDER))))
 
     row_content.append(
-        _col_component("col-sm-6", _historical_graph(
-            metric="wall",
-            metric_label="Wall Time (s)",
-            data=historical_wall_data,
-            platform=platform,
-            color="#dd4477"
-        ))
-    )
+        _col_component(
+            "col-sm-6",
+            _historical_graph(
+                metric="wall",
+                metric_label="Wall Time (s)",
+                data=historical_wall_data,
+                platform=platform,
+                color="#dd4477")))
 
     row_content.append(
-        _col_component("col-sm-6", _single_graph(
-            metric="memory",
-            metric_label="Memory (MB)",
-            data=memory_data,
-            platform=platform,
-        ))
-    )
+        _col_component(
+            "col-sm-6",
+            _single_graph(
+                metric="memory",
+                metric_label="Memory (MB)",
+                data=memory_data,
+                platform=platform,
+            )))
 
     row_content.append(
-        _col_component("col-sm-6", _historical_graph(
-            metric="memory",
-            metric_label="Memory (MB)",
-            data=historical_mem_data,
-            platform=platform,
-            color="#3366cc"
-        ))
-    )
+        _col_component(
+            "col-sm-6",
+            _historical_graph(
+                metric="memory",
+                metric_label="Memory (MB)",
+                data=historical_mem_data,
+                platform=platform,
+                color="#3366cc")))
 
     row_content.append(
-        _col_component("col-sm-12", _uncollapse_button(
-          "summary-{}".format(platform), "Show Summary Table")
-        )
-    )
+        _col_component(
+            "col-sm-12",
+            _uncollapse_button("summary-{}".format(platform),
+                               "Show Summary Table")))
     row_content.append(
-        _col_component("col-sm-12", _summary_table(
-            content=summary_text,
-            platform=platform
-        ))
-    )
+        _col_component("col-sm-12",
+                       _summary_table(content=summary_text, platform=platform)))
 
     graph_components.append(
         _row_component(
@@ -621,21 +646,15 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
                 "col-sm-5",
                 '<h2 class="underlined">{}</h2></hr>'.format(platform))))
     raw_files_components.append(
-        _uncollapse_button(
-            'raw_files_%s' % platform,
-            'Show raw files for %s' % platform
-        )
-    )
+        _uncollapse_button("raw_files_%s" % platform,
+                           "Show raw files for %s" % platform))
     raw_files_components.append(
         _row_component(
             _col_component(
                 "col-sm-10",
-                _get_file_list_component(
-                    storage_bucket,
-                    dated_subdir,
-                    platform))))
+                _get_file_list_component(storage_bucket, dated_subdir,
+                                         platform))))
     graph_components.append(_row_component("\n".join(row_content)))
-    
 
   content = _full_report(
       project,
@@ -648,15 +667,14 @@ def _generate_report_for_date(project, date, storage_bucket, report_name, upload
   if not os.path.exists(REPORTS_DIRECTORY):
     os.makedirs(REPORTS_DIRECTORY)
 
-  report_tmp_file = "{}/report_{}_{}.html".format(
-      REPORTS_DIRECTORY, project, date.strftime("%Y%m%d")
-  )
+  report_tmp_file = "{}/report_{}_{}.html".format(REPORTS_DIRECTORY, project,
+                                                  date.strftime("%Y%m%d"))
   with open(report_tmp_file, "w") as fo:
     fo.write(content)
 
   if upload_report:
-    _upload_to_storage(
-        report_tmp_file, storage_bucket, dated_subdir + "/{}.html".format(report_name))
+    _upload_to_storage(report_tmp_file, storage_bucket,
+                       dated_subdir + "/{}.html".format(report_name))
   else:
     print(content)
 
@@ -677,31 +695,34 @@ def main(args=None):
   )
   parser.add_argument(
       "--storage_bucket",
-      help="The GCP Storage bucket to fetch benchmark data from/upload the reports to.")
+      help="The GCP Storage bucket to fetch benchmark data from/upload the reports to."
+  )
   parser.add_argument(
-      "--upload_report", type=bool, default=False,
+      "--upload_report",
+      type=bool,
+      default=False,
       help="Whether to upload the report.")
   parser.add_argument(
       "--bigquery_table",
-      help="The BigQuery table to fetch data from. In the format: project:table_identifier.")
+      help="The BigQuery table to fetch data from. In the format: project:table_identifier."
+  )
   parser.add_argument(
-      "--report_name", type=str,
-      help="The name of the generated report.", default="report")
+      "--report_name",
+      type=str,
+      help="The name of the generated report.",
+      default="report")
   parsed_args = parser.parse_args(args)
 
   date = (
       datetime.datetime.strptime(parsed_args.date, "%Y-%m-%d").date()
-      if parsed_args.date
-      else datetime.date.today()
-  )
+      if parsed_args.date else datetime.date.today())
 
-  bq_project, bq_table = parsed_args.bigquery_table.split(':')
+  bq_project, bq_table = parsed_args.bigquery_table.split(":")
   for project in parsed_args.project:
-    _generate_report_for_date(
-        project, date, parsed_args.storage_bucket, parsed_args.report_name,
-        parsed_args.upload_report, bq_project, bq_table)
+    _generate_report_for_date(project, date, parsed_args.storage_bucket,
+                              parsed_args.report_name,
+                              parsed_args.upload_report, bq_project, bq_table)
 
 
 if __name__ == "__main__":
   sys.exit(main())
-

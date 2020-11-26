@@ -110,9 +110,9 @@ def parse_bazel_args_from_canonical_str(args):
       to be in canonical form.
   """
   logger.log_warn(('Warning: Disabling prefetch_ext_deps requires the command '
-      'to be in canonical form: '
-      '<command> [<canonical options>] [<expressions>]. '
-      'E.g. build --compilation_mode=opt -- //:all'))
+                   'to be in canonical form: '
+                   '<command> [<canonical options>] [<expressions>]. '
+                   'E.g. build --compilation_mode=opt -- //:all'))
 
   # The command is always the first element.
   command = args[0]

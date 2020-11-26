@@ -19,7 +19,8 @@ import getpass
 import utils.logger as logger
 
 
-def export_csv(data_directory, filename, data, project_source, platform, project_label):
+def export_csv(data_directory, filename, data, project_source, platform,
+               project_label):
   """Exports the content of data to a csv file in data_directory
 
   Args:
@@ -82,4 +83,3 @@ def export_file(data_directory, filename, content):
     out_file.write(content)
 
   return out_file_path
-

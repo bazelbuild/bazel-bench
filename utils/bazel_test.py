@@ -84,7 +84,10 @@ class BazelTest(unittest.TestCase):
         b.command(
             command_name='build', args=['bar', 'zoo'], collect_memory=True))
     subprocess_mock.assert_called_with(
-        ['foo', '--bazelrc=/dev/null', 'build', 'bar', 'zoo'], stdout=mock.ANY, stderr=mock.ANY)
+        ['foo', '--bazelrc=/dev/null', 'build', 'bar', 'zoo'],
+        stdout=mock.ANY,
+        stderr=mock.ANY)
+
 
 if __name__ == '__main__':
   unittest.main()

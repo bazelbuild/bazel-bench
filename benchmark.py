@@ -49,6 +49,7 @@ DEFAULT_OUT_BASE_PATH = os.path.join(BB_ROOT, 'out')
 # The default name of the aggr json profile.
 DEFAULT_AGGR_JSON_PROFILE_FILENAME = 'aggr_json_profiles.csv'
 
+
 def _get_clone_subdir(project_source):
   """Calculates a hexdigest of project_source to serve as a unique subdir name."""
   return hashlib.md5(project_source.encode('utf-8')).hexdigest()
@@ -63,13 +64,19 @@ def _exec_command(args, shell=False, fail_if_nonzero=True, cwd=None):
 
   devnull_w = open(os.devnull, 'w')
   proc = subprocess.Popen(
-      args, shell=shell, stdin=devnull_r, stdout=devnull_w, stderr=devnull_w, cwd=cwd)
+      args,
+      shell=shell,
+      stdin=devnull_r,
+      stdout=devnull_w,
+      stderr=devnull_w,
+      cwd=cwd)
   return proc.communicate()
-  
 
 
-def _get_commits_topological(
-    commits_sha_list, repo, flag_name, fill_default=True):
+def _get_commits_topological(commits_sha_list,
+                             repo,
+                             flag_name,
+                             fill_default=True):
   """Returns a list of commits, sorted by topological order.
 
   e.g. for a commit history A -> B -> C -> D, commits_sha_list = [C, B]
@@ -80,16 +87,19 @@ def _get_commits_topological(
   of the repo.
 
   Args:
-    commits_sha_list: a list of string of commit SHA digest. Can be long or short digest.
+    commits_sha_list: a list of string of commit SHA digest. Can be long or
+      short digest.
     repo: the git.Repo instance of the repository.
     flag_name: the flag that is supposed to specify commits_list.
-    fill_default: whether to fill in a default latest commit if none is specified.
+    fill_default: whether to fill in a default latest commit if none is
+      specified.
 
   Returns:
     A list of string of full SHA digests, sorted by topological commit order.
   """
   if commits_sha_list:
-    long_commits_sha_set = set(map(lambda x: _to_long_sha_digest(x, repo), commits_sha_list))
+    long_commits_sha_set = set(
+        map(lambda x: _to_long_sha_digest(x, repo), commits_sha_list))
     sorted_commit_list = []
     for c in reversed(list(repo.iter_commits())):
       if c.hexsha in long_commits_sha_set:
@@ -162,7 +172,7 @@ def _build_bazel_binary(commit, repo, outroot, platform=None):
     The path to the resulting binary (copied to outroot).
   """
   outroot_for_commit = '%s/%s/%s' % (
-    outroot, platform, commit) if platform else '%s/%s' % (outroot, commit)
+      outroot, platform, commit) if platform else '%s/%s' % (outroot, commit)
   destination = '%s/bazel' % outroot_for_commit
   if os.path.exists(destination):
     logger.log('Binary exists at %s, reusing...' % destination)
@@ -195,23 +205,18 @@ def _construct_json_profile_flags(out_file_path):
     A list of string representing the flags.
   """
   return [
-      "--experimental_generate_json_trace_profile",
-      "--experimental_profile_cpu_usage",
-      "--experimental_json_trace_compression",
-      "--profile={}".format(out_file_path)
+      '--experimental_generate_json_trace_profile',
+      '--experimental_profile_cpu_usage',
+      '--experimental_json_trace_compression',
+      '--profile={}'.format(out_file_path)
   ]
 
 
-def json_profile_filename(
-    data_directory, bazel_bench_uid, bazel_commit, project_commit, run_number,
-    total_runs):
-  return '%s/%s_%s_%s_%s_of_%s.profile.gz' % (
-      data_directory,
-      bazel_bench_uid,
-      bazel_commit,
-      project_commit,
-      run_number,
-      total_runs)
+def json_profile_filename(data_directory, bazel_bench_uid, bazel_commit,
+                          project_commit, run_number, total_runs):
+  return '%s/%s_%s_%s_%s_of_%s.profile.gz' % (data_directory, bazel_bench_uid,
+                                              bazel_commit, project_commit,
+                                              run_number, total_runs)
 
 
 def _single_run(bazel_bin_path,
@@ -288,12 +293,12 @@ def _run_benchmark(bazel_bin_path,
     bep_json_dir: absolute path to the directory to write the build event json
       file to.
     collect_json_profile: whether to collect JSON profile for each run.
-    data_directory: the path to the directory to store run data.
-      Required if collect_json_profile.
-    bazel_identifier: the commit hash of the bazel commit.
-      Required if collect_json_profile.
-    project_commit: the commit hash of the project commit.
-      Required if collect_json_profile.
+    data_directory: the path to the directory to store run data. Required if
+      collect_json_profile.
+    bazel_identifier: the commit hash of the bazel commit. Required if
+      collect_json_profile.
+    project_commit: the commit hash of the project commit. Required if
+      collect_json_profile.
 
   Returns:
     A list of result objects from each _single_run.
@@ -301,9 +306,8 @@ def _run_benchmark(bazel_bin_path,
   collected = []
   os.chdir(project_path)
 
-  logger.log(
-      '=== BENCHMARKING BAZEL: %s, PROJECT: %s ==='
-      % (bazel_identifier, project_commit))
+  logger.log('=== BENCHMARKING BAZEL: %s, PROJECT: %s ===' %
+             (bazel_identifier, project_commit))
   # Runs the command once to make sure external dependencies are fetched.
   # If prefetch_ext_deps, run the command with --build_event_json_file to get the
   # command arguments.
@@ -328,8 +332,7 @@ def _run_benchmark(bazel_bin_path,
         '--build_event_json_file=%s' % bep_json_path
     ]
 
-    _single_run(
-        bazel_bin_path, command, command_args, bazelrc, collect_memory)
+    _single_run(bazel_bin_path, command, command_args, bazelrc, collect_memory)
     command, expressions, options = args_parser.parse_bazel_args_from_build_event(
         bep_json_path)
   else:
@@ -346,16 +349,14 @@ def _run_benchmark(bazel_bin_path,
 
     maybe_include_json_profile_flags = options[:]
     if collect_json_profile:
-      assert bazel_identifier, 'bazel_identifier is required when collect_json_profile'
-      assert project_commit, 'project_commit is required when collect_json_profile'
+      assert bazel_identifier, ('bazel_identifier is required when '
+                                'collect_json_profile')
+      assert project_commit, ('project_commit is required when '
+                              'collect_json_profile')
       maybe_include_json_profile_flags += _construct_json_profile_flags(
-          json_profile_filename(
-              data_directory,
-              bazel_bench_uid,
-              bazel_identifier.replace('/', '_'),
-              project_commit,
-              i,
-              runs))
+          json_profile_filename(data_directory, bazel_bench_uid,
+                                bazel_identifier.replace('/', '_'),
+                                project_commit, i, runs))
     parsed_args = maybe_include_json_profile_flags + expressions
     collected.append(
         _single_run(bazel_bin_path, command, parsed_args, bazelrc,
@@ -364,19 +365,18 @@ def _run_benchmark(bazel_bin_path,
   return collected, (command, expressions, options)
 
 
-def handle_json_profiles_aggr(
-    bazel_commits, project_source, project_commits, runs, output_prefix,
-    output_path, data_directory):
+def handle_json_profiles_aggr(bazel_commits, project_source, project_commits,
+                              runs, output_prefix, output_path, data_directory):
   """Aggregates the collected JSON profiles and writes the result to a CSV.
 
    Args:
     bazel_commits: the Bazel commits that bazel-bench ran on.
-    project_source: a path/url to a local/remote repository of the project
-      on which benchmarking was performed.
+    project_source: a path/url to a local/remote repository of the project on
+      which benchmarking was performed.
     project_commits: the commits of the project when benchmarking was done.
     runs: the total number of runs.
-    output_prefix: the prefix to json profile filenames.
-      Often the bazel-bench-uid.
+    output_prefix: the prefix to json profile filenames. Often the
+      bazel-bench-uid.
     output_path: the path to the output csv file.
     data_directory: the directory that stores output files.
   """
@@ -386,26 +386,24 @@ def handle_json_profiles_aggr(
 
   with open(output_path, 'w') as f:
     csv_writer = csv.writer(f)
-    csv_writer.writerow(
-        ['bazel_source', 'project_source', 'project_commit',
-         'cat', 'name', 'dur'])
+    csv_writer.writerow([
+        'bazel_source', 'project_source', 'project_commit', 'cat', 'name', 'dur'
+    ])
 
     for bazel_commit in bazel_commits:
       for project_commit in project_commits:
         profiles_filenames = [
-             json_profile_filename(
-                  data_directory,
-                  output_prefix,
-                  bazel_commit,
-                  project_commit,
-                  i,
-                  runs) for i in range(1, runs + 1)]
+            json_profile_filename(data_directory, output_prefix, bazel_commit,
+                                  project_commit, i, runs)
+            for i in range(1, runs + 1)
+        ]
         event_list = json_profiles_merger_lib.aggregate_data(
             profiles_filenames, only_phases=True)
         for event in event_list:
-          csv_writer.writerow(
-              [bazel_commit, project_source, project_commit,
-               event['cat'], event['name'], event['median']])
+          csv_writer.writerow([
+              bazel_commit, project_source, project_commit, event['cat'],
+              event['name'], event['median']
+          ])
   logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
 
 
@@ -418,18 +416,14 @@ def create_summary(data):
   summary_builder.append('\nRESULTS:')
   last_collected = None
   for (bazel_commit, project_commit), collected in data.items():
-    header = (
-        'Bazel commit: %s, Project commit: %s, Project source: %s' %
-            (bazel_commit, project_commit, FLAGS.project_source))
+    header = ('Bazel commit: %s, Project commit: %s, Project source: %s' %
+              (bazel_commit, project_commit, FLAGS.project_source))
     summary_builder.append(header)
 
     summary_builder.append(
-        '%s  %s %s %s %s' % (
-            'metric'.rjust(8),
-            'mean'.center(20),
-            'median'.center(20),
-            'stddev'.center(10),
-            'pval'.center(10)))
+        '%s  %s %s %s %s' %
+        ('metric'.rjust(8), 'mean'.center(20), 'median'.center(20),
+         'stddev'.center(10), 'pval'.center(10)))
 
     num_runs = len(collected['wall'].items())
     # A map from run number to exit code, for runs with non-zero exit codes.
@@ -453,60 +447,63 @@ def create_summary(data):
         mean_diff = '(% +6.2f%%)' % (
             100. * (values_exclude_failures.mean() - base.mean()) / base.mean())
         median_diff = '(% +6.2f%%)' % (
-            100. * (values_exclude_failures.median() - base.median()) /
-            base.median())
+            100. *
+            (values_exclude_failures.median() - base.median()) / base.median())
       else:
         pval = ''
         mean_diff = median_diff = '         '
       summary_builder.append(
-          '%s: %s %s %s %s' % (
-              metric.rjust(8),
-              ('% 8.3fs %s' % (
-                  values_exclude_failures.mean(), mean_diff)).center(20),
-              ('% 8.3fs %s' % (
-                  values_exclude_failures.median(), median_diff)).center(20),
-              ('% 7.3fs' % values_exclude_failures.stddev()).center(10),
-              pval.center(10)))
+          '%s: %s %s %s %s' %
+          (metric.rjust(8),
+           ('% 8.3fs %s' %
+            (values_exclude_failures.mean(), mean_diff)).center(20),
+           ('% 8.3fs %s' %
+            (values_exclude_failures.median(), median_diff)).center(20),
+           ('% 7.3fs' % values_exclude_failures.stddev()).center(10),
+           pval.center(10)))
     last_collected = collected
     if non_zero_runs:
       summary_builder.append(
           ('The following runs contain non-zero exit code(s):\n %s\n'
            'Please check the full log for more details. These runs are '
-           'excluded from the above result table.' % '\n '.join(
-               '- run: %s/%s, exit_code: %s' % (k + 1, num_runs, v)
-               for k, v in non_zero_runs.items())))
+           'excluded from the above result table.' %
+           '\n '.join('- run: %s/%s, exit_code: %s' % (k + 1, num_runs, v)
+                      for k, v in non_zero_runs.items())))
     summary_builder.append('')
 
   return '\n'.join(summary_builder)
 
+
 FLAGS = flags.FLAGS
 # Flags for the bazel binaries.
 flags.DEFINE_list('bazel_commits', None, 'The commits at which bazel is built.')
-flags.DEFINE_list('bazel_binaries', None, 'The pre-built bazel binaries to benchmark.')
+flags.DEFINE_list('bazel_binaries', None,
+                  'The pre-built bazel binaries to benchmark.')
 flags.DEFINE_string('bazel_source',
                     'https://github.com/bazelbuild/bazel.git',
                     'Either a path to the local Bazel repo or a https url to ' \
                     'a GitHub repository.')
-flags.DEFINE_string('bazel_bin_dir', None,
-                    'The directory to store the bazel binaries from each commit.')
+flags.DEFINE_string(
+    'bazel_bin_dir', None,
+    'The directory to store the bazel binaries from each commit.')
 
 # Flags for the project to be built.
-flags.DEFINE_string('project_label', None,
-                    'The label of the project. Only relevant in the daily performance report.')
+flags.DEFINE_string(
+    'project_label', None,
+    'The label of the project. Only relevant in the daily performance report.')
 flags.DEFINE_string('project_source', None,
                     'Either a path to the local git project to be built or ' \
                     'a https url to a GitHub repository.')
 flags.DEFINE_list('project_commits', None,
                   'The commits from the git project to be benchmarked.')
-flags.DEFINE_string('env_configure', None,
-                    "The shell commands to configure the project's environment .")
-
+flags.DEFINE_string(
+    'env_configure', None,
+    "The shell commands to configure the project's environment .")
 
 # Execution options.
 flags.DEFINE_integer('runs', 3, 'The number of benchmark runs.')
 flags.DEFINE_string('bazelrc', None, 'The path to a .bazelrc file.')
-flags.DEFINE_string('platform',
-                    None,
+flags.DEFINE_string('platform', None,
                     ('The platform on which bazel-bench is run. This is just '
                      'to categorize data and has no impact on the actual '
                      'script execution.'))
@@ -535,6 +532,7 @@ flags.DEFINE_string('data_directory', None,
 # properly filled.
 flags.DEFINE_string('csv_file_name', None,
                     'The name of the output csv, without the .csv extension.')
+
 
 def _flag_checks():
   """Verify flags requirements."""
@@ -588,14 +586,14 @@ def main(argv):
   data_directory = FLAGS.data_directory or DEFAULT_OUT_BASE_PATH
 
   # We use the start time as a unique identifier of this bazel-bench run.
-  bazel_bench_uid = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+  bazel_bench_uid = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
 
   bazel_bin_base_path = FLAGS.bazel_bin_dir or BAZEL_BINARY_BASE_PATH
   bazel_bin_identifiers = []
 
   for bazel_commit in bazel_commits:
-    bazel_bin_path = _build_bazel_binary(
-        bazel_commit, bazel_clone_repo, bazel_bin_base_path, FLAGS.platform)
+    bazel_bin_path = _build_bazel_binary(bazel_commit, bazel_clone_repo,
+                                         bazel_bin_base_path, FLAGS.platform)
     bazel_bin_identifiers.append((bazel_bin_path, bazel_commit))
 
   for bazel_bin_path in bazel_binaries:
@@ -605,7 +603,8 @@ def main(argv):
     for project_commit in project_commits:
       project_clone_repo.git.checkout('-f', project_commit)
       if FLAGS.env_configure:
-        _exec_command(FLAGS.env_configure, shell=True, cwd=project_clone_repo.working_dir)
+        _exec_command(
+            FLAGS.env_configure, shell=True, cwd=project_clone_repo.working_dir)
 
       results, args = _run_benchmark(
           bazel_bin_path=bazel_bin_path,
@@ -640,20 +639,19 @@ def main(argv):
     csv_file_name = FLAGS.csv_file_name or '{}.csv'.format(bazel_bench_uid)
     txt_file_name = csv_file_name.replace('.csv', '.txt')
 
-    output_handling.export_csv(
-        data_directory,
-        csv_file_name,
-        csv_data,
-        FLAGS.project_source,
-        FLAGS.platform,
-        FLAGS.project_label)
+    output_handling.export_csv(data_directory, csv_file_name, csv_data,
+                               FLAGS.project_source, FLAGS.platform,
+                               FLAGS.project_label)
     output_handling.export_file(data_directory, txt_file_name, summary_text)
 
     if FLAGS.aggregate_json_profiles:
       aggr_json_profiles_csv_path = (
           '%s/%s' % (FLAGS.data_directory, DEFAULT_AGGR_JSON_PROFILE_FILENAME))
       handle_json_profiles_aggr(
-          bazel_commits, FLAGS.project_source, project_commits, FLAGS.runs,
+          bazel_commits,
+          FLAGS.project_source,
+          project_commits,
+          FLAGS.runs,
           output_prefix=bazel_bench_uid,
           output_path=aggr_json_profiles_csv_path,
           data_directory=FLAGS.data_directory)

@@ -113,8 +113,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
     mock_repo.git.checkout.assert_called_once_with('-f', 'commit')
     self.assertEqual(
         ''.join([
-            'Building Bazel binary at commit commit',
-            'bazel build //src:bazel',
+            'Building Bazel binary at commit commit', 'bazel build //src:bazel',
             'Copying bazel binary to outroot/commit/bazel',
             'chmod +x outroot/commit/bazel'
         ]), mock_stderr.getvalue())
@@ -262,6 +261,7 @@ class BenchmarkFlagsTest(absltest.TestCase):
         str(value_err),
         'Either --bazel_commits or --project_commits should be a single element.'
     )
+
 
 if __name__ == '__main__':
   absltest.main()

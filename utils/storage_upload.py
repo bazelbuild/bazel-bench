@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Handles the uploading of results to Storage.
-"""
+"""Handles the uploading of results to Storage."""
 import os
 import re
 import utils.logger as logger
@@ -20,6 +19,7 @@ import utils.logger as logger
 from absl import app
 from absl import flags
 from google.cloud import storage
+
 
 def upload_to_storage(file_path, project_id, bucket_id, destination):
   """Uploads the file to Storage.
@@ -41,8 +41,7 @@ def upload_to_storage(file_path, project_id, bucket_id, destination):
 
   blob.upload_from_filename(file_path)
 
-  logger.log(
-      'Uploaded {} to {}/{}.'.format(file_path, bucket_id, destination))
+  logger.log('Uploaded {} to {}/{}.'.format(file_path, bucket_id, destination))
 
 
 FLAGS = flags.FLAGS
@@ -61,9 +60,9 @@ def main(argv):
 
   project_id, bucket_id, subdirectory = FLAGS.upload_to_storage.split(':')
   for filepath in files_to_upload:
-      filename = os.path.basename(filepath)
-      destination = '%s/%s' % (subdirectory, filename)
-      upload_to_storage(filepath, project_id, bucket_id, destination)
+    filename = os.path.basename(filepath)
+    destination = '%s/%s' % (subdirectory, filename)
+    upload_to_storage(filepath, project_id, bucket_id, destination)
 
 
 if __name__ == '__main__':

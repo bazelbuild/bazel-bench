@@ -22,9 +22,11 @@ Currently supported flags/attributes:
 - collect_memory
 - warmup_runs
 - shutdown
-- the command (which includes startup options, command, targets, command options)
+- the command (which includes startup options, command, targets, command
+options)
 
-Note that the pluralized options (e.g. --project_commits) have to repeated across
+Note that the pluralized options (e.g. --project_commits) have to repeated
+across
 units or as a global option in their singular form.
 
 Example of a config file:
@@ -70,13 +72,14 @@ class BenchmarkConfig(object):
       'shutdown': True,
   }
 
-  def __init__(self, units, benchmark_project_commits = False):
+  def __init__(self, units, benchmark_project_commits=False):
     """Loads the YAML config file and get the benchmarking units.
 
     Args:
       units: the benchmarking units.
-      benchmark_project_commits: whether we're benchmarking project commits (instead of
-        bazel commits). This makes a difference in how we generate our report.
+      benchmark_project_commits: whether we're benchmarking project commits
+        (instead of bazel commits). This makes a difference in how we generate
+        our report.
     """
     self._units = units
     self._benchmark_project_commits = benchmark_project_commits
@@ -84,9 +87,7 @@ class BenchmarkConfig(object):
   def get_bazel_commits(self):
     """Returns the list of specified bazel_commits."""
     return [
-        unit['bazel_commit']
-        for unit in self._units
-        if 'bazel_commit' in unit
+        unit['bazel_commit'] for unit in self._units if 'bazel_commit' in unit
     ]
 
   def get_units(self):
@@ -126,7 +127,7 @@ class BenchmarkConfig(object):
       raise ValueError('Wrong config file format. Please check the example.')
 
     benchmark_project_commits = ('benchmark_project_commits' in config and
-                           config['benchmark_project_commits'])
+                                 config['benchmark_project_commits'])
 
     global_options = (
         config['global_options'] if 'global_options' in config else {})
@@ -141,12 +142,12 @@ class BenchmarkConfig(object):
 
   @classmethod
   def from_flags(cls, bazel_commits, bazel_paths, project_commits, runs,
-                 bazelrc, collect_memory, collect_profile,
-                 warmup_runs, shutdown, command):
+                 bazelrc, collect_memory, collect_profile, warmup_runs,
+                 shutdown, command):
     """Creates the BenchmarkConfig based on specified flags.
-    
+
     TODO(leba): Add support for bazel_paths.
-    
+
     Args:
       bazel_commits: the bazel commits.
       bazel_paths: paths to pre-built bazel binaries.
@@ -181,18 +182,18 @@ class BenchmarkConfig(object):
             }))
     for bazel_path in bazel_paths:
       for project_commit in project_commits:
-          units.append(
-              cls._parse_unit({
-                  'bazel_path': bazel_path,
-                  'project_commit': project_commit,
-                  'runs': runs,
-                  'bazelrc': bazelrc,
-                  'collect_memory': collect_memory,
-                  'collect_profile': collect_profile,
-                  'warmup_runs': warmup_runs,
-                  'shutdown': shutdown,
-                  'command': command,
-              }))
+        units.append(
+            cls._parse_unit({
+                'bazel_path': bazel_path,
+                'project_commit': project_commit,
+                'runs': runs,
+                'bazelrc': bazelrc,
+                'collect_memory': collect_memory,
+                'collect_profile': collect_profile,
+                'warmup_runs': warmup_runs,
+                'shutdown': shutdown,
+                'command': command,
+            }))
     return cls(units, benchmark_project_commits=(len(project_commits) > 1))
 
   @classmethod

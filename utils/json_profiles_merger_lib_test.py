@@ -3,6 +3,7 @@
 import json_profiles_merger_lib as lib
 import unittest
 
+
 class JsonProfilesMergerLibTest(unittest.TestCase):
 
   def test_accumulate_event_duration(self):
@@ -94,7 +95,6 @@ class JsonProfilesMergerLibTest(unittest.TestCase):
                 'dur_list': [1]
             },
         }, accum_dict)
-
 
   def test_accumulate_only_phase_marker(self):
     event_list = [

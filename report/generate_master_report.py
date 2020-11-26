@@ -13,8 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Generates a daily HTML report for the projects.
+"""Generates a daily HTML report for the projects.
+
 The steps:
   1. Get the necessary data from Storage for projects/date.
   2. Manipulate the data to a format suitable for graphs.
@@ -35,20 +35,21 @@ import tempfile
 import urllib.request
 from google.cloud import bigquery
 
-
 TMP = tempfile.gettempdir()
 REPORTS_DIRECTORY = os.path.join(TMP, ".bazel_bench", "reports")
 PLATFORMS = ["macos", "ubuntu1804"]
 PROJECT_SOURCE_TO_NAME = {
-  "https://github.com/bazelbuild/bazel.git": "bazel",
-  "https://github.com/tensorflow/tensorflow.git": "tensorflow"
+    "https://github.com/bazelbuild/bazel.git": "bazel",
+    "https://github.com/tensorflow/tensorflow.git": "tensorflow"
 }
 
 
 def _upload_to_storage(src_file_path, storage_bucket, destination_dir):
-  """Uploads the file from src_file_path to the specified location on Storage.
-  """
-  args = ["gsutil", "cp", src_file_path, "gs://{}/{}".format(storage_bucket, destination_dir)]
+  """Uploads the file from src_file_path to the specified location on Storage."""
+  args = [
+      "gsutil", "cp", src_file_path,
+      "gs://{}/{}".format(storage_bucket, destination_dir)
+  ]
   subprocess.run(args)
 
 
@@ -71,12 +72,12 @@ def _row_component(content):
 def _col_component(col_class, content):
   return """
 <div class="{col_class}">{content}</div>
-""".format(col_class=col_class, content=content)
- 
+""".format(
+    col_class=col_class, content=content)
+
 
 def _historical_graph(metric, metric_label, data, platform):
-  """Returns the HTML <div> component of a single graph.
-  """
+  """Returns the HTML <div> component of a single graph."""
   title = "[{}] Historical values of {}".format(platform, metric_label)
   hAxis = "Date (commmit)"
   vAxis = metric_label
@@ -123,13 +124,16 @@ def _historical_graph(metric, metric_label, data, platform):
   </script>
 <div id="{chart_id}" style="min-height: 400px"></div>
 """.format(
-    title=title, data=data, hAxis=hAxis, vAxis=vAxis, chart_id=chart_id,
+    title=title,
+    data=data,
+    hAxis=hAxis,
+    vAxis=vAxis,
+    chart_id=chart_id,
     metric_label=metric_label)
 
 
 def _full_report(date, graph_components, project_reports_components):
-  """Returns the full HTML of a complete report, from the graph components.
-  """
+  """Returns the full HTML of a complete report, from the graph components."""
   return """
 <html>
   <head>
@@ -203,8 +207,7 @@ def _full_report(date, graph_components, project_reports_components):
 """.format(
     date=date.strftime("%Y/%m/%d"),
     graphs=graph_components,
-    reports=project_reports_components
-  )
+    reports=project_reports_components)
 
 
 def _query_bq(bq_project, bq_table, date_cutoff, platform):
@@ -244,15 +247,18 @@ FROM (
 )
 GROUP BY bazel_commit, project_label
 ORDER BY report_date, project_label ASC;
-""".format(bq_project=bq_project, bq_table=bq_table, date_cutoff=date_cutoff, platform=platform)
+""".format(
+    bq_project=bq_project,
+    bq_table=bq_table,
+    date_cutoff=date_cutoff,
+    platform=platform)
 
   return bq_client.query(query)
 
 
 # TODO(leba): Normalize data between projects.
 def _prepare_time_series_data(raw_data):
-  """Massage the data to fit a format suitable for graph generation.
-  """
+  """Massage the data to fit a format suitable for graph generation."""
   headers = ["Date"]
   project_to_pos = {}
   date_to_wall = {}
@@ -262,15 +268,20 @@ def _prepare_time_series_data(raw_data):
   for row in raw_data:
     if row.project_label not in project_to_pos:
       project_to_pos[row.project_label] = len(project_to_pos)
-      headers.extend([row.project_label, {"role": "interval"}, {"role": "interval"}])
+      headers.extend(
+          [row.project_label, {
+              "role": "interval"
+          }, {
+              "role": "interval"
+          }])
 
   for row in raw_data:
     if row.report_date not in date_to_wall:
       # Commits on day X are benchmarked on day X + 1.
       date_str = "{} ({})".format(
-        (row.report_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
-        _short_hash(row.bazel_commit))
-      
+          (row.report_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d"),
+          _short_hash(row.bazel_commit))
+
       date_to_wall[row.report_date] = ["null"] * len(headers)
       date_to_mem[row.report_date] = ["null"] * len(headers)
 
@@ -285,17 +296,21 @@ def _prepare_time_series_data(raw_data):
     date_to_mem[row.report_date][base_pos + 2] = row.min_memory
     date_to_mem[row.report_date][base_pos + 3] = row.max_memory
 
-  return [headers] + list(date_to_wall.values()), [headers] + list(date_to_mem.values()), project_to_pos.keys()
+  return [headers] + list(date_to_wall.values()), [headers] + list(
+      date_to_mem.values()), project_to_pos.keys()
 
 
 def _project_reports_components(date, projects):
-  links = " - ".join(
-    ['<a href="https://perf.bazel.build/{project_label}/{date_subdir}/report.html">{project_label}</a>'.format(
-      date_subdir=date.strftime("%Y/%m/%d"), project_label=label) for label in projects])
+  links = " - ".join([
+      '<a href="https://perf.bazel.build/{project_label}/{date_subdir}/report.html">{project_label}</a>'
+      .format(date_subdir=date.strftime("%Y/%m/%d"), project_label=label)
+      for label in projects
+  ])
   return "<p><b>Individual Project Reports:</b> {}</p>".format(links)
 
 
-def _generate_report_for_date(date, storage_bucket, report_name, upload_report, bq_project, bq_table):
+def _generate_report_for_date(date, storage_bucket, report_name, upload_report,
+                              bq_project, bq_table):
   """Generates a html report for the specified date & project.
 
   Args:
@@ -306,7 +321,7 @@ def _generate_report_for_date(date, storage_bucket, report_name, upload_report, 
     bq_project: the BigQuery project.
     bq_table: the BigQuery table.
   """
-  bq_date_cutoff = (date + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+  bq_date_cutoff = (date + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
   graph_components = []
   projects = set()
@@ -314,49 +329,51 @@ def _generate_report_for_date(date, storage_bucket, report_name, upload_report, 
   for platform in PLATFORMS:
 
     historical_wall_data, historical_mem_data, platform_projects = _prepare_time_series_data(
-      _query_bq(bq_project, bq_table, bq_date_cutoff, platform))
+        _query_bq(bq_project, bq_table, bq_date_cutoff, platform))
 
     projects = projects.union(set(platform_projects))
     # Generate a graph for that platform.
     row_content = []
 
     row_content.append(
-        _col_component("col-sm-6", _historical_graph(
-            metric="wall",
-            metric_label="Wall Time (s)",
-            data=historical_wall_data,
-            platform=platform,
-        ))
-    )
+        _col_component(
+            "col-sm-6",
+            _historical_graph(
+                metric="wall",
+                metric_label="Wall Time (s)",
+                data=historical_wall_data,
+                platform=platform,
+            )))
 
     row_content.append(
-        _col_component("col-sm-6", _historical_graph(
-            metric="memory",
-            metric_label="Memory (MB)",
-            data=historical_mem_data,
-            platform=platform,
-        ))
-    )
+        _col_component(
+            "col-sm-6",
+            _historical_graph(
+                metric="memory",
+                metric_label="Memory (MB)",
+                data=historical_mem_data,
+                platform=platform,
+            )))
 
     graph_components.append(_row_component("\n".join(row_content)))
-    
+
   content = _full_report(
-    date,
-    graph_components="\n".join(graph_components),
-    project_reports_components=_project_reports_components(date, projects))
+      date,
+      graph_components="\n".join(graph_components),
+      project_reports_components=_project_reports_components(date, projects))
 
   if not os.path.exists(REPORTS_DIRECTORY):
     os.makedirs(REPORTS_DIRECTORY)
 
-  report_tmp_file = "{}/report_master_{}.html".format(
-      REPORTS_DIRECTORY, date.strftime("%Y%m%d")
-  )
+  report_tmp_file = "{}/report_master_{}.html".format(REPORTS_DIRECTORY,
+                                                      date.strftime("%Y%m%d"))
   with open(report_tmp_file, "w") as fo:
     fo.write(content)
 
   if upload_report:
     _upload_to_storage(
-        report_tmp_file, storage_bucket, "all/{}/{}.html".format(date.strftime("%Y/%m/%d"), report_name))
+        report_tmp_file, storage_bucket,
+        "all/{}/{}.html".format(date.strftime("%Y/%m/%d"), report_name))
   else:
     print(content)
 
@@ -365,32 +382,37 @@ def main(args=None):
   if args is None:
     args = sys.argv[1:]
 
-  parser = argparse.ArgumentParser(description="Bazel Bench Daily Master Report")
+  parser = argparse.ArgumentParser(
+      description="Bazel Bench Daily Master Report")
   parser.add_argument("--date", type=str, help="Date in YYYY-mm-dd format.")
   parser.add_argument(
       "--storage_bucket",
-      help="The GCP Storage bucket to fetch benchmark data from/upload the reports to.")
+      help="The GCP Storage bucket to fetch benchmark data from/upload the reports to."
+  )
   parser.add_argument(
-      "--upload_report", type=bool, default=False,
+      "--upload_report",
+      type=bool,
+      default=False,
       help="Whether to upload the report.")
   parser.add_argument(
       "--bigquery_table",
-      help="The BigQuery table to fetch data from. In the format: project:table_identifier.")
+      help="The BigQuery table to fetch data from. In the format: project:table_identifier."
+  )
   parser.add_argument(
-      "--report_name", type=str,
-      help="The name of the generated report.", default="report")
+      "--report_name",
+      type=str,
+      help="The name of the generated report.",
+      default="report")
   parsed_args = parser.parse_args(args)
 
   date = (
       datetime.datetime.strptime(parsed_args.date, "%Y-%m-%d").date()
-      if parsed_args.date
-      else datetime.date.today()
-  )
+      if parsed_args.date else datetime.date.today())
 
-  bq_project, bq_table = parsed_args.bigquery_table.split(':')
-  _generate_report_for_date(
-      date, parsed_args.storage_bucket, parsed_args.report_name,
-      parsed_args.upload_report, bq_project, bq_table)
+  bq_project, bq_table = parsed_args.bigquery_table.split(":")
+  _generate_report_for_date(date, parsed_args.storage_bucket,
+                            parsed_args.report_name, parsed_args.upload_report,
+                            bq_project, bq_table)
 
 
 if __name__ == "__main__":
