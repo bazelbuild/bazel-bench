@@ -17,17 +17,15 @@ Currently supported flags/attributes:
 - project_commit
 - project_source
 - bazel_commit
-- bazel_path
+- bazel_binary
 - runs
 - collect_memory
-- warmup_runs
-- shutdown
+- collect_profile
 - the command (which includes startup options, command, targets, command
 options)
 
 Note that the pluralized options (e.g. --project_commits) have to repeated
-across
-units or as a global option in their singular form.
+across units or as a global option in their singular form.
 
 Example of a config file:
 benchmark_project_commits: False
@@ -35,16 +33,14 @@ global_options:
   project_commit: 595a730
   runs: 3
   collect_memory: true
-  warmup_runs: 1
-  shutdown: true
-  bazelrc: null
+  collect_profile: false
   project_source: /path/to/project/repo
 units:
  - bazel_commit: 595a730
    command: info
- - bazel_path: /tmp/bazel
+ - bazel_binary: /tmp/bazel
    command: --host_jvm_debug build --nobuild //src:bazel
- - bazel_path: /tmp/bazel
+ - bazel_binary: /tmp/bazel
    command: info
    project_commit: 595a731
 
@@ -55,6 +51,7 @@ benchmarked.
 
 import copy
 import shlex
+import sys
 import yaml
 
 
@@ -65,11 +62,9 @@ class BenchmarkConfig(object):
   # TODO(leba): Consider replacing dict with collections.namedtuple.
   _DEFAULT_VALS = {
       'runs': 3,
-      'bazelrc': None,
       'collect_memory': False,
       'collect_profile': False,
-      'warmup_runs': 1,
-      'shutdown': True,
+      'bazel_source': 'https://github.com/bazelbuild/bazel.git'
   }
 
   def __init__(self, units, benchmark_project_commits=False):
@@ -83,12 +78,6 @@ class BenchmarkConfig(object):
     """
     self._units = units
     self._benchmark_project_commits = benchmark_project_commits
-
-  def get_bazel_commits(self):
-    """Returns the list of specified bazel_commits."""
-    return [
-        unit['bazel_commit'] for unit in self._units if 'bazel_commit' in unit
-    ]
 
   def get_units(self):
     """Returns a copy of the parsed units."""
@@ -141,24 +130,18 @@ class BenchmarkConfig(object):
     return cls(parsed_units, benchmark_project_commits)
 
   @classmethod
-  def from_flags(cls, bazel_commits, bazel_paths, project_commits, runs,
-                 bazelrc, collect_memory, collect_profile, warmup_runs,
-                 shutdown, command):
+  def from_flags(cls, bazel_commits, bazel_binaries, project_commits,
+                 bazel_source, project_source, runs, collect_memory,
+                 collect_profile, command):
     """Creates the BenchmarkConfig based on specified flags.
-
-    TODO(leba): Add support for bazel_paths.
 
     Args:
       bazel_commits: the bazel commits.
-      bazel_paths: paths to pre-built bazel binaries.
+      bazel_binaries: paths to pre-built bazel binaries.
       project_commits: the project commits.
       runs: The number of benchmark runs to perform for each combination.
-      bazelrc: An optional path to a bazelrc.
       collect_memory: Whether to collect Blaze memory consumption.
       collect_profile: Whether to collect a JSON profile.
-      warmup_runs: Number of warm-up runs that are discarded from the
-        measurements.
-      shutdown: Whether to shutdown Blaze during runs.
       command: the full command to benchmark, optionally with startup options
         prepended, e.g. "--noexobazel build --nobuild ...".
 
@@ -172,26 +155,24 @@ class BenchmarkConfig(object):
             cls._parse_unit({
                 'bazel_commit': bazel_commit,
                 'project_commit': project_commit,
+                'bazel_source': bazel_source,
+                'project_source': project_source,
                 'runs': runs,
-                'bazelrc': bazelrc,
                 'collect_memory': collect_memory,
                 'collect_profile': collect_profile,
-                'warmup_runs': warmup_runs,
-                'shutdown': shutdown,
                 'command': command,
             }))
-    for bazel_path in bazel_paths:
+    for bazel_binary in bazel_binaries:
       for project_commit in project_commits:
         units.append(
             cls._parse_unit({
-                'bazel_path': bazel_path,
+                'bazel_binary': bazel_binary,
                 'project_commit': project_commit,
+                'bazel_source': bazel_source,
+                'project_source': project_source,
                 'runs': runs,
-                'bazelrc': bazelrc,
                 'collect_memory': collect_memory,
                 'collect_profile': collect_profile,
-                'warmup_runs': warmup_runs,
-                'shutdown': shutdown,
                 'command': command,
             }))
     return cls(units, benchmark_project_commits=(len(project_commits) > 1))
@@ -226,6 +207,10 @@ class BenchmarkConfig(object):
     options = []
     while full_command_tokens and full_command_tokens[0].startswith('--'):
       options.append(full_command_tokens.pop(0))
+    # This is a workaround for https://github.com/bazelbuild/bazel/issues/3236.
+    if sys.platform.startswith('linux'):
+      options.append('--sandbox_tmpfs_path=/tmp')
+
     targets = full_command_tokens
 
     # Attributes that need special handling.

@@ -27,7 +27,7 @@ To do a test run, run the following command (if you're on Windows, populate
 $ bazel
 run :benchmark \
 -- \
---bazel_commits=b8468a6b68a405e1a5767894426d3ea9a1a2f22f,ad503849e78b98d762f03168de5a336904280150\
+--bazel_commits=b8468a6b68a405e1a5767894426d3ea9a1a2f22f,ad503849e78b98d762f03168de5a336904280150 \
 --project_source=https://github.com/bazelbuild/rules_cc.git \
 --data_directory=/tmp/bazel-bench-data \
 -- build //:all
@@ -40,7 +40,7 @@ file to the specified `--data_directory`.
 
 Bazel-bench has the following syntax:
 
-```
+```shell
 $ bazel run :benchmark -- <bazel-bench-flags> -- <args to pass to bazel binary>
 
 ```
@@ -48,7 +48,7 @@ $ bazel run :benchmark -- <bazel-bench-flags> -- <args to pass to bazel binary>
 For example, to benchmark the performance of 2 bazel commits A and B on the same
 command `bazel build --nobuild //:all` of `rules_cc` project, you'd do:
 
-```
+```shell
 $ bazel run :benchmark \
 -- \
 --bazel_commits=A,B \
@@ -60,14 +60,55 @@ Note the double-dash `--` before the command arguments. You can pass any
 arguments that you would normally run on Bazel to the script. The performance of
 commands other than `build` can also be benchmarked e.g. `query`, ...
 
+### Config-file Interface
+
+The flag-based approach does not support cases where the benchmarked Bazel
+commands differ. The most common use case for this: As a rule developer, I want
+to verify the effect of my flag on Bazel performance. For that, we'd need the
+config-file interface. The example config file would look like this:
+
+```yaml
+# config.yaml
+global_options:
+  project_commit: 595a730
+  runs: 3
+  collect_memory: true
+  collect_profile: false
+  project_source: /path/to/project/repo
+units:
+ - bazel_binary: /usr/bin/bazel
+   command: --startup_option1 build --nomy_flag //:all
+ - bazel_binary: /usr/bin/bazel
+   command: --startup_option2 build --my_flag //:all
+```
+
+To launch the benchmark:
+
+```shell
+$ bazel run :benchmark -- --benchmark_config=/absolute/path/to/config.yaml
+```
+
+The above config file would benchmark 2 "units". A unit is defined as a set of 
+conditions that describes a scenario to be benchmarked. This setup allows
+maximum flexibility, as the conditions are independent between units. It's even 
+possible to benchmark a `bazel_commit` against a pre-built `bazel_binary`.
+
+`global_options` is the list of options applied to every units. These global options are overridden by local options.
+
+For the list of currently supported flags/attributes and their default values,
+refer to [utils/benchmark_config.py](utils/benchmark_config.py).
+
+#### Known Limitations:
+
+- `project_source` should be a global option, as we don't support benchmarking
+multiple projects in 1 benchmark. Though, `project_commit` can differ between units.
+- Incremental benchmarks isn't available.
+- Commands have to be in canonical form (next section).
+
+
 ### Bazel Arguments Interpretation
 
-Bazel arguments are interpreted with
-[Build Event Protocol](https://docs.bazel.build/versions/master/build-event-protocol.html).
-This happens during the first pre-run of each Bazel binary to pre-fetch the
-external dependencies.
-
-In case of `--noprefetch_external_deps`, Bazel arguments are parsed manually. It
+Bazel arguments are parsed manually. It
 is _important_ that the supplied arguments in the command line strictly follows
 the canonical form:
 
