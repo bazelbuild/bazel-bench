@@ -163,6 +163,7 @@ def _full_report(date, graph_components, project_reports_components):
       <div class="row">
         <div class="col-sm-12">
           <h1>Report for {date}</h1>
+          <p>Generated with https://github.com/bazelbuild/bazel-bench at {gentime}</p>
         </div>
       </div>
       <div class="row">
@@ -205,6 +206,7 @@ def _full_report(date, graph_components, project_reports_components):
   </body>
 </html>
 """.format(
+    gentime=datetime.datetime.now(),
     date=date.strftime("%Y/%m/%d"),
     graphs=graph_components,
     reports=project_reports_components)
