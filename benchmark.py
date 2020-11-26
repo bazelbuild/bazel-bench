@@ -256,7 +256,7 @@ def _single_run(bazel_bin_path,
   if command == 'build':
     options = options + ['--nostamp', '--noshow_progress', '--color=no']
   measurements = bazel.command(
-      command=command, args=options + targets, collect_memory=collect_memory)
+      command, args=options + targets, collect_memory=collect_memory)
 
   # Get back to a clean state.
   bazel.command('clean', ['--color=no'])

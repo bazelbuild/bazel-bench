@@ -123,8 +123,9 @@ class BenchmarkFunctionTests(absltest.TestCase):
       benchmark._single_run(
           'bazel_binary_path',
           'build',
-          args=['//:all'],
-          bazelrc=None,
+          options=[],
+          targets=['//:all'],
+          startup_options=[],
           collect_memory=False)
 
     self.assertEqual(
@@ -146,14 +147,15 @@ class BenchmarkFunctionTests(absltest.TestCase):
           runs=2,
           bazel_bench_uid='fake_uid',
           collect_memory=False,
-          bazel_args=['build', '//:all'],
-          bazelrc=None,
+          command='build',
+          options=[],
+          targets=['//:all'],
+          startup_options=[],
           prefetch_ext_deps=False)
 
     self.assertEqual(
         ''.join([
             '=== BENCHMARKING BAZEL: None, PROJECT: None ===',
-            'Parsing arguments from command line...',
             'Starting benchmark run 1/2:',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
@@ -176,15 +178,17 @@ class BenchmarkFunctionTests(absltest.TestCase):
           runs=2,
           bazel_bench_uid='fake_uid',
           collect_memory=False,
-          bazel_args=['build', '//:all'],
-          bazelrc=None,
+          command='build',
+          options=[],
+          targets=['//:all'],
+          startup_options=[],
           prefetch_ext_deps=True)
 
     self.assertEqual(
         ''.join([
             '=== BENCHMARKING BAZEL: None, PROJECT: None ===',
-            'Pre-fetching external dependencies & exporting build event json to some_out_path/build_env.json...',
-            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=some_out_path/build_env.json',
+            'Pre-fetching external dependencies...',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 1/2:',
@@ -209,8 +213,10 @@ class BenchmarkFunctionTests(absltest.TestCase):
           runs=2,
           bazel_bench_uid='fake_uid',
           collect_memory=False,
-          bazel_args=['build', '//:all'],
-          bazelrc=None,
+          command='build',
+          options=[],
+          targets=['//:all'],
+          startup_options=[],
           prefetch_ext_deps=True,
           collect_json_profile=True,
           data_directory='fake_dir',
@@ -220,16 +226,16 @@ class BenchmarkFunctionTests(absltest.TestCase):
     self.assertEqual(
         ''.join([
             '=== BENCHMARKING BAZEL: fake_bazel_commit, PROJECT: fake_project_commit ===',
-            'Pre-fetching external dependencies & exporting build event json to some_out_path/build_env.json...',
-            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all --build_event_json_file=some_out_path/build_env.json',
+            'Pre-fetching external dependencies...',
+            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 1/2:',
-            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_fake_project_commit_1_of_2.profile.gz //:all',
+            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_fake_project_commit_1_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 2/2:',
-            'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_fake_project_commit_2_of_2.profile.gz //:all',
+            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_fake_project_commit_2_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown '
         ]), mock_stderr.getvalue())
