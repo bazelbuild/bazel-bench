@@ -67,10 +67,9 @@ class Bazel(object):
 
     try:
       subprocess.check_call(
-        [self._bazel_binary_path, self._bazelrc_flag, command_name] + args,
-        stdout=dev_null,
-        stderr=dev_null
-      )
+          [self._bazel_binary_path, self._bazelrc_flag, command_name] + args,
+          stdout=dev_null,
+          stderr=dev_null)
     except subprocess.CalledProcessError as e:
       exit_status = e.returncode
       logger.log_error('Bazel command failed with exit code %s' % e.returncode)

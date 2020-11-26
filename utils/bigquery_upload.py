@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Handles the uploading of result CSV to BigQuery.
-"""
+"""Handles the uploading of result CSV to BigQuery."""
 import re
 import sys
 import utils.logger as logger
@@ -21,7 +20,9 @@ from absl import app
 from absl import flags
 from google.cloud import bigquery
 
-def upload_to_bigquery(csv_file_path, project_id, dataset_id, table_id, location):
+
+def upload_to_bigquery(csv_file_path, project_id, dataset_id, table_id,
+                       location):
   """Uploads the csv file to BigQuery.
 
   Takes the configuration from GOOGLE_APPLICATION_CREDENTIALS.
@@ -61,6 +62,7 @@ def upload_to_bigquery(csv_file_path, project_id, dataset_id, table_id, location
   logger.log('Uploaded {} rows into {}:{}.'.format(job.output_rows, dataset_id,
                                                    table_id))
 
+
 FLAGS = flags.FLAGS
 flags.DEFINE_string('upload_to_bigquery', None,
                     'The details of the BigQuery table to upload ' \
@@ -75,10 +77,10 @@ def main(argv):
   # Discard the first argument.
   csv_files_to_upload = argv[1:]
 
-  project_id, dataset_id, table_id, location = FLAGS.upload_to_bigquery.split(':')
+  project_id, dataset_id, table_id, location = FLAGS.upload_to_bigquery.split(
+      ':')
   for filename in csv_files_to_upload:
-    upload_to_bigquery(
-        filename, project_id, dataset_id, table_id, location)
+    upload_to_bigquery(filename, project_id, dataset_id, table_id, location)
 
 
 if __name__ == '__main__':

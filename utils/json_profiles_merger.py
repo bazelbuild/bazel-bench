@@ -1,4 +1,5 @@
 r"""A simple script to aggregate JSON profiles.
+
 Collect median duration of events across these profiles.
 Usage:
   bazel run json_profiles_merger -- \
@@ -37,12 +38,12 @@ flags.DEFINE_string(
     'The details of the BigQuery table to upload results to specified in '
     'the form: <project_id>:<dataset_id>:<table_id>:<location>.')
 flags.DEFINE_string(
-    'input_profile_dir', None,
-    '(Optional) Folder to load input profiles from.'
+    'input_profile_dir', None, '(Optional) Folder to load input profiles from.'
     'This is useful for when your list of input profiles is quite large.')
 flags.DEFINE_boolean(
     'only_phases', False,
     'Whether to only include events from phase markers in the final output.')
+
 
 def main(argv):
   # Discard the first argument (the binary).
@@ -50,21 +51,15 @@ def main(argv):
 
   if FLAGS.input_profile_dir:
     # Add any globbed files from the input_dir to the list.
-    input_profiles += glob(FLAGS.input_profile_dir + "/*.profile.gz")
+    input_profiles += glob(FLAGS.input_profile_dir + '/*.profile.gz')
 
   if not input_profiles:
     raise ValueError('At least one profile must be provided!')
 
-  aggregated_data = lib.aggregate_data(
-      input_profiles,
-      FLAGS.only_phases)
+  aggregated_data = lib.aggregate_data(input_profiles, FLAGS.only_phases)
 
-  lib.write_to_csv(
-      FLAGS.bazel_source,
-      FLAGS.project_source,
-      FLAGS.project_commit,
-      aggregated_data,
-      FLAGS.output_path)
+  lib.write_to_csv(FLAGS.bazel_source, FLAGS.project_source,
+                   FLAGS.project_commit, aggregated_data, FLAGS.output_path)
 
   if FLAGS.upload_data_to:
     project_id, dataset_id, table_id, location = FLAGS.upload_data_to.split(':')

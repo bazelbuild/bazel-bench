@@ -10,7 +10,8 @@
 
 This script works with python3.
 
-Pre-requisites: `python`, `pip`, `git`, `bazel`, `virtualenv` (strongly recommended).
+Pre-requisites: `python`, `pip`, `git`, `bazel`, `virtualenv` (strongly
+recommended).
 
 Before you do anything, install the dependencies:
 
@@ -129,7 +130,10 @@ Some useful flags are:
 
 ## Collecting JSON Profile
 
-[Bazel's JSON Profile](https://docs.bazel.build/versions/master/skylark/performance.html#json-profile) is a useful tool to investigate the performance of Bazel. You can configure `bazel-bench` to export these JSON profiles on runs using the `--collect_json_profile` flag.
+[Bazel's JSON Profile](https://docs.bazel.build/versions/master/skylark/performance.html#json-profile)
+is a useful tool to investigate the performance of Bazel. You can configure
+`bazel-bench` to export these JSON profiles on runs using the
+`--collect_json_profile` flag.
 
 ### JSON Profile Aggregation
 
@@ -157,7 +161,8 @@ argument of the script, like in the above example
 ## Output Directory Layout
 
 By default, bazel-bench will store the measurement results and other required
-files (project clones, built binaries, ...) under the `~/.bazel-bench` directory.
+files (project clones, built binaries, ...) under the `~/.bazel-bench`
+directory.
 
 The layout is:
 
@@ -181,7 +186,7 @@ To clear the caches, simply `rm -rf` where necessary.
 As an important part of our bazel-bench daily pipeline, we upload the csv output
 files to BigQuery and Storage, using separate targets.
 
-To upload the output to BigQuery & Storage you'll need the GCP credentials and 
+To upload the output to BigQuery & Storage you'll need the GCP credentials and
 the table details. Please contact leba@google.com.
 
 BigQuery:
@@ -206,19 +211,14 @@ bazel run utils:storage_upload \
 
 ## Performance Report
 
-We generate a performance report with BazelCI. The generator script can be 
-found under the `/report` directory.
+We generate a performance report with BazelCI. The generator script can be found
+under the `/report` directory.
 
-Example Usage:
-```
-$ python3 report/generate_report.py --date=2019-01-01 --project=dummy
---storage_bucket=dummy_bucket
-```
+Example Usage: `$ python3 report/generate_report.py --date=2019-01-01
+--project=dummy --storage_bucket=dummy_bucket`
 
-For more detailed usage information, run:
-```
-$ python3 report/generate_report.py --help
-```
+For more detailed usage information, run: `$ python3 report/generate_report.py
+--help`
 
 ## Tests
 

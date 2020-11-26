@@ -38,7 +38,7 @@ def log_warn(text):
   """Logs a warning message using the logger singleton."""
   logging.warn(_maybe_colorize_text(text, 'warn'))
 
+
 def log_error(text):
   """Logs an error message using the logger singleton."""
   logging.error(_maybe_colorize_text(text, 'error'))
-

@@ -1,4 +1,5 @@
 """A library that holds the bulk of the logic for merging JSON profiles.
+
 Collect duration statistics of events across these profiles.
 
 Duration is measured in milliseconds.
@@ -13,8 +14,10 @@ import os
 
 def _median(lst):
   """Returns the median of the input list.
+
   Args:
     lst: the input list.
+
   Returns:
     The median of the list, or None if the list is empty/None.
   """
@@ -25,9 +28,10 @@ def _median(lst):
   return (sorted_lst[length // 2 - 1] + sorted_lst[length // 2]) / 2
 
 
-def write_to_csv(
-    bazel_source, project_source, project_commit, event_list, output_csv_path):
+def write_to_csv(bazel_source, project_source, project_commit, event_list,
+                 output_csv_path):
   """Writes the event_list to output_csv_path.
+
   event_list format:
   [{'cat': <string>, 'name': <string>, 'min': <int>,
     'median': <int>, 'max': <int>, 'count': <int>}, ...]
@@ -46,19 +50,22 @@ def write_to_csv(
 
   with open(output_csv_path, 'w') as csv_file:
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(
-        ['bazel_source', 'project_source', 'project_commit',
-         'cat', 'name', 'min', 'median', 'max', 'count'])
+    csv_writer.writerow([
+        'bazel_source', 'project_source', 'project_commit', 'cat', 'name',
+        'min', 'median', 'max', 'count'
+    ])
 
     for event in event_list:
-      csv_writer.writerow(
-          [bazel_source, project_source, project_commit,
-           event['cat'], event['name'], event['min'], event['median'],
-           event['max'], event['count']])
+      csv_writer.writerow([
+          bazel_source, project_source, project_commit, event['cat'],
+          event['name'], event['min'], event['median'], event['max'],
+          event['count']
+      ])
 
 
 def _accumulate_event_duration(event_list, accum_dict, only_phases=False):
   """Fill up accum_dict by accummulating durations of each event.
+
   Also create the entries for each phase by subtracting the build phase markers'
   ts attribute.
   Args:
@@ -108,20 +115,24 @@ def _accumulate_event_duration(event_list, accum_dict, only_phases=False):
           'cat': 'build phase marker',
           'dur_list': []
       }
-    current_phase_duration_millis = (next_ts - ts) / 1000 # Convert from microseconds to milliseconds
+    current_phase_duration_millis = (
+        next_ts - ts) / 1000  # Convert from microseconds to milliseconds
     accum_dict[marker]['dur_list'].append(current_phase_duration_millis)
 
 
 def _aggregate_from_accum_dict(accum_dict):
   """Aggregate the result from the accummulated dict.
+
   Calculate statistics of the durations and counts for each event.
   All measurements of time should be in milliseconds.
   Args:
     accum_dict: the dict to be filled up with a mapping of the following format:
       { <name>: { name: ..., cat: ..., dur_list: [...]}, ...}
+
   Returns:
     A list of the following format:
-      [{ name: ..., cat: ..., median: ..., min: ..., median: ..., max: ..., count: ... }]
+      [{ name: ..., cat: ..., median: ..., min: ..., median: ..., max: ...,
+      count: ... }]
   """
   result = []
   for obj in accum_dict.values():
@@ -138,13 +149,16 @@ def _aggregate_from_accum_dict(accum_dict):
 
 def aggregate_data(input_profiles, only_phases=False):
   """Produces the aggregated data from the JSON profile inputs.
+
   Collects information on cat, name and median duration of the events in the
   JSON profiles.
   Args:
     input_profiles: a list of paths to .profile or .profile.gz files.
     only_phases: only output entries from phase markers.
+
   Returns:
-    The list of objects which contain the info about cat, name and statistics on the
+    The list of objects which contain the info about cat, name and statistics on
+    the
     duration of events.
   """
   # A map from event name to an object which accumulates the durations.
@@ -164,4 +178,3 @@ def aggregate_data(input_profiles, only_phases=False):
     _accumulate_event_duration(event_list, accum_dict, only_phases)
 
   return _aggregate_from_accum_dict(accum_dict)
-

@@ -16,6 +16,7 @@ import numpy
 import scipy.stats
 import copy
 
+
 class Values(object):
   """Utility class to store numeric values.
 
@@ -70,17 +71,14 @@ class Values(object):
       return -1
 
   def items(self):
-    """Returns a copy of the items.
-    """
+    """Returns a copy of the items."""
     return copy.copy(self._items)
 
   def exclude_from_indexes(self, indexes):
-    """Returns a copy of Values which excludes the items from certain indexes.
-    """
+    """Returns a copy of Values which excludes the items from certain indexes."""
     filtered = []
     for i, value in enumerate(self._items):
       if i not in indexes:
         filtered.append(value)
 
     return Values(filtered)
-

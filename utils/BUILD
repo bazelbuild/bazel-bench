@@ -1,5 +1,4 @@
 load("@third_party//:requirements.bzl", "requirement")
-load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
 
 package(default_visibility = ["//visibility:public"])
 

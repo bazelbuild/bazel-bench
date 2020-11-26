@@ -18,6 +18,7 @@ import unittest
 import os
 import tempfile
 
+
 class BenchmarkConfigTest(unittest.TestCase):
 
   def test_parsing_from_file(self):
