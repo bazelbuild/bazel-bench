@@ -543,7 +543,6 @@ def _get_benchmark_config_and_clone_repos(argv):
     bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH,
                                            first_unit['bazel_source'])
 
-    print(vars(config))
     return config, bazel_clone_repo, project_clone_repo
 
   # Strip off 'benchmark.py' from argv
