@@ -21,3 +21,6 @@ utils/config.py
 
 # Bazel
 bazel-*
+
+# venv
+.venv/
