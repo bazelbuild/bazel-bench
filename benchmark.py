@@ -677,13 +677,15 @@ def main(argv):
     output_handling.export_csv(data_directory, csv_file_name, csv_data)
     output_handling.export_file(data_directory, txt_file_name, summary_text)
 
-    if FLAGS.aggregate_json_profiles:
+    # This is mostly for the nightly benchmark, hence the flags assumptions.
+    if (FLAGS.aggregate_json_profiles and FLAGS.bazel_commits 
+        and FLAGS.project_commits and not FLAGS.benchmark_config):
       aggr_json_profiles_csv_path = (
           '%s/%s' % (FLAGS.data_directory, DEFAULT_AGGR_JSON_PROFILE_FILENAME))
       handle_json_profiles_aggr(
-          bazel_commits,
+          FLAGS.bazel_commits,
           FLAGS.project_source,
-          project_commits,
+          FLAGS.project_commits,
           FLAGS.runs,
           output_prefix=bazel_bench_uid,
           output_path=aggr_json_profiles_csv_path,
