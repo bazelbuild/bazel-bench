@@ -259,11 +259,12 @@ def _single_run(bazel_bin_path,
 
   if measurements != None:
       logger.log('Results of this run: wall: ' +
-              '%.3fs, cpu %.3fs, system %.3fs, memory %.3fMB' % (
+              '%.3fs, cpu %.3fs, system %.3fs, memory %.3fMB, exit_status: %d' % (
                   measurements['wall'],
                   measurements['cpu'],
                   measurements['system'],
-                  measurements['memory']))
+                  measurements['memory'],
+                  measurements['exit_status']))
 
   # Get back to a clean state.
   bazel.command('clean', ['--color=no'])
