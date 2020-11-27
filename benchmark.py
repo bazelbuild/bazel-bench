@@ -554,7 +554,7 @@ def _get_benchmark_config_and_clone_repos(argv):
         PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
         project_source)
     bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH,
-                                           first_unit['bazel_source'])
+                                           config.get_bazel_source())
 
     return config, bazel_clone_repo, project_clone_repo
 

@@ -102,6 +102,13 @@ class BenchmarkConfig(object):
     We don't allow multiple project_source for now.
     """
     return None if not self._units else self._units[0]['project_source']
+    
+  def get_bazel_source(self):
+    """Returns the common bazel_source across the units.
+    
+    We don't allow multiple bazel_source for now.
+    """
+    return None if not self._units else self._units[0]['bazel_source']
 
   def benchmark_project_commits(self):
     """Returns whether we're benchmarking project commits (instead of bazel commits)."""
