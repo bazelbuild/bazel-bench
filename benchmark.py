@@ -549,9 +549,7 @@ def _get_benchmark_config_and_clone_repos(argv):
   """
   if FLAGS.benchmark_config:
     config = BenchmarkConfig.from_file(FLAGS.benchmark_config)
-    # We don't allow multiple project_source for now.
-    first_unit = config.get_units()[0]
-    project_source = first_unit['project_source']
+    project_source = config.get_project_source()
     project_clone_repo = _setup_project_repo(
         PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
         project_source)
@@ -677,15 +675,14 @@ def main(argv):
     output_handling.export_csv(data_directory, csv_file_name, csv_data)
     output_handling.export_file(data_directory, txt_file_name, summary_text)
 
-    # This is mostly for the nightly benchmark, hence the flags assumptions.
-    if (FLAGS.aggregate_json_profiles and FLAGS.bazel_commits 
-        and FLAGS.project_commits and not FLAGS.benchmark_config):
+    # This is mostly for the nightly benchmark.
+    if FLAGS.aggregate_json_profiles:
       aggr_json_profiles_csv_path = (
           '%s/%s' % (FLAGS.data_directory, DEFAULT_AGGR_JSON_PROFILE_FILENAME))
       handle_json_profiles_aggr(
-          FLAGS.bazel_commits,
-          FLAGS.project_source,
-          FLAGS.project_commits,
+          config.get_bazel_commits(),
+          config.get_project_source(),
+          config.get_project_commits(),
           FLAGS.runs,
           output_prefix=bazel_bench_uid,
           output_path=aggr_json_profiles_csv_path,

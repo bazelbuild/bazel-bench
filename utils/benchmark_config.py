@@ -83,6 +83,25 @@ class BenchmarkConfig(object):
   def get_units(self):
     """Returns a copy of the parsed units."""
     return copy.copy(self._units)
+  
+  def get_bazel_commits(self):	
+    """Returns the list of specified bazel_commits."""	
+    return [	
+        unit['bazel_commit'] for unit in self._units if 'bazel_commit' in unit	
+    ]
+
+  def get_project_commits(self):	
+    """Returns the list of specified project_commits."""	
+    return [	
+        unit['project_commit'] for unit in self._units if 'project_commit' in unit	
+    ]
+
+  def get_project_source(self):
+    """Returns the common project_source across the units.
+    
+    We don't allow multiple project_source for now.
+    """
+    return None if not self._units else self._units[0]['project_source']
 
   def benchmark_project_commits(self):
     """Returns whether we're benchmarking project commits (instead of bazel commits)."""
