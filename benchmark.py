@@ -388,7 +388,7 @@ def handle_json_profiles_aggr(bazel_commits, project_source, project_commits,
   logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
 
 
-def create_summary(data):
+def create_summary(data, project_source):
   """Creates the runs summary onto stdout.
 
   Excludes runs with non-zero exit codes from the final summary table.
@@ -404,7 +404,7 @@ def create_summary(data):
   last_collected = None
   for (bazel_commit, project_commit), collected in data.items():
     header = ('Bazel commit: %s, Project commit: %s, Project source: %s' %
-              (bazel_commit, project_commit, FLAGS.project_source))
+              (bazel_commit, project_commit, project_source))
     summary_builder.append(header)
 
     summary_builder.append(
@@ -665,7 +665,7 @@ def main(argv):
         'non_measurables': non_measurables
     }
 
-  summary_text = create_summary(data)
+  summary_text = create_summary(data, config.get_project_source())
   print(summary_text)
 
   if FLAGS.data_directory:
