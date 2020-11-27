@@ -23,9 +23,8 @@ $ pip3 install -r third_party/requirements.txt
 To do a test run, run the following command (if you're on Windows, populate
 `--data_directory` with an appropriate Windows-style path):
 
-```
-$ bazel
-run :benchmark \
+```shell
+$ bazel run :benchmark \
 -- \
 --bazel_commits=b8468a6b68a405e1a5767894426d3ea9a1a2f22f,ad503849e78b98d762f03168de5a336904280150 \
 --project_source=https://github.com/bazelbuild/rules_cc.git \
