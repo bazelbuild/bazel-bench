@@ -19,7 +19,6 @@ Currently supported flags/attributes:
 - bazel_commit
 - bazel_binary
 - runs
-- collect_memory
 - collect_profile
 - the command (which includes startup options, command, targets, command
 options)
@@ -32,7 +31,6 @@ benchmark_project_commits: False
 global_options:
   project_commit: 595a730
   runs: 3
-  collect_memory: true
   collect_profile: false
   project_source: /path/to/project/repo
 units:
@@ -63,7 +61,6 @@ class BenchmarkConfig(object):
   # TODO(leba): Consider replacing dict with collections.namedtuple.
   _DEFAULT_VALS = {
       'runs': 3,
-      'collect_memory': False,
       'collect_profile': False,
       'bazel_source': 'https://github.com/bazelbuild/bazel.git'
   }
@@ -158,8 +155,7 @@ class BenchmarkConfig(object):
 
   @classmethod
   def from_flags(cls, bazel_commits, bazel_binaries, project_commits,
-                 bazel_source, project_source, runs, collect_memory,
-                 collect_profile, command):
+                 bazel_source, project_source, runs, collect_profile, command):
     """Creates the BenchmarkConfig based on specified flags.
 
     Args:
@@ -171,7 +167,6 @@ class BenchmarkConfig(object):
       project_source: Either a path to the local git project to be built or a
         https url to a GitHub repository
       runs: The number of benchmark runs to perform for each combination.
-      collect_memory: Whether to collect Blaze memory consumption.
       collect_profile: Whether to collect a JSON profile.
       command: the full command to benchmark, optionally with startup options
         prepended, e.g. "--noexobazel build --nobuild ...".
@@ -189,7 +184,6 @@ class BenchmarkConfig(object):
                 'bazel_source': bazel_source,
                 'project_source': project_source,
                 'runs': runs,
-                'collect_memory': collect_memory,
                 'collect_profile': collect_profile,
                 'command': command,
             }))
@@ -202,7 +196,6 @@ class BenchmarkConfig(object):
                 'bazel_source': bazel_source,
                 'project_source': project_source,
                 'runs': runs,
-                'collect_memory': collect_memory,
                 'collect_profile': collect_profile,
                 'command': command,
             }))

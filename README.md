@@ -71,7 +71,6 @@ config-file interface. The example config file would look like this:
 global_options:
   project_commit: 595a730
   runs: 3
-  collect_memory: true
   collect_profile: false
   project_source: /path/to/project/repo
 units:
@@ -148,10 +147,8 @@ Some useful flags are:
   --bazel_source: Either a path to the local Bazel repo or a https url to a GitHub repository.
     (default: 'https://github.com/bazelbuild/bazel.git')
   --bazelrc: The path to a .bazelrc file.
-  --[no]collect_memory: Whether to collect used heap sizes.
-    (default: 'false')
   --csv_file_name: The name of the output csv, without the .csv extension
-  --data_directory: The directory in which the csv files should be stored. Turns on memory collection.
+  --data_directory: The directory in which the csv files should be stored.
   --[no]prefetch_ext_deps: Whether to do an initial run to pre-fetch external dependencies.
     (default: 'true')
   --project_commits: The commits from the git project to be benchmarked.

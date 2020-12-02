@@ -82,7 +82,7 @@ class BazelTest(unittest.TestCase):
             'started_at': 'fake_date'
         },
         b.command(
-            command='build', args=['bar', 'zoo'], collect_memory=True))
+            command='build', args=['bar', 'zoo']))
     subprocess_mock.assert_called_with(
         ['foo', 'build', 'bar', 'zoo'], stdout=mock.ANY, stderr=mock.ANY)
 

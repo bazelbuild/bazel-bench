@@ -125,8 +125,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
           'build',
           options=[],
           targets=['//:all'],
-          startup_options=[],
-          collect_memory=False)
+          startup_options=[])
 
     self.assertEqual(
         ''.join([
@@ -143,7 +142,6 @@ class BenchmarkFunctionTests(absltest.TestCase):
           'project_path',
           runs=2,
           bazel_bench_uid='fake_uid',
-          collect_memory=False,
           command='build',
           options=[],
           targets=['//:all'],
@@ -172,7 +170,6 @@ class BenchmarkFunctionTests(absltest.TestCase):
           'project_path',
           runs=2,
           bazel_bench_uid='fake_uid',
-          collect_memory=False,
           command='build',
           options=[],
           targets=['//:all'],
@@ -205,7 +202,6 @@ class BenchmarkFunctionTests(absltest.TestCase):
           'project_path',
           runs=2,
           bazel_bench_uid='fake_uid',
-          collect_memory=False,
           command='build',
           options=[],
           targets=['//:all'],

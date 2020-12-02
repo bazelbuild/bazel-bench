@@ -223,8 +223,7 @@ def _single_run(bazel_bin_path,
                 command,
                 options,
                 targets,
-                startup_options,
-                collect_memory=False):
+                startup_options):
   """Runs the benchmarking for a combination of (bazel version, project version).
 
   Args:
@@ -233,7 +232,6 @@ def _single_run(bazel_bin_path,
     options: the list of options.
     targets: the list of targets.
     startup_options: the list of target options.
-    collect_memory: whether the benchmarking should collect memory info.
 
   Returns:
     A result object:
@@ -254,8 +252,7 @@ def _single_run(bazel_bin_path,
   # The order in which the options appear matters.
   if command == 'build':
     options = options + ['--nostamp', '--noshow_progress', '--color=no']
-  measurements = bazel.command(
-      command, args=options + targets, collect_memory=collect_memory)
+  measurements = bazel.command(command, args=options + targets)
 
   if measurements != None:
       logger.log('Results of this run: wall: ' +
@@ -275,7 +272,6 @@ def _single_run(bazel_bin_path,
 def _run_benchmark(bazel_bin_path,
                    project_path,
                    runs,
-                   collect_memory,
                    command,
                    options,
                    targets,
@@ -293,7 +289,6 @@ def _run_benchmark(bazel_bin_path,
     bazel_bin_path: the path to the bazel binary to be run.
     project_path: the path to the project clone to be built.
     runs: the number of runs.
-    collect_memory: whether the benchmarking should collect memory info.
     bazel_args: the unparsed list of arguments to be passed to Bazel binary.
     prefetch_ext_deps: whether to do a first non-benchmarked run to fetch the
       external dependencies.
@@ -319,8 +314,7 @@ def _run_benchmark(bazel_bin_path,
   # Runs the command once to make sure external dependencies are fetched.
   if prefetch_ext_deps:
     logger.log('Pre-fetching external dependencies...')
-    _single_run(bazel_bin_path, command, options, targets, startup_options,
-                collect_memory)
+    _single_run(bazel_bin_path, command, options, targets, startup_options)
 
   if collect_json_profile:
     if not os.path.exists(data_directory):
@@ -341,7 +335,7 @@ def _run_benchmark(bazel_bin_path,
                                 project_commit, i, runs))
     collected.append(
         _single_run(bazel_bin_path, command, maybe_include_json_profile_flags,
-                    targets, startup_options, collect_memory))
+                    targets, startup_options))
 
   return collected, (command, targets, options)
 
@@ -498,8 +492,6 @@ flags.DEFINE_string('platform', None,
 # Miscellaneous flags.
 flags.DEFINE_boolean('verbose', False,
                      'Whether to include git/Bazel stdout logs.')
-flags.DEFINE_boolean('collect_memory', False,
-                     'Whether to collect used heap sizes.')
 flags.DEFINE_boolean('prefetch_ext_deps', True,
                      'Whether to do an initial run to pre-fetch external ' \
                      'dependencies.')
@@ -515,8 +507,7 @@ flags.DEFINE_string(
 
 # Output storage flags.
 flags.DEFINE_string('data_directory', None,
-                    'The directory in which the csv files should be stored. ' \
-                    'Turns on memory collection.')
+                    'The directory in which the csv files should be stored.')
 # The daily report generation process on BazelCI requires the csv file name to
 # be determined before bazel-bench is launched, so that METADATA files are
 # properly filled.
@@ -586,7 +577,6 @@ def _get_benchmark_config_and_clone_repos(argv):
   config = BenchmarkConfig.from_flags(bazel_commits, bazel_binaries,
                                       project_commits, bazel_source,
                                       FLAGS.project_source, FLAGS.runs,
-                                      FLAGS.collect_memory,
                                       FLAGS.collect_json_profile,
                                       ' '.join(bazel_args))
 
@@ -635,7 +625,6 @@ def main(argv):
         bazel_bin_path=unit['bazel_bin_path'],
         project_path=project_clone_repo.working_dir,
         runs=unit['runs'],
-        collect_memory=unit['collect_memory'] or FLAGS.data_directory,
         command=unit['command'],
         options=unit['options'],
         targets=unit['targets'],
