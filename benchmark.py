@@ -507,8 +507,7 @@ flags.DEFINE_string(
 
 # Output storage flags.
 flags.DEFINE_string('data_directory', None,
-                    'The directory in which the csv files should be stored. ' \
-                    'Turns on memory collection.')
+                    'The directory in which the csv files should be stored.')
 # The daily report generation process on BazelCI requires the csv file name to
 # be determined before bazel-bench is launched, so that METADATA files are
 # properly filled.

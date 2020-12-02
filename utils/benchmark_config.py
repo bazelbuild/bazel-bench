@@ -19,7 +19,6 @@ Currently supported flags/attributes:
 - bazel_commit
 - bazel_binary
 - runs
-- collect_memory
 - collect_profile
 - the command (which includes startup options, command, targets, command
 options)
@@ -32,7 +31,6 @@ benchmark_project_commits: False
 global_options:
   project_commit: 595a730
   runs: 3
-  collect_memory: true
   collect_profile: false
   project_source: /path/to/project/repo
 units:
