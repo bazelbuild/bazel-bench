@@ -70,7 +70,7 @@ config-file interface. The example config file would look like this:
 # config.yaml
 global_options:
   project_commit: 595a730
-  runs: 3
+  runs: 5
   collect_profile: false
   project_source: /path/to/project/repo
 units:
@@ -156,7 +156,7 @@ Some useful flags are:
     (a comma separated list)
   --project_source: Either a path to the local git project to be built or a https url to a GitHub repository.
   --runs: The number of benchmark runs.
-    (default: '3')
+    (default: '5')
     (an integer)
   --[no]verbose: Whether to include git/Bazel stdout logs.
     (default: 'false')
