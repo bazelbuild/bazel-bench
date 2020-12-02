@@ -46,7 +46,6 @@ units:
         'project_commit': 'hash1',
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
         'runs': 3,
-        'collect_memory': False,
         'collect_profile': False,
         'command': 'info',
         'startup_options': [],
@@ -63,7 +62,6 @@ benchmark_project_commits: False
 global_options:
   project_commit: 'hash3'
   runs: 3
-  collect_memory: true
 units:
  - bazel_commit: hash1
    command: info
@@ -78,7 +76,6 @@ units:
         'project_commit': 'hash3',
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
         'runs': 3,
-        'collect_memory': True,
         'collect_profile': False,
         'command': 'info',
         'startup_options': [],
@@ -89,7 +86,6 @@ units:
         'project_commit': 'hash2',
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
         'runs': 3,
-        'collect_memory': True,
         'collect_profile': False,
         'command': 'build',
         'startup_options': [],
@@ -107,7 +103,6 @@ units:
         bazel_source='foo',
         project_source='foo',
         runs=3,
-        collect_memory=True,
         collect_profile=False,
         command='build --nobuild //abc')
     self.assertEqual(result._units, [{
@@ -116,7 +111,6 @@ units:
         'bazel_source': 'foo',
         'project_source': 'foo',
         'runs': 3,
-        'collect_memory': True,
         'collect_profile': False,
         'command': 'build',
         'startup_options': [],
@@ -128,7 +122,6 @@ units:
         'bazel_source': 'foo',
         'project_source': 'foo',
         'runs': 3,
-        'collect_memory': True,
         'collect_profile': False,
         'command': 'build',
         'startup_options': [],
@@ -144,7 +137,6 @@ units:
         'project_commit': 'hash2',
         'runs': 3,
         'bazelrc': None,
-        'collect_memory': True,
         'collect_profile': False,
         'warmup_runs': 1,
         'shutdown': True,
@@ -157,7 +149,6 @@ units:
         'project_commit': 'hash2',
         'runs': 3,
         'bazelrc': None,
-        'collect_memory': True,
         'collect_profile': False,
         'warmup_runs': 1,
         'shutdown': True,

@@ -37,16 +37,13 @@ class Bazel(object):
     self._startup_options = startup_options
     self._pid = None
 
-  def command(self, command, args=None, collect_memory=False):
+  def command(self, command, args=None):
     """Invokes a command with a bazel binary.
 
     Args:
       command: A string specifying the bazel command to invoke.
       args: An optional list of strings representing additional arguments to the
         bazel command.
-      collect_memory: A boolean specifying whether to collect memory information
-        for this command. Note that this retrieves the heap size from bazel a
-        number of times to get stable data.
 
     Returns:
       A dict containing collected metrics (wall, cpu, system times and
@@ -82,9 +79,8 @@ class Bazel(object):
       result[kind] = after_times[kind] - before_times[kind]
     result['exit_status'] = exit_status
 
-    if collect_memory:
-      # We do a number of runs here to reduce the noise in the data.
-      result['memory'] = min([self._get_heap_size() for _ in range(5)])
+    # We do a number of runs here to reduce the noise in the data.
+    result['memory'] = min([self._get_heap_size() for _ in range(5)])
 
     return result
 
