@@ -482,7 +482,7 @@ flags.DEFINE_string(
     "The shell commands to configure the project's environment .")
 
 # Execution options.
-flags.DEFINE_integer('runs', 3, 'The number of benchmark runs.')
+flags.DEFINE_integer('runs', 5, 'The number of benchmark runs.')
 flags.DEFINE_string('bazelrc', None, 'The path to a .bazelrc file.')
 flags.DEFINE_string('platform', None,
                     ('The platform on which bazel-bench is run. This is just '

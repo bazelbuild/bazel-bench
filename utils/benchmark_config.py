@@ -30,7 +30,7 @@ Example of a config file:
 benchmark_project_commits: False
 global_options:
   project_commit: 595a730
-  runs: 3
+  runs: 5
   collect_profile: false
   project_source: /path/to/project/repo
 units:
@@ -60,7 +60,7 @@ class BenchmarkConfig(object):
   # TODO(leba): have a single source of truth for this.
   # TODO(leba): Consider replacing dict with collections.namedtuple.
   _DEFAULT_VALS = {
-      'runs': 3,
+      'runs': 5,
       'collect_profile': False,
       'bazel_source': 'https://github.com/bazelbuild/bazel.git'
   }
