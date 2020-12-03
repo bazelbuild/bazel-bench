@@ -18,7 +18,7 @@ recommended).
 $ git clone https://github.com/bazelbuild/bazel-bench.git
 $ cd bazel-bench
 
-# Create and activate the virtual environment.
+# (Optional, Recommended) Create and activate the virtual environment.
 $ python3 -m venv .venv/
 $ source .venv/bin/activate
 
