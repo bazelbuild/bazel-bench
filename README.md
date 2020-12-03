@@ -10,13 +10,19 @@
 
 This script works with python3.
 
-Pre-requisites: `python`, `pip`, `git`, `bazel`, `virtualenv` (strongly
+Pre-requisites: `python`, `pip`, `git`, `bazel`, [`venv`](https://docs.python.org/3/library/venv.html) (strongly
 recommended).
 
-Before you do anything, install the dependencies:
-
 ```
-# pip or pip3, depends on your setup.
+# Clone bazel-bench.
+$ git clone https://github.com/bazelbuild/bazel-bench.git
+$ cd bazel-bench
+
+# (Optional, Recommended) Create and activate the virtual environment.
+$ python3 -m venv .venv/
+$ source .venv/bin/activate
+
+# Install the dependencies. pip or pip3, depends on your setup.
 $ pip3 install -r third_party/requirements.txt
 ```
 
@@ -29,10 +35,11 @@ $ bazel run :benchmark \
 --bazel_commits=b8468a6b68a405e1a5767894426d3ea9a1a2f22f,ad503849e78b98d762f03168de5a336904280150 \
 --project_source=https://github.com/bazelbuild/rules_cc.git \
 --data_directory=/tmp/bazel-bench-data \
+--verbose \
 -- build //:all
 ```
 
-The above command would print a result table on the terminal and outputs a csv
+The Bazel commits might be too old and no longer buildable by your local Bazel. Replace them with the more recent commits from [bazelbuild/bazel](https://github.com/bazelbuild/bazel). The above command would print a result table on the terminal and outputs a csv
 file to the specified `--data_directory`.
 
 ## Syntax
