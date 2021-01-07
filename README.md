@@ -189,7 +189,7 @@ produce the median duration of each event across them.
 To run the tool:
 
 ```
-bazel run utils:json_profile_merger \
+bazel run utils:json_profiles_merger \
 -- \
 --bazel_source=<some commit or path> \
 --project_source=<some url or path> \
