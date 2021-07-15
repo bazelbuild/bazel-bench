@@ -2,7 +2,7 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 git_repository(
     name = "rules_python",
-    commit = "38f86fb55b698c51e8510c807489c9f4e047480e",
+    commit = "748aa53d7701e71101dfd15d800e100f6ff8e5d1",
     remote = "https://github.com/bazelbuild/rules_python.git",
 )
 
@@ -16,6 +16,7 @@ pip_repositories()
 pip3_import(
     name = "third_party",
     requirements = "//third_party:requirements.txt",
+    timeout = 1000,
 )
 
 # Load the pip_install symbol for my_deps, and create the dependencies'
