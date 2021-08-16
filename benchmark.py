@@ -397,7 +397,7 @@ def create_summary(data, project_source):
   summary_builder.append('\nRESULTS:')
   last_collected = None
   for (bazel_commit, project_commit), collected in data.items():
-    header = ('Bazel commit: %s, Project commit: %s, Project source: %s' %
+    header = ('Bazel version: %s, Project commit: %s, Project source: %s' %
               (bazel_commit, project_commit, project_source))
     summary_builder.append(header)
 
@@ -611,9 +611,9 @@ def main(argv):
                                            bazel_bin_base_path, FLAGS.platform)
       unit['bazel_bin_path'] = bazel_bin_path
 
-  for unit in config.get_units():
-    bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit[
-        'bazel_binary']
+  for i, unit in enumerate(config.get_units()):
+    bazel_identifier = '{}_unit_{}'.format(
+        unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary'], i)
     project_commit = unit['project_commit']
 
     project_clone_repo.git.checkout('-f', project_commit)
