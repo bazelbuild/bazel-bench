@@ -146,11 +146,12 @@ class BenchmarkFunctionTests(absltest.TestCase):
           options=[],
           targets=['//:all'],
           startup_options=[],
-          prefetch_ext_deps=False)
+          prefetch_ext_deps=False,
+          unit_num=0)
 
     self.assertEqual(
         ''.join([
-            '=== BENCHMARKING BAZEL: None, PROJECT: None ===',
+            '=== BENCHMARKING BAZEL [Unit #0]: None, PROJECT: None ===',
             'Starting benchmark run 1/2:',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
@@ -174,11 +175,12 @@ class BenchmarkFunctionTests(absltest.TestCase):
           options=[],
           targets=['//:all'],
           startup_options=[],
-          prefetch_ext_deps=True)
+          prefetch_ext_deps=True,
+          unit_num=0)
 
     self.assertEqual(
         ''.join([
-            '=== BENCHMARKING BAZEL: None, PROJECT: None ===',
+            '=== BENCHMARKING BAZEL [Unit #0]: None, PROJECT: None ===',
             'Pre-fetching external dependencies...',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
@@ -210,21 +212,22 @@ class BenchmarkFunctionTests(absltest.TestCase):
           collect_json_profile=True,
           data_directory='fake_dir',
           bazel_identifier='fake_bazel_commit',
-          project_commit='fake_project_commit')
+          project_commit='fake_project_commit',
+          unit_num=0)
 
     self.assertEqual(
         ''.join([
-            '=== BENCHMARKING BAZEL: fake_bazel_commit, PROJECT: fake_project_commit ===',
+            '=== BENCHMARKING BAZEL [Unit #0]: fake_bazel_commit, PROJECT: fake_project_commit ===',
             'Pre-fetching external dependencies...',
             'Executing Bazel command: bazel build --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 1/2:',
-            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_fake_project_commit_1_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_0_fake_project_commit_1_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 2/2:',
-            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_fake_project_commit_2_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_0_fake_project_commit_2_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown '
         ]), mock_stderr.getvalue())

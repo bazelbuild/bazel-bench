@@ -213,10 +213,11 @@ def _construct_json_profile_flags(out_file_path):
 
 
 def json_profile_filename(data_directory, bazel_bench_uid, bazel_commit,
-                          project_commit, run_number, total_runs):
-  return '%s/%s_%s_%s_%s_of_%s.profile.gz' % (data_directory, bazel_bench_uid,
-                                              bazel_commit, project_commit,
-                                              run_number, total_runs)
+                          unit_num, project_commit, run_number, total_runs):
+  return '%s/%s_%s_%d_%s_%s_of_%s.profile.gz' % (data_directory, bazel_bench_uid,
+                                                bazel_commit, unit_num,
+                                                project_commit, run_number,
+                                                total_runs)
 
 
 def _single_run(bazel_bin_path,
@@ -278,7 +279,7 @@ def _run_benchmark(bazel_bin_path,
                    startup_options,
                    prefetch_ext_deps,
                    bazel_bench_uid,
-                   bep_json_dir=None,
+                   unit_num,
                    data_directory=None,
                    collect_json_profile=False,
                    bazel_identifier=None,
@@ -293,8 +294,7 @@ def _run_benchmark(bazel_bin_path,
     prefetch_ext_deps: whether to do a first non-benchmarked run to fetch the
       external dependencies.
     bazel_bench_uid: a unique string identifier of this entire bazel-bench run.
-    bep_json_dir: absolute path to the directory to write the build event json
-      file to.
+    unit_num: the numerical order of the current unit being benchmarked.
     collect_json_profile: whether to collect JSON profile for each run.
     data_directory: the path to the directory to store run data. Required if
       collect_json_profile.
@@ -309,8 +309,8 @@ def _run_benchmark(bazel_bin_path,
   collected = []
   os.chdir(project_path)
 
-  logger.log('=== BENCHMARKING BAZEL: %s, PROJECT: %s ===' %
-             (bazel_identifier, project_commit))
+  logger.log('=== BENCHMARKING BAZEL [Unit #%d]: %s, PROJECT: %s ===' %
+             (unit_num, bazel_identifier, project_commit))
   # Runs the command once to make sure external dependencies are fetched.
   if prefetch_ext_deps:
     logger.log('Pre-fetching external dependencies...')
@@ -331,7 +331,7 @@ def _run_benchmark(bazel_bin_path,
                               'collect_json_profile')
       maybe_include_json_profile_flags += _construct_json_profile_flags(
           json_profile_filename(data_directory, bazel_bench_uid,
-                                bazel_identifier.replace('/', '_'),
+                                bazel_identifier.replace('/', '_'), unit_num,
                                 project_commit, i, runs))
     collected.append(
         _single_run(bazel_bin_path, command, maybe_include_json_profile_flags,
@@ -396,9 +396,9 @@ def create_summary(data, project_source):
   summary_builder = []
   summary_builder.append('\nRESULTS:')
   last_collected = None
-  for (bazel_commit, project_commit), collected in data.items():
-    header = ('Bazel commit: %s, Project commit: %s, Project source: %s' %
-              (bazel_commit, project_commit, project_source))
+  for (i, bazel_commit, project_commit), collected in data.items():
+    header = ('[Unit #%d] Bazel version: %s, Project commit: %s, Project source: %s' %
+              (i, bazel_commit, project_commit, project_source))
     summary_builder.append(header)
 
     summary_builder.append(
@@ -611,9 +611,8 @@ def main(argv):
                                            bazel_bin_base_path, FLAGS.platform)
       unit['bazel_bin_path'] = bazel_bin_path
 
-  for unit in config.get_units():
-    bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit[
-        'bazel_binary']
+  for i, unit in enumerate(config.get_units()):
+    bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary']
     project_commit = unit['project_commit']
 
     project_clone_repo.git.checkout('-f', project_commit)
@@ -631,6 +630,7 @@ def main(argv):
         startup_options=unit['startup_options'],
         prefetch_ext_deps=FLAGS.prefetch_ext_deps,
         bazel_bench_uid=bazel_bench_uid,
+        unit_num=i,
         collect_json_profile=unit['collect_profile'],
         data_directory=data_directory,
         bazel_identifier=bazel_identifier,
@@ -642,7 +642,7 @@ def main(argv):
           collected[metric] = Values()
         collected[metric].add(value)
 
-    data[(bazel_identifier, project_commit)] = collected
+    data[(i, bazel_identifier, project_commit)] = collected
     non_measurables = {
       'project_source': unit['project_source'],
       'platform': FLAGS.platform,
