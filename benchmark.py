@@ -147,8 +147,8 @@ def _setup_project_repo(repo_path, project_source):
   if os.path.exists(repo_path):
     logger.log('Path %s exists. Updating...' % repo_path)
     repo = git.Repo(repo_path)
-    repo.git.checkout('master')
-    repo.git.pull('-f', 'origin', 'master')
+    repo.git.checkout(FLAGS.project_branch)
+    repo.git.pull('-f', 'origin', FLAGS.project_branch)
   else:
     logger.log('Cloning %s to %s...' % (project_source, repo_path))
     repo = git.Repo.clone_from(project_source, repo_path)
@@ -480,6 +480,9 @@ flags.DEFINE_list('project_commits', None,
 flags.DEFINE_string(
     'env_configure', None,
     "The shell commands to configure the project's environment .")
+flags.DEFINE_string(
+    'project_branch', 'master',
+    "The branch of the git project to be benchmarked.")
 
 # Execution options.
 flags.DEFINE_integer('runs', 5, 'The number of benchmark runs.')
