@@ -38,7 +38,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
       mock.patch('benchmark.git.Repo') as mock_repo_class:
       mock_repo = mock_repo_class.return_value
-      benchmark._setup_project_repo('repo_path', 'project_source')
+      benchmark._setup_project_repo('repo_path', 'project_source', 'master')
 
     mock_repo.git.checkout.assert_called_once_with('master')
     mock_repo.git.pull.assert_called_once_with('-f', 'origin', 'master')
@@ -51,7 +51,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
                                          unused_exists_mock):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
       mock.patch('benchmark.git.Repo') as mock_repo_class:
-      benchmark._setup_project_repo('repo_path', 'project_source')
+      benchmark._setup_project_repo('repo_path', 'project_source', 'master')
 
     mock_repo_class.clone_from.assert_called_once_with('project_source',
                                                        'repo_path')
