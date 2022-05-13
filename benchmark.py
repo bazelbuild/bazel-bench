@@ -37,6 +37,8 @@ from utils.benchmark_config import BenchmarkConfig
 # BB_ROOT has different values, depending on the platform.
 BB_ROOT = os.path.join(os.path.expanduser('~'), '.bazel-bench')
 
+# The name of the Bazel master branch.
+BAZEL_MASTER_BRANCH = 'master'
 # The path to the cloned bazelbuild/bazel repo.
 BAZEL_CLONE_PATH = os.path.join(BB_ROOT, 'bazel')
 # The path to the clone of the project to be built with Bazel.
@@ -128,7 +130,7 @@ def _to_long_sha_digest(digest, repo):
   return repo.git.rev_parse(digest) if len(digest) < 40 else digest
 
 
-def _setup_project_repo(repo_path, project_source):
+def _setup_project_repo(repo_path, project_source, branch):
   """Returns a path to the cloned repository.
 
   If the repo_path exists, perform a `git pull` to update the content.
@@ -147,8 +149,8 @@ def _setup_project_repo(repo_path, project_source):
   if os.path.exists(repo_path):
     logger.log('Path %s exists. Updating...' % repo_path)
     repo = git.Repo(repo_path)
-    repo.git.checkout(FLAGS.project_branch)
-    repo.git.pull('-f', 'origin', FLAGS.project_branch)
+    repo.git.checkout(branch)
+    repo.git.pull('-f', 'origin', branch)
   else:
     logger.log('Cloning %s to %s...' % (project_source, repo_path))
     repo = git.Repo.clone_from(project_source, repo_path)
@@ -546,9 +548,12 @@ def _get_benchmark_config_and_clone_repos(argv):
     project_source = config.get_project_source()
     project_clone_repo = _setup_project_repo(
         PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
-        project_source)
-    bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH,
-                                           config.get_bazel_source())
+        project_source,
+        FLAGS.project_branch)
+    bazel_clone_repo = _setup_project_repo(
+        BAZEL_CLONE_PATH,
+        config.get_bazel_source(),
+        BAZEL_MASTER_BRANCH)
 
     return config, bazel_clone_repo, project_clone_repo
 
@@ -561,7 +566,10 @@ def _get_benchmark_config_and_clone_repos(argv):
   bazel_binaries = FLAGS.bazel_binaries or []
   logger.log('Preparing bazelbuild/bazel repository.')
   bazel_source = FLAGS.bazel_source if FLAGS.bazel_source else BAZEL_GITHUB_URL
-  bazel_clone_repo = _setup_project_repo(BAZEL_CLONE_PATH, bazel_source)
+  bazel_clone_repo = _setup_project_repo(
+        BAZEL_CLONE_PATH,
+        bazel_source,
+        BAZEL_MASTER_BRANCH)
   bazel_commits = _get_commits_topological(
       FLAGS.bazel_commits,
       bazel_clone_repo,
@@ -572,7 +580,8 @@ def _get_benchmark_config_and_clone_repos(argv):
   logger.log('Preparing %s clone.' % FLAGS.project_source)
   project_clone_repo = _setup_project_repo(
       PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(FLAGS.project_source),
-      FLAGS.project_source)
+      FLAGS.project_source,
+      FLAGS.project_branch)
 
   project_commits = _get_commits_topological(FLAGS.project_commits,
                                              project_clone_repo,
