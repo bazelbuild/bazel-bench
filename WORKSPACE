@@ -1,26 +1,16 @@
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-git_repository(
+http_archive(
     name = "rules_python",
-    commit = "748aa53d7701e71101dfd15d800e100f6ff8e5d1",
-    remote = "https://github.com/bazelbuild/rules_python.git",
+    sha256 = "15f84594af9da06750ceb878abbf129241421e3abbd6e36893041188db67f2fb",
+    strip_prefix = "rules_python-0.7.0",
+    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.7.0.tar.gz",
 )
 
-# Only needed for PIP support:
-load("@rules_python//python:pip.bzl", "pip_repositories", "pip3_import")
+load("@rules_python//python:pip.bzl", "pip_install")
 
-pip_repositories()
-
-# This rule translates the specified requirements.txt into
-# @my_deps//:requirements.bzl, which itself exposes a pip_install method.
-pip3_import(
-    name = "third_party",
-    requirements = "//third_party:requirements.txt",
-    timeout = 1000,
+# Translate requirements.txt into a @third_party external repository.
+pip_install(
+   name = "third_party",
+   requirements = "//third_party:requirements.txt",
 )
-
-# Load the pip_install symbol for my_deps, and create the dependencies'
-# repositories.
-load("@third_party//:requirements.bzl", "pip_install")
-
-pip_install()
