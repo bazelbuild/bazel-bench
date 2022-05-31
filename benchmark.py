@@ -337,11 +337,13 @@ def _run_benchmark(bazel_bin_path,
   return collected, (command, targets, options)
 
 
-def handle_json_profiles_aggr(bazel_commits, project_source, project_commits,
-                              runs, output_prefix, output_path, data_directory):
+def handle_json_profiles_aggr(bazel_bench_uid, bazel_commits, project_source,
+                              project_commits, runs, output_prefix, output_path,
+                              data_directory):
   """Aggregates the collected JSON profiles and writes the result to a CSV.
 
    Args:
+    bazel_bench_uid: a unique string identifier of this entire bazel-bench run.
     bazel_commits: the Bazel commits that bazel-bench ran on.
     project_source: a path/url to a local/remote repository of the project on
       which benchmarking was performed.
@@ -365,7 +367,8 @@ def handle_json_profiles_aggr(bazel_commits, project_source, project_commits,
     for bazel_commit in bazel_commits:
       for project_commit in project_commits:
         profiles_filenames = [
-            json_profile_filename(data_directory, output_prefix, bazel_commit,
+            json_profile_filename(data_directory, bazel_bench_uid,
+                                  output_prefix, bazel_commit,
                                   project_commit, i, runs)
             for i in range(1, runs + 1)
         ]
@@ -599,7 +602,6 @@ def main(argv):
   bazel_bench_uid = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
 
   bazel_bin_base_path = FLAGS.bazel_bin_dir or BAZEL_BINARY_BASE_PATH
-  bazel_bin_identifiers = []
 
   # Build the bazel binaries, if necessary.
   for unit in config.get_units():
@@ -669,6 +671,7 @@ def main(argv):
       aggr_json_profiles_csv_path = (
           '%s/%s' % (FLAGS.data_directory, DEFAULT_AGGR_JSON_PROFILE_FILENAME))
       handle_json_profiles_aggr(
+          bazel_bench_uid,
           config.get_bazel_commits(),
           config.get_project_source(),
           config.get_project_commits(),
