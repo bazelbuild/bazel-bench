@@ -211,10 +211,8 @@ def _construct_json_profile_flags(out_file_path):
 
 def json_profile_filename(data_directory, bazel_bench_uid, bazel_commit,
                           unit_num, project_commit, run_number, total_runs):
-  return '%s/%s_%s_%d_%s_%s_of_%s.profile.gz' % (data_directory, bazel_bench_uid,
-                                                bazel_commit, unit_num,
-                                                project_commit, run_number,
-                                                total_runs)
+  return (f'{data_directory}/{bazel_bench_uid}_{bazel_commit}_{unit_num}'
+          + f'_{project_commit}_{run_number}_of_{total_runs}.profile.gz')
 
 
 def _single_run(bazel_bin_path,
@@ -327,9 +325,15 @@ def _run_benchmark(bazel_bin_path,
       assert project_commit, ('project_commit is required when '
                               'collect_json_profile')
       maybe_include_json_profile_flags += _construct_json_profile_flags(
-          json_profile_filename(data_directory, bazel_bench_uid,
-                                bazel_identifier.replace('/', '_'), unit_num,
-                                project_commit, i, runs))
+          json_profile_filename(
+              data_directory=data_directory,
+              bazel_bench_uid=bazel_bench_uid,
+              bazel_commit=bazel_identifier.replace('/', '_'),
+              unit_num=unit_num,
+              project_commit=project_commit,
+              run_number=i,
+              total_runs=runs,
+          ))
     collected.append(
         _single_run(bazel_bin_path, command, maybe_include_json_profile_flags,
                     targets, startup_options))
@@ -337,20 +341,19 @@ def _run_benchmark(bazel_bin_path,
   return collected, (command, targets, options)
 
 
-def handle_json_profiles_aggr(bazel_bench_uid, bazel_commits, project_source,
-                              project_commits, runs, output_prefix, output_path,
-                              data_directory):
+def handle_json_profiles_aggr(bazel_bench_uid, unit_num, bazel_commits,
+                              project_source, project_commits, runs,
+                              output_path, data_directory):
   """Aggregates the collected JSON profiles and writes the result to a CSV.
 
    Args:
     bazel_bench_uid: a unique string identifier of this entire bazel-bench run.
+    unit_num: the numerical order of the current unit being benchmarked.
     bazel_commits: the Bazel commits that bazel-bench ran on.
     project_source: a path/url to a local/remote repository of the project on
       which benchmarking was performed.
     project_commits: the commits of the project when benchmarking was done.
     runs: the total number of runs.
-    output_prefix: the prefix to json profile filenames. Often the
-      bazel-bench-uid.
     output_path: the path to the output csv file.
     data_directory: the directory that stores output files.
   """
@@ -367,9 +370,15 @@ def handle_json_profiles_aggr(bazel_bench_uid, bazel_commits, project_source,
     for bazel_commit in bazel_commits:
       for project_commit in project_commits:
         profiles_filenames = [
-            json_profile_filename(data_directory, bazel_bench_uid,
-                                  output_prefix, bazel_commit,
-                                  project_commit, i, runs)
+            json_profile_filename(
+                data_directory=data_directory,
+                bazel_bench_uid=bazel_bench_uid,
+                bazel_commit=bazel_commit,
+                unit_num=unit_num,
+                project_commit=project_commit,
+                run_number=i,
+                total_runs=runs,
+            )
             for i in range(1, runs + 1)
         ]
         event_list = json_profiles_merger_lib.aggregate_data(
@@ -671,14 +680,15 @@ def main(argv):
       aggr_json_profiles_csv_path = (
           '%s/%s' % (FLAGS.data_directory, DEFAULT_AGGR_JSON_PROFILE_FILENAME))
       handle_json_profiles_aggr(
-          bazel_bench_uid,
-          config.get_bazel_commits(),
-          config.get_project_source(),
-          config.get_project_commits(),
-          FLAGS.runs,
-          output_prefix=bazel_bench_uid,
+          bazel_bench_uid=bazel_bench_uid,
+          unit_num=i,
+          bazel_commits=config.get_bazel_commits(),
+          project_source=config.get_project_source(),
+          project_commits=config.get_project_commits(),
+          runs=FLAGS.runs,
           output_path=aggr_json_profiles_csv_path,
-          data_directory=FLAGS.data_directory)
+          data_directory=FLAGS.data_directory,
+      )
 
   logger.log('Done.')
 
