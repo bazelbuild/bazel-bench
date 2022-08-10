@@ -488,7 +488,7 @@ flags.DEFINE_list('project_commits', None,
                   'The commits from the git project to be benchmarked.')
 flags.DEFINE_string(
     'env_configure', None,
-    "The shell commands to configure the project's environment .")
+    "The shell commands to configure the project's environment.")
 
 # Execution options.
 flags.DEFINE_integer('runs', 5, 'The number of benchmark runs.')
@@ -586,11 +586,17 @@ def _get_benchmark_config_and_clone_repos(argv):
   project_commits = _get_commits_topological(FLAGS.project_commits,
                                              project_clone_repo,
                                              'project_commits')
-  config = BenchmarkConfig.from_flags(bazel_commits, bazel_binaries,
-                                      project_commits, bazel_source,
-                                      FLAGS.project_source, FLAGS.runs,
-                                      FLAGS.collect_json_profile,
-                                      ' '.join(bazel_args))
+
+  config = BenchmarkConfig.from_flags(
+      bazel_commits=bazel_commits,
+      bazel_binaries=bazel_binaries,
+      project_commits=project_commits,
+      bazel_source=bazel_source,
+      project_source=FLAGS.project_source,
+      env_configure=FLAGS.env_configure,
+      runs=FLAGS.runs,
+      collect_json_profile=FLAGS.collect_json_profile,
+      command=' '.join(bazel_args))
 
   return config, bazel_clone_repo, project_clone_repo
 
@@ -627,9 +633,9 @@ def main(argv):
     project_commit = unit['project_commit']
 
     project_clone_repo.git.checkout('-f', project_commit)
-    if FLAGS.env_configure:
+    if unit['env_configure']:
       _exec_command(
-          FLAGS.env_configure, shell=True, cwd=project_clone_repo.working_dir)
+          unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
 
     results, args = _run_benchmark(
         bazel_bin_path=unit['bazel_bin_path'],

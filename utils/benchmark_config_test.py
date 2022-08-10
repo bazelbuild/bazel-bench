@@ -68,6 +68,7 @@ units:
  - bazel_path: /tmp/bazel
    command: build --nobuild //abc
    project_commit: 'hash2'
+   env_configure: 'some-command'
 """
     result = benchmark_config.BenchmarkConfig.from_string(file_content)
 
@@ -85,6 +86,7 @@ units:
         'bazel_path': '/tmp/bazel',
         'project_commit': 'hash2',
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
+        'env_configure': 'some-command',
         'runs': 5,
         'collect_profile': False,
         'command': 'build',
@@ -103,6 +105,7 @@ units:
         bazel_source='foo',
         project_source='foo',
         runs=5,
+        env_configure='some-command',
         collect_profile=False,
         command='build --nobuild //abc')
     self.assertEqual(result._units, [{
@@ -111,6 +114,7 @@ units:
         'bazel_source': 'foo',
         'project_source': 'foo',
         'runs': 5,
+        'env_configure': 'some-command',
         'collect_profile': False,
         'command': 'build',
         'startup_options': [],
@@ -122,6 +126,7 @@ units:
         'bazel_source': 'foo',
         'project_source': 'foo',
         'runs': 5,
+        'env_configure': 'some-command',
         'collect_profile': False,
         'command': 'build',
         'startup_options': [],
