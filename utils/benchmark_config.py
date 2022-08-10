@@ -80,29 +80,29 @@ class BenchmarkConfig(object):
   def get_units(self):
     """Returns a copy of the parsed units."""
     return copy.copy(self._units)
-  
-  def get_bazel_commits(self):	
-    """Returns the list of specified bazel_commits."""	
-    return [	
-        unit['bazel_commit'] for unit in self._units if 'bazel_commit' in unit	
+
+  def get_bazel_commits(self):
+    """Returns the list of specified bazel_commits."""
+    return [
+        unit['bazel_commit'] for unit in self._units if 'bazel_commit' in unit
     ]
 
-  def get_project_commits(self):	
-    """Returns the list of specified project_commits."""	
-    return [	
-        unit['project_commit'] for unit in self._units if 'project_commit' in unit	
+  def get_project_commits(self):
+    """Returns the list of specified project_commits."""
+    return [
+        unit['project_commit'] for unit in self._units if 'project_commit' in unit
     ]
 
   def get_project_source(self):
     """Returns the common project_source across the units.
-    
+
     We don't allow multiple project_source for now.
     """
     return None if not self._units else self._units[0]['project_source']
-    
+
   def get_bazel_source(self):
     """Returns the common bazel_source across the units.
-    
+
     We don't allow multiple bazel_source for now.
     """
     return None if not self._units else self._units[0]['bazel_source']
@@ -155,7 +155,8 @@ class BenchmarkConfig(object):
 
   @classmethod
   def from_flags(cls, bazel_commits, bazel_binaries, project_commits,
-                 bazel_source, project_source, runs, collect_profile, command):
+                 bazel_source, project_source, env_configure, runs,
+                 collect_profile, command):
     """Creates the BenchmarkConfig based on specified flags.
 
     Args:
@@ -166,6 +167,7 @@ class BenchmarkConfig(object):
         GitHub repository
       project_source: Either a path to the local git project to be built or a
         https url to a GitHub repository
+      env_configure: The command to run on the project repository before building it.
       runs: The number of benchmark runs to perform for each combination.
       collect_profile: Whether to collect a JSON profile.
       command: the full command to benchmark, optionally with startup options
@@ -185,6 +187,7 @@ class BenchmarkConfig(object):
                 'project_source': project_source,
                 'runs': runs,
                 'collect_profile': collect_profile,
+                'env_configure': env_configure,
                 'command': command,
             }))
     for bazel_binary in bazel_binaries:
@@ -197,6 +200,7 @@ class BenchmarkConfig(object):
                 'project_source': project_source,
                 'runs': runs,
                 'collect_profile': collect_profile,
+                'env_configure': env_configure,
                 'command': command,
             }))
     return cls(units, benchmark_project_commits=(len(project_commits) > 1))
