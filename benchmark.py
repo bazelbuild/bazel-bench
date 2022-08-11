@@ -589,7 +589,7 @@ def _get_benchmark_config_and_clone_repos(argv):
       project_source=FLAGS.project_source,
       env_configure=FLAGS.env_configure,
       runs=FLAGS.runs,
-      collect_json_profile=FLAGS.collect_json_profile,
+      collect_profile=FLAGS.collect_json_profile,
       command=' '.join(bazel_args))
 
   return config, bazel_clone_repo, project_clone_repo
