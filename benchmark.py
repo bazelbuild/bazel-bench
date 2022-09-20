@@ -627,7 +627,7 @@ def main(argv):
     project_commit = unit['project_commit']
 
     project_clone_repo.git.checkout('-f', project_commit)
-    if unit['env_configure']:
+    if 'env_configure' in unit:
       _exec_command(
           unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
 
