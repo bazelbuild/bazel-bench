@@ -37,9 +37,9 @@ from utils.benchmark_config import BenchmarkConfig
 # BB_ROOT has different values, depending on the platform.
 BB_ROOT = os.path.join(os.path.expanduser('~'), '.bazel-bench')
 
-# The path to the cloned bazelbuild/bazel repo.
-BAZEL_CLONE_PATH = os.path.join(BB_ROOT, 'bazel')
-# The path to the clone of the project to be built with Bazel.
+# The path to the directory that stores Bazel clones.
+BAZEL_CLONE_BASE_PATH = os.path.join(BB_ROOT, 'bazel-clones')
+# The path to the directory that stores project clones.
 PROJECT_CLONE_BASE_PATH = os.path.join(BB_ROOT, 'project-clones')
 BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 # The path to the directory that stores the bazel binaries.
@@ -547,9 +547,10 @@ def _get_benchmark_config_and_clone_repos(argv):
     project_clone_repo = _setup_project_repo(
         PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
         project_source)
+    bazel_source = config.get_bazel_source()
     bazel_clone_repo = _setup_project_repo(
-        BAZEL_CLONE_PATH,
-        config.get_bazel_source())
+        BAZEL_CLONE_BASE_PATH + '/' + _get_clone_subdir(bazel_source),
+        bazel_source)
 
     return config, bazel_clone_repo, project_clone_repo
 
@@ -563,7 +564,7 @@ def _get_benchmark_config_and_clone_repos(argv):
   logger.log('Preparing bazelbuild/bazel repository.')
   bazel_source = FLAGS.bazel_source if FLAGS.bazel_source else BAZEL_GITHUB_URL
   bazel_clone_repo = _setup_project_repo(
-        BAZEL_CLONE_PATH,
+        PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(bazel_source),
         bazel_source)
   bazel_commits = _get_commits_topological(
       FLAGS.bazel_commits,
