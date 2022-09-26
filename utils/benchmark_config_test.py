@@ -50,7 +50,8 @@ units:
         'command': 'info',
         'startup_options': [],
         'options': _pad_test_command_options([]),
-        'targets': []
+        'targets': [],
+        'env_configure': None,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
     os.remove(config_file_path)
@@ -76,6 +77,7 @@ units:
         'bazel_commit': 'hash1',
         'project_commit': 'hash3',
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
+        'env_configure': None,
         'runs': 5,
         'collect_profile': False,
         'command': 'info',

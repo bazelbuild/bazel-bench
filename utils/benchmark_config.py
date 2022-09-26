@@ -62,7 +62,8 @@ class BenchmarkConfig(object):
   _DEFAULT_VALS = {
       'runs': 5,
       'collect_profile': False,
-      'bazel_source': 'https://github.com/bazelbuild/bazel.git'
+      'bazel_source': 'https://github.com/bazelbuild/bazel.git',
+      'env_configure': None,
   }
 
   def __init__(self, units, benchmark_project_commits=False):
