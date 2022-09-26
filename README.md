@@ -8,22 +8,12 @@
 
 # Setup
 
-This script works with python3.
-
-Pre-requisites: `python`, `pip`, `git`, `bazel`, [`venv`](https://docs.python.org/3/library/venv.html) (strongly
-recommended).
+Pre-requisites: `git` and `bazel`.
 
 ```
 # Clone bazel-bench.
 $ git clone https://github.com/bazelbuild/bazel-bench.git
 $ cd bazel-bench
-
-# (Optional, Recommended) Create and activate the virtual environment.
-$ python3 -m venv .venv/
-$ source .venv/bin/activate
-
-# Install the dependencies. pip or pip3, depends on your setup.
-$ pip3 install -r third_party/requirements.txt
 ```
 
 To do a test run, run the following command (if you're on Windows, populate
