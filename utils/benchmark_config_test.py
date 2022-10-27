@@ -70,6 +70,8 @@ units:
    command: build --nobuild //abc
    project_commit: 'hash2'
    env_configure: 'some-command'
+ - bazel_path: /tmp/bazel
+   command: build --flag_a -- //foo
 """
     result = benchmark_config.BenchmarkConfig.from_string(file_content)
 
@@ -95,6 +97,17 @@ units:
         'startup_options': [],
         'options': _pad_test_command_options(['--nobuild']),
         'targets': ['//abc']
+    }, {
+        'bazel_path': '/tmp/bazel',
+        'project_commit': 'hash3',
+        'bazel_source': 'https://github.com/bazelbuild/bazel.git',
+        'env_configure': 'some-command',
+        'runs': 5,
+        'collect_profile': False,
+        'command': 'build',
+        'startup_options': [],
+        'options': _pad_test_command_options(['--flag_a']),
+        'targets': ['//foo']
     }])
     self.assertEqual(result._benchmark_project_commits, False)
 
