@@ -157,7 +157,7 @@ Some useful flags are:
     (an integer)
   --[no]verbose: Whether to include git/Bazel stdout logs.
     (default: 'false')
-  --[no]collect_json_profile: Whether to collect JSON profile for each run.
+  --[no]collect_profile: Whether to collect JSON profile for each run.
     Requires --data_directory to be set.
     (default: 'false')
 ```
@@ -167,7 +167,7 @@ Some useful flags are:
 [Bazel's JSON Profile](https://docs.bazel.build/versions/master/skylark/performance.html#json-profile)
 is a useful tool to investigate the performance of Bazel. You can configure
 `bazel-bench` to export these JSON profiles on runs using the
-`--collect_json_profile` flag.
+`--collect_profile` flag.
 
 ### JSON Profile Aggregation
 

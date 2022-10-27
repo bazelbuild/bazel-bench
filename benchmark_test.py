@@ -195,7 +195,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
         ]), mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os, 'chdir')
-  def test_run_benchmark_collect_json_profile(self, _):
+  def test_run_benchmark_collect_profile(self, _):
     benchmark.DEFAULT_OUT_BASE_PATH = 'some_out_path'
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._run_benchmark(
@@ -208,7 +208,7 @@ class BenchmarkFunctionTests(absltest.TestCase):
           targets=['//:all'],
           startup_options=[],
           prefetch_ext_deps=True,
-          collect_json_profile=True,
+          collect_profile=True,
           data_directory='fake_dir',
           bazel_identifier='fake_bazel_commit',
           project_commit='fake_project_commit',

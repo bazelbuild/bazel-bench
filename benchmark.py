@@ -270,7 +270,7 @@ def _run_benchmark(bazel_bin_path,
                    bazel_bench_uid,
                    unit_num,
                    data_directory=None,
-                   collect_json_profile=False,
+                   collect_profile=False,
                    bazel_identifier=None,
                    project_commit=None):
   """Runs the benchmarking for a combination of (bazel version, project version).
@@ -284,13 +284,13 @@ def _run_benchmark(bazel_bin_path,
       external dependencies.
     bazel_bench_uid: a unique string identifier of this entire bazel-bench run.
     unit_num: the numerical order of the current unit being benchmarked.
-    collect_json_profile: whether to collect JSON profile for each run.
+    collect_profile: whether to collect JSON profile for each run.
     data_directory: the path to the directory to store run data. Required if
-      collect_json_profile.
+      collect_profile.
     bazel_identifier: the commit hash of the bazel commit. Required if
-      collect_json_profile.
+      collect_profile.
     project_commit: the commit hash of the project commit. Required if
-      collect_json_profile.
+      collect_profile.
 
   Returns:
     A list of result objects from each _single_run.
@@ -305,7 +305,7 @@ def _run_benchmark(bazel_bin_path,
     logger.log('Pre-fetching external dependencies...')
     _single_run(bazel_bin_path, command, options, targets, startup_options)
 
-  if collect_json_profile:
+  if collect_profile:
     if not os.path.exists(data_directory):
       os.makedirs(data_directory)
 
@@ -313,11 +313,11 @@ def _run_benchmark(bazel_bin_path,
     logger.log('Starting benchmark run %s/%s:' % (i, runs))
 
     maybe_include_json_profile_flags = options[:]
-    if collect_json_profile:
+    if collect_profile:
       assert bazel_identifier, ('bazel_identifier is required when '
-                                'collect_json_profile')
+                                'collect_profile')
       assert project_commit, ('project_commit is required when '
-                              'collect_json_profile')
+                              'collect_profile')
       maybe_include_json_profile_flags += _construct_json_profile_flags(
           json_profile_filename(
               data_directory=data_directory,
@@ -498,12 +498,12 @@ flags.DEFINE_boolean('verbose', False,
 flags.DEFINE_boolean('prefetch_ext_deps', True,
                      'Whether to do an initial run to pre-fetch external ' \
                      'dependencies.')
-flags.DEFINE_boolean('collect_json_profile', False,
+flags.DEFINE_boolean('collect_profile', False,
                      'Whether to collect JSON profile for each run. Requires ' \
                      '--data_directory to be set.')
 flags.DEFINE_boolean('aggregate_json_profiles', False,
                      'Whether to aggregate the collected JSON profiles. Requires '\
-                     '--collect_json_profile to be set.')
+                     '--collect_profile to be set.')
 flags.DEFINE_string(
     'benchmark_config', None,
     'Whether to use the config-file interface to define benchmark units.')
@@ -527,9 +527,9 @@ def _flag_checks():
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
-  if FLAGS.aggregate_json_profiles and not FLAGS.collect_json_profile:
+  if FLAGS.aggregate_json_profiles and not FLAGS.collect_profile:
     raise ValueError('--aggregate_json_profiles requires '
-                     '--collect_json_profile to be set.')
+                     '--collect_profile to be set.')
 
 
 def _get_benchmark_config_and_clone_repos(argv):
@@ -590,7 +590,7 @@ def _get_benchmark_config_and_clone_repos(argv):
       project_source=FLAGS.project_source,
       env_configure=FLAGS.env_configure,
       runs=FLAGS.runs,
-      collect_profile=FLAGS.collect_json_profile,
+      collect_profile=FLAGS.collect_profile,
       command=' '.join(bazel_args))
 
   return config, bazel_clone_repo, project_clone_repo
@@ -643,7 +643,7 @@ def main(argv):
         prefetch_ext_deps=FLAGS.prefetch_ext_deps,
         bazel_bench_uid=bazel_bench_uid,
         unit_num=i,
-        collect_json_profile=unit['collect_profile'],
+        collect_profile=unit['collect_profile'],
         data_directory=data_directory,
         bazel_identifier=bazel_identifier,
         project_commit=project_commit)
