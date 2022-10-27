@@ -71,7 +71,7 @@ units:
    project_commit: 'hash2'
    env_configure: 'some-command'
  - bazel_path: /tmp/bazel
-   command: build --flag_a -- //foo
+   command: build --flag_a -- //foo -//excluded/..
 """
     result = benchmark_config.BenchmarkConfig.from_string(file_content)
 
