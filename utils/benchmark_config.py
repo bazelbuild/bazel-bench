@@ -234,7 +234,11 @@ class BenchmarkConfig(object):
       raise ValueError('\'%s\' does not contain a Blaze command (e.g. build)' %
                        unit['command'])
     options = []
-    while full_command_tokens and full_command_tokens[0].startswith('--'):
+    # Next, parse the options. We identify this by tokens that start with `--`.
+    # The exception is the token `--`, which is a valid syntax used to separate
+    # the flags from the targets: https://bazel.build/run/build#specifying-build-targets
+    # Example: bazel build --flag_a -- //foo -//exluded/...
+    while full_command_tokens and full_command_tokens[0].startswith('--') and full_command_tokens[0] != '--':
       options.append(full_command_tokens.pop(0))
     # This is a workaround for https://github.com/bazelbuild/bazel/issues/3236.
     if sys.platform.startswith('linux'):
