@@ -71,7 +71,7 @@ units:
    project_commit: 'hash2'
    env_configure: 'some-command'
  - bazel_path: /tmp/bazel
-   command: build --flag_a -- //foo -//excluded/..
+   command: build --flag_a -- //foo -//excluded/...
 """
     result = benchmark_config.BenchmarkConfig.from_string(file_content)
 
@@ -101,13 +101,13 @@ units:
         'bazel_path': '/tmp/bazel',
         'project_commit': 'hash3',
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
-        'env_configure': 'some-command',
+        'env_configure': None,
         'runs': 5,
         'collect_profile': False,
         'command': 'build',
         'startup_options': [],
         'options': _pad_test_command_options(['--flag_a']),
-        'targets': ['//foo']
+        'targets': ['--', '//foo', '-//excluded/...']
     }])
     self.assertEqual(result._benchmark_project_commits, False)
 
