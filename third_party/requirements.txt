@@ -1,6 +1,6 @@
 absl-py==1.2.0
 cachetools==3.1.0
-certifi==2018.11.29
+certifi==2022.12.7
 chardet==3.0.4
 funcsigs==1.0.2
 futures==3.1.1
