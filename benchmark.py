@@ -1,4 +1,4 @@
-# Copyright 2019 The Bazel Authors. All rights reserved.
+  # Copyright 2019 The Bazel Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -558,6 +558,9 @@ def _get_benchmark_config_and_clone_repos(argv):
   # argv would be something like:
   # ['benchmark.py', 'build', '--nobuild', '//:all']
   bazel_args = argv[1:]
+
+  # remove --bazel_commits=xyz from the list, otherwise it's passed to the bazel bin as a target, and the benchmark fails.
+  del bazel_args[-1]
 
   # Building Bazel binaries
   bazel_binaries = FLAGS.bazel_binaries or []
