@@ -197,8 +197,6 @@ def _construct_json_profile_flags(out_file_path):
   """
   return [
       '--experimental_generate_json_trace_profile',
-      '--experimental_profile_cpu_usage',
-      '--experimental_json_trace_compression',
       '--profile={}'.format(out_file_path)
   ]
 

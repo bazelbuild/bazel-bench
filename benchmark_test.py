@@ -222,11 +222,11 @@ class BenchmarkFunctionTests(absltest.TestCase):
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 1/2:',
-            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_0_fake_project_commit_1_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --profile=fake_dir/fake_uid_fake_bazel_commit_0_fake_project_commit_1_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown ',
             'Starting benchmark run 2/2:',
-            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --experimental_profile_cpu_usage --experimental_json_trace_compression --profile=fake_dir/fake_uid_fake_bazel_commit_0_fake_project_commit_2_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
+            'Executing Bazel command: bazel build --experimental_generate_json_trace_profile --profile=fake_dir/fake_uid_fake_bazel_commit_0_fake_project_commit_2_of_2.profile.gz --nostamp --noshow_progress --color=no //:all',
             'Executing Bazel command: bazel clean --color=no',
             'Executing Bazel command: bazel shutdown '
         ]), mock_stderr.getvalue())
