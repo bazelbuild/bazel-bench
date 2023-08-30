@@ -13,6 +13,7 @@
 # limitations under the License.
 """Handles Bazel invocations and measures their time/memory consumption."""
 import subprocess
+import tempfile
 import os
 import time
 import psutil
@@ -62,14 +63,18 @@ class Bazel(object):
     dev_null = open(os.devnull, 'w')
     exit_status = 0
 
-    try:
-      subprocess.check_call(
-          [self._bazel_binary_path] + self._startup_options + [command] + args,
-          stdout=dev_null,
-          stderr=dev_null)
-    except subprocess.CalledProcessError as e:
-      exit_status = e.returncode
-      logger.log_error('Bazel command failed with exit code %s' % e.returncode)
+    with tempfile.NamedTemporaryFile() as tmp_stdout:
+      try:
+        subprocess.check_call(
+            [self._bazel_binary_path] + self._startup_options + [command] + args,
+            stdout=dev_null,
+            stderr=tmp_stdout.file)
+      except subprocess.CalledProcessError as e:
+        exit_status = e.returncode
+        logger.log_error('Bazel command failed with exit code %s' % e.returncode)
+        tmp_stdout.seek(0)
+        logger.log_error(tmp_stdout.read().decode())
+
 
     if command == 'shutdown':
       return None
