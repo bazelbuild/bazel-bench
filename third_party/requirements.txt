@@ -5,7 +5,7 @@ chardet==3.0.4
 funcsigs==1.0.2
 futures==3.1.1
 gitdb2==2.0.0
-GitPython==3.1.32
+GitPython==3.1.34
 google-api-core==1.8.0
 google-auth==1.6.3
 google-cloud-bigquery==1.9.0
