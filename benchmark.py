@@ -251,10 +251,10 @@ def _single_run(bazel_bin_path,
                   measurements['memory'],
                   measurements['exit_status']))
 
-  if not FLAGS.skip_clean:
+  if FLAGS.clean:
     bazel.command('clean', ['--color=no'])
 
-  if not FLAGS.skip_shutdown:
+  if FLAGS.shutdown:
     bazel.command('shutdown')
 
   return measurements
@@ -492,8 +492,8 @@ flags.DEFINE_string('platform', None,
                     ('The platform on which bazel-bench is run. This is just '
                      'to categorize data and has no impact on the actual '
                      'script execution.'))
-flags.DEFINE_boolean('skip_clean', False, 'Whether to invoke clean between runs/builds.')
-flags.DEFINE_boolean('skip_shutdown', False, 'Whether to invoke shutdown between runs/builds.')
+flags.DEFINE_boolean('clean', True, 'Whether to invoke clean between runs/builds.')
+flags.DEFINE_boolean('shutdown', True, 'Whether to invoke shutdown between runs/builds.')
 
 # Miscellaneous flags.
 flags.DEFINE_boolean('verbose', False,

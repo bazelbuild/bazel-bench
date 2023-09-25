@@ -259,7 +259,7 @@ class BenchmarkFlagsTest(absltest.TestCase):
         'Either --bazel_commits or --project_commits should be a single element.'
     )
 
-  @flagsaver.flagsaver(skip_clean=True)
+  @flagsaver.flagsaver(clean=False)
   def test_single_run_skip_clean(self):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._single_run(
@@ -275,8 +275,8 @@ class BenchmarkFlagsTest(absltest.TestCase):
             'Executing Bazel command: bazel shutdown '
         ]), mock_stderr.getvalue())
 
-  @flagsaver.flagsaver(skip_shutdown=True)
-  def test_single_run_skip_clean(self):
+  @flagsaver.flagsaver(shutdown=False)
+  def test_single_run_skip_shutdown(self):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
       benchmark._single_run(
           'bazel_binary_path',
