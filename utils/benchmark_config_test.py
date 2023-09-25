@@ -52,6 +52,8 @@ units:
         'options': _pad_test_command_options([]),
         'targets': [],
         'env_configure': None,
+        'clean': True,
+        'shutdown': True,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
     os.remove(config_file_path)
@@ -85,7 +87,9 @@ units:
         'command': 'info',
         'startup_options': [],
         'options': _pad_test_command_options([]),
-        'targets': []
+        'targets': [],
+        'clean': True,
+        'shutdown': True
     }, {
         'bazel_path': '/tmp/bazel',
         'project_commit': 'hash2',
@@ -96,7 +100,9 @@ units:
         'command': 'build',
         'startup_options': [],
         'options': _pad_test_command_options(['--nobuild']),
-        'targets': ['//abc']
+        'targets': ['//abc'],
+        'clean': True,
+        'shutdown': True
     }, {
         'bazel_path': '/tmp/bazel',
         'project_commit': 'hash3',
@@ -107,7 +113,9 @@ units:
         'command': 'build',
         'startup_options': [],
         'options': _pad_test_command_options(['--flag_a']),
-        'targets': ['--', '//foo', '-//excluded/...']
+        'targets': ['--', '//foo', '-//excluded/...'],
+        'clean': True,
+        'shutdown': True
     }])
     self.assertEqual(result._benchmark_project_commits, False)
 
@@ -122,7 +130,10 @@ units:
         runs=5,
         env_configure='some-command',
         collect_profile=False,
-        command='build --nobuild //abc')
+        command='build --nobuild //abc',
+        clean=False,
+        shutdown=False,
+    )
     self.assertEqual(result._units, [{
         'bazel_commit': 'hash1',
         'project_commit': 'hash3',
@@ -134,7 +145,9 @@ units:
         'command': 'build',
         'startup_options': [],
         'options': _pad_test_command_options(['--nobuild']),
-        'targets': ['//abc']
+        'targets': ['//abc'],
+        'clean': False,
+        'shutdown': False,
     }, {
         'bazel_binary': 'path/to/bazel',
         'project_commit': 'hash3',
@@ -146,7 +159,9 @@ units:
         'command': 'build',
         'startup_options': [],
         'options': _pad_test_command_options(['--nobuild']),
-        'targets': ['//abc']
+        'targets': ['//abc'],
+        'clean': False,
+        'shutdown': False,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
 

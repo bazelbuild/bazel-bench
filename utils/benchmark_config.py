@@ -31,6 +31,8 @@ benchmark_project_commits: False
 global_options:
   project_commit: 595a730
   runs: 5
+  clean: true
+  shutdown: true
   collect_profile: false
   project_source: /path/to/project/repo
 units:
@@ -64,6 +66,8 @@ class BenchmarkConfig(object):
       'collect_profile': False,
       'bazel_source': 'https://github.com/bazelbuild/bazel.git',
       'env_configure': None,
+      'clean': True,
+      'shutdown': True,
   }
 
   def __init__(self, units, benchmark_project_commits=False):
@@ -157,7 +161,7 @@ class BenchmarkConfig(object):
   @classmethod
   def from_flags(cls, bazel_commits, bazel_binaries, project_commits,
                  bazel_source, project_source, env_configure, runs,
-                 collect_profile, command):
+                 collect_profile, command, clean, shutdown):
     """Creates the BenchmarkConfig based on specified flags.
 
     Args:
@@ -173,6 +177,8 @@ class BenchmarkConfig(object):
       collect_profile: Whether to collect a JSON profile.
       command: the full command to benchmark, optionally with startup options
         prepended, e.g. "--noexobazel build --nobuild ...".
+      clean: Whether to invoke `bazel clean` between runs.
+      shutdown: Whether to invoke `bazel shutdown` between runs.
 
     Returns:
       The created config object.
@@ -190,6 +196,8 @@ class BenchmarkConfig(object):
                 'collect_profile': collect_profile,
                 'env_configure': env_configure,
                 'command': command,
+                'clean': clean,
+                'shutdown': shutdown,
             }))
     for bazel_binary in bazel_binaries:
       for project_commit in project_commits:
@@ -203,6 +211,8 @@ class BenchmarkConfig(object):
                 'collect_profile': collect_profile,
                 'env_configure': env_configure,
                 'command': command,
+                'clean': clean,
+                'shutdown': shutdown,
             }))
     return cls(units, benchmark_project_commits=(len(project_commits) > 1))
 
