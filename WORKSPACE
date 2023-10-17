@@ -2,10 +2,14 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_python",
-    sha256 = "c03246c11efd49266e8e41e12931090b613e12a59e6f55ba2efd29a7cb8b4258",
-    strip_prefix = "rules_python-0.11.0",
-    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.11.0.tar.gz",
+    sha256 = "9d04041ac92a0985e344235f5d946f71ac543f1b1565f2cdbc9a2aaee8adf55b",
+    strip_prefix = "rules_python-0.26.0",
+    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.26.0.tar.gz",
 )
+
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
 
 load("@rules_python//python:pip.bzl", "pip_install")
 load("@rules_python//python:repositories.bzl", "python_register_toolchains")
@@ -25,3 +29,7 @@ pip_install(
    python_interpreter_target = interpreter,
    requirements = "//third_party:requirements.txt",
 )
+
+load("@third_party//:requirements.bzl", "install_deps")
+
+install_deps()
