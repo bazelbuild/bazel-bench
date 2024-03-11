@@ -1,0 +1,47 @@
+module(
+    name = "bazel-bench",
+    version = "0.0.0",
+)
+
+bazel_dep(
+    name = "rules_python",
+    version = "0.22.1",
+)
+
+# -- bazel_dep definitions -- #
+python = use_extension(
+    "@rules_python//python/extensions:python.bzl",
+    "python",
+    dev_dependency = True,
+)
+python.toolchain(
+    name = "python3_10",
+    python_version = "3.10",
+)
+use_repo(
+    python,
+    "python3_10_toolchains",
+)
+
+interpreter = use_extension(
+    "@rules_python//python/extensions:interpreter.bzl",
+    "interpreter",
+    dev_dependency = True,
+)
+interpreter.install(
+    name = "python3_10_interpreter",
+    python_name = "python3_10",
+)
+use_repo(interpreter, "python3_10_interpreter")
+
+pip = use_extension(
+    "@rules_python//python/extensions:pip.bzl",
+    "pip",
+    dev_dependency = True,
+)
+pip.parse(
+    name = "third_party",
+    python_interpreter_target = "@python3_10_interpreter//:python",
+    requirements_lock = "//third_party:requirements.txt",
+)
+use_repo(pip, "third_party")

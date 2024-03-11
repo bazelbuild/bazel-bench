@@ -21,7 +21,7 @@ load("@python3_10//:defs.bzl", "interpreter")
 
 # Translate requirements.txt into a @third_party external repository.
 pip_install(
-   name = "third_party",
-   python_interpreter_target = interpreter,
-   requirements = "//third_party:requirements.txt",
+    name = "third_party",
+    python_interpreter_target = interpreter,
+    requirements = "//third_party:requirements.txt",
 )
