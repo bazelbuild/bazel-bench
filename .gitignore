@@ -21,6 +21,7 @@ utils/config.py
 
 # Bazel
 bazel-*
+MODULE.bazel.lock
 
 # Python venv
 .venv/
