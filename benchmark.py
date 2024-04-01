@@ -154,29 +154,29 @@ def _build_bazel_binary(commit, repo, outroot, platform=None):
   return the path without re-building.
 
   Args:
-    commit: the Bazel commit SHA.
+    commit: the commit, branch or tag to build Bazel at.
     repo: the git.Repo instance of the Bazel clone.
-    outroot: the directory inwhich the resulting binary is copied to.
+    outroot: the directory into which to copy the resulting binary.
     platform: the platform on which to build this binary.
 
   Returns:
     The path to the resulting binary (copied to outroot).
   """
+  repo.git.checkout('-f', commit)
+  commit = repo.commit().hexsha
+
   outroot_for_commit = '%s/%s/%s' % (
       outroot, platform, commit) if platform else '%s/%s' % (outroot, commit)
   destination = '%s/bazel' % outroot_for_commit
+
   if os.path.exists(destination):
-    logger.log('Binary exists at %s, reusing...' % destination)
+    logger.log('Bazel binary exists at %s, reusing...' % destination)
     return destination
 
   logger.log('Building Bazel binary at commit %s' % commit)
-  repo.git.checkout('-f', commit)
-
   _exec_command(['bazel', 'build', '//src:bazel'], cwd=repo.working_dir)
 
-  # Copy to another location
   binary_out = '%s/bazel-bin/src/bazel' % repo.working_dir
-
   if not os.path.exists(outroot_for_commit):
     os.makedirs(outroot_for_commit)
   logger.log('Copying bazel binary to %s' % destination)

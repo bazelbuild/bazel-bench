@@ -78,8 +78,8 @@ class BenchmarkFunctionTests(absltest.TestCase):
       mock.patch('benchmark.git.Repo') as mock_repo_class:
       mock_repo = mock_repo_class.return_value
       mock_commit = mock.MagicMock()
-      mock_repo.commit.return_value = mock_commit
       mock_commit.hexsha = 'A'
+      mock_repo.commit.return_value = mock_commit
       result = benchmark._get_commits_topological(None, mock_repo,
                                                   'bazel_commits')
 
@@ -91,9 +91,17 @@ class BenchmarkFunctionTests(absltest.TestCase):
   @mock.patch.object(benchmark.os, 'makedirs')
   def test_build_bazel_binary_exists(self, unused_chdir_mock,
                                      unused_exists_mock):
-    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
-      benchmark._build_bazel_binary('commit', 'repo_path', 'outroot')
-    self.assertEqual('Binary exists at outroot/commit/bazel, reusing...',
+    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
+      mock.patch('benchmark.git.Repo') as mock_repo_class:
+      mock_repo = mock_repo_class.return_value
+      mock_commit = mock.MagicMock()
+      mock_commit.hexsha = "abc123"
+      mock_repo.commit.return_value = mock_commit
+      benchmark._build_bazel_binary('commit', mock_repo, 'outroot')
+
+    mock_repo.git.checkout.assert_called_once_with('-f', 'commit')
+
+    self.assertEqual('Bazel binary exists at outroot/abc123/bazel, reusing...',
                      mock_stderr.getvalue())
 
   @mock.patch.object(benchmark.os.path, 'exists', return_value=False)
@@ -107,14 +115,18 @@ class BenchmarkFunctionTests(absltest.TestCase):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
       mock.patch('benchmark.git.Repo') as mock_repo_class:
       mock_repo = mock_repo_class.return_value
+      mock_commit = mock.MagicMock()
+      mock_commit.hexsha = "abc123"
+      mock_repo.commit.return_value = mock_commit
       benchmark._build_bazel_binary('commit', mock_repo, 'outroot')
 
     mock_repo.git.checkout.assert_called_once_with('-f', 'commit')
+
     self.assertEqual(
         ''.join([
-            'Building Bazel binary at commit commit', 'bazel build //src:bazel',
-            'Copying bazel binary to outroot/commit/bazel',
-            'chmod +x outroot/commit/bazel'
+            'Building Bazel binary at commit abc123', 'bazel build //src:bazel',
+            'Copying bazel binary to outroot/abc123/bazel',
+            'chmod +x outroot/abc123/bazel'
         ]), mock_stderr.getvalue())
 
   def test_single_run(self):
