@@ -115,7 +115,7 @@ pytz==2018.9
     # via -r third_party/requirements.in
 pyyaml==6.0.1
     # via -r third_party/requirements.in
-requests==2.31.0
+requests==2.32.2
     # via
     #   -r third_party/requirements.in
     #   google-api-core
