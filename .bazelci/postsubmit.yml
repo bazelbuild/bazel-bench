@@ -1,6 +1,6 @@
 ---
 tasks:
-  ubuntu1804:
+  ubuntu2204:
     include_json_profile:
       - build
       - test
@@ -8,7 +8,7 @@ tasks:
       - "//..."
     test_targets:
       - "//..."
-  macos:
+  macos_arm64:
     include_json_profile:
       - build
       - test
