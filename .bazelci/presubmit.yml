@@ -1,11 +1,11 @@
 ---
 tasks:
-  ubuntu1804:
+  ubuntu2204:
     build_targets:
       - "//..."
     test_targets:
       - "//..."
-  macos:
+  macos_arm64:
     build_targets:
       - "//..."
     test_targets:

@@ -1,2 +1,1 @@
-build --noenable_bzlmod
 build --incompatible_disallow_empty_glob
