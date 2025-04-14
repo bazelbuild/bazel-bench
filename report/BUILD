@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_binary")
 load("@third_party//:requirements.bzl", "requirement")
 
 package(default_visibility = ["//visibility:public"])

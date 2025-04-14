@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@third_party//:requirements.bzl", "requirement")
 
 # TODO(https://github.com/bazelbuild/bazel-bench/issues/36): Make these work for python3.

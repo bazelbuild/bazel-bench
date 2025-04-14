@@ -23,7 +23,6 @@ pip = use_extension(
     "pip",
     dev_dependency = True,
 )
-
 pip.parse(
     hub_name = "third_party",
     python_version = "3.10",
