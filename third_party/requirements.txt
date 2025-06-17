@@ -90,7 +90,7 @@ pbr==5.1.3
     # via -r third_party/requirements.in
 proto-plus==1.23.0
     # via google-cloud-bigquery
-protobuf==4.24.4
+protobuf==4.25.8
     # via
     #   -r third_party/requirements.in
     #   google-api-core
