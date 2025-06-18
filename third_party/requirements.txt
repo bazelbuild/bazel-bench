@@ -133,7 +133,7 @@ six==1.16.0
     #   python-dateutil
 smmap==5.0.1
     # via gitdb
-urllib3==2.2.2
+urllib3==2.5.0
     # via
     #   -r third_party/requirements.in
     #   requests
