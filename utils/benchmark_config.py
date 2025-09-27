@@ -68,6 +68,7 @@ class BenchmarkConfig(object):
       'env_configure': None,
       'clean': True,
       'shutdown': True,
+      'patch_file': None,
   }
 
   def __init__(self, units, benchmark_project_commits=False):
@@ -161,7 +162,7 @@ class BenchmarkConfig(object):
   @classmethod
   def from_flags(cls, bazel_commits, bazel_binaries, project_commits,
                  bazel_source, project_source, env_configure, runs,
-                 collect_profile, command, clean, shutdown):
+                 collect_profile, command, clean, shutdown, patch_file=None):
     """Creates the BenchmarkConfig based on specified flags.
 
     Args:
@@ -179,6 +180,7 @@ class BenchmarkConfig(object):
         prepended, e.g. "--noexobazel build --nobuild ...".
       clean: Whether to invoke `bazel clean` between runs.
       shutdown: Whether to invoke `bazel shutdown` between runs.
+      patch_file: Optional path to a patch file to apply before running the benchmark.
 
     Returns:
       The created config object.
@@ -198,6 +200,7 @@ class BenchmarkConfig(object):
                 'command': command,
                 'clean': clean,
                 'shutdown': shutdown,
+                'patch_file': patch_file,
             }))
     for bazel_binary in bazel_binaries:
       for project_commit in project_commits:
@@ -213,6 +216,7 @@ class BenchmarkConfig(object):
                 'command': command,
                 'clean': clean,
                 'shutdown': shutdown,
+                'patch_file': patch_file,
             }))
     return cls(units, benchmark_project_commits=(len(project_commits) > 1))
 

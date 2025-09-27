@@ -186,6 +186,32 @@ def _build_bazel_binary(commit, repo, outroot, platform=None):
   return destination
 
 
+def _apply_patch(repo, patch_file_path):
+  """Applies a patch file to the repository.
+
+  Args:
+    repo: the git.Repo instance of the repository.
+    patch_file_path: the path to the patch file to apply.
+  """
+  if not os.path.exists(patch_file_path):
+    logger.log('Patch file does not exist: %s' % patch_file_path)
+    return
+  
+  logger.log('Applying patch file: %s' % patch_file_path)
+  _exec_command(['git', 'apply', patch_file_path], cwd=repo.working_dir)
+
+
+def _reset_patch_changes(repo):
+  """Resets any uncommitted changes in the repository to restore clean state.
+
+  Args:
+    repo: the git.Repo instance of the repository.
+  """
+  logger.log('Resetting patch changes to restore clean repository state')
+  _exec_command(['git', 'reset', '--hard', 'HEAD'], cwd=repo.working_dir)
+  _exec_command(['git', 'clean', '-fd'], cwd=repo.working_dir)
+
+
 def _construct_json_profile_flags(out_file_path):
   """Constructs the flags used to collect JSON profiles.
 
@@ -494,6 +520,7 @@ flags.DEFINE_string('platform', None,
                      'script execution.'))
 flags.DEFINE_boolean('clean', True, 'Whether to invoke clean between runs/builds.')
 flags.DEFINE_boolean('shutdown', True, 'Whether to invoke shutdown between runs/builds.')
+flags.DEFINE_string("patch_file", None, 'Optional path to a patch file to apply before running the benchmark.')
 
 # Miscellaneous flags.
 flags.DEFINE_boolean('verbose', False,
@@ -596,7 +623,8 @@ def _get_benchmark_config_and_clone_repos(argv):
       collect_profile=FLAGS.collect_profile,
       command=' '.join(bazel_args),
       clean=FLAGS.clean,
-      shutdown=FLAGS.shutdown)
+      shutdown=FLAGS.shutdown,
+      patch_file=FLAGS.patch_file)
 
   return config, bazel_clone_repo, project_clone_repo
 
@@ -633,6 +661,8 @@ def main(argv):
     project_commit = unit['project_commit']
 
     project_clone_repo.git.checkout('-f', project_commit)
+    if unit['patch_file'] is not None:
+      _apply_patch(project_clone_repo, unit['patch_file'])
     if unit['env_configure'] is not None:
       _exec_command(
           unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
@@ -652,6 +682,10 @@ def main(argv):
         data_directory=data_directory,
         bazel_identifier=bazel_identifier,
         project_commit=project_commit)
+    
+    if unit['patch_file'] is not None:
+      _reset_patch_changes(project_clone_repo)
+    
     collected = {}
     for benchmarking_result in results:
       for metric, value in benchmarking_result.items():
