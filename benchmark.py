@@ -67,6 +67,44 @@ def _resolve_path(path):
   return os.path.abspath(os.path.join(base_dir, os.path.expanduser(path)))
 
 
+def _get_local_project_commit(project_source):
+  """Gets the HEAD commit SHA for a local project, or 'local' if unavailable."""
+  if project_source and (os.path.isdir(os.path.join(project_source, '.git')) or
+                         os.path.isfile(os.path.join(project_source, '.git'))):
+    try:
+      out = subprocess.check_output(
+          ['git', 'rev-parse', 'HEAD'],
+          cwd=project_source,
+          stderr=subprocess.DEVNULL,
+          text=True).strip()
+      if out:
+        return out
+    except Exception:
+      pass
+    try:
+      local_repo = git.Repo(project_source)
+      return local_repo.head.commit.hexsha
+    except Exception:
+      pass
+  return 'local'
+
+
+def _check_no_patch_in_place(project_source, patch_files):
+  """Refuses patch files when benchmarking a local project in place.
+
+  The patch is applied to and reverted from the project tree around every run.
+  Doing that in the user's own checkout is risky: if the benchmark is
+  interrupted, or the user edits a patched file meanwhile, the checkout is left
+  modified (or the revert fails).
+  """
+  if any(patch_files):
+    raise ValueError(
+        '--patch_file/patch_file cannot be used when benchmarking %s in place: '
+        'the patch would be repeatedly applied to and reverted from your own '
+        'checkout. Pass --project_commits (or project_commit in the config) so '
+        'the project is cloned.' % project_source)
+
+
 def _exec_command(args, shell=False, cwd=None):
   logger.log('Executing: %s' % (args if shell else ' '.join(args)))
 
@@ -868,9 +906,26 @@ def _get_benchmark_config_and_clone_repos(argv):
   if FLAGS.benchmark_config:
     config = BenchmarkConfig.from_file(_resolve_path(FLAGS.benchmark_config))
     project_source = _resolve_path(config.get_project_source())
-    project_clone_repo = _setup_project_repo(
-        PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
-        project_source)
+    need_project_clone = not os.path.isdir(project_source) or any(
+        'project_commit' in u for u in config.get_units())
+    project_clone_repo = None
+    if need_project_clone:
+      logger.log('Preparing %s clone.' % project_source)
+      project_clone_repo = _setup_project_repo(
+          PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
+          project_source)
+    else:
+      _check_no_patch_in_place(
+          project_source,
+          [FLAGS.patch_file] + [u.get('patch_file') for u in config.get_units()])
+      latest_commit_sha = _get_local_project_commit(project_source)
+      for u in config.get_units():
+        if 'project_commit' not in u:
+          u['project_commit'] = latest_commit_sha
+      for u in config._units:
+        if 'project_commit' not in u:
+          u['project_commit'] = latest_commit_sha
+
     need_bazel_repo = any('bazel_commit' in u for u in config.get_units()) or bool(FLAGS.bisect)
     bazel_clone_repo = None
     if need_bazel_repo:
@@ -886,6 +941,11 @@ def _get_benchmark_config_and_clone_repos(argv):
   # argv would be something like:
   # ['benchmark.py', 'build', '--nobuild', '//:all']
   bazel_args = argv[1:]
+
+  project_source = _resolve_path(FLAGS.project_source)
+  need_project_clone = not os.path.isdir(project_source) or bool(FLAGS.project_commits)
+  if not need_project_clone:
+    _check_no_patch_in_place(project_source, [FLAGS.patch_file])
 
   # Building Bazel binaries
   bazel_binaries = [_resolve_path(b) for b in (FLAGS.bazel_binaries or [])]
@@ -906,15 +966,20 @@ def _get_benchmark_config_and_clone_repos(argv):
         fill_default=not FLAGS.bazel_commits and not bazel_binaries)
 
   # Set up project repo
-  project_source = _resolve_path(FLAGS.project_source)
-  logger.log('Preparing %s clone.' % project_source)
-  project_clone_repo = _setup_project_repo(
-      PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
-      project_source)
+  project_clone_repo = None
 
-  project_commits = _get_commits_topological(FLAGS.project_commits,
-                                             project_clone_repo,
-                                             'project_commits')
+  if need_project_clone:
+    logger.log('Preparing %s clone.' % project_source)
+    project_clone_repo = _setup_project_repo(
+        PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
+        project_source)
+    project_commits = _get_commits_topological(FLAGS.project_commits,
+                                               project_clone_repo,
+                                               'project_commits')
+  else:
+    latest_commit_sha = _get_local_project_commit(project_source)
+    logger.log('No project_commits specified, using the latest one: %s' % latest_commit_sha)
+    project_commits = [latest_commit_sha]
 
   config = BenchmarkConfig.from_flags(
       bazel_commits=bazel_commits,
@@ -944,6 +1009,7 @@ def main(argv):
 
   config, bazel_clone_repo, project_clone_repo = _get_benchmark_config_and_clone_repos(
       argv)
+  project_path = project_clone_repo.working_dir if project_clone_repo else _resolve_path(config.get_project_source())
 
   # A dictionary that maps a (bazel_commit, project_commit) tuple
   # to its benchmarking result.
@@ -976,14 +1042,15 @@ def main(argv):
       logger.log('--- Evaluating commit for bisection: %s ---' % commit)
       bazel_bin_path = _build_bazel_binary(
           commit, bazel_clone_repo, bazel_bin_base_path, FLAGS.platform)
-      project_clone_repo.git.checkout('-f', project_commit)
+      if project_clone_repo:
+        project_clone_repo.git.checkout('-f', project_commit)
       if unit['env_configure'] is not None:
         _exec_command(
-            unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
+            unit['env_configure'], shell=True, cwd=project_path)
 
       results, _ = _run_benchmark(
           bazel_bin_path=bazel_bin_path,
-          project_path=project_clone_repo.working_dir,
+          project_path=project_path,
           runs=unit['runs'],
           command=unit['command'],
           options=unit['options'],
@@ -1054,10 +1121,11 @@ def main(argv):
     for i, unit in enumerate(units):
       bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary']
       project_commit = unit['project_commit']
-      os.chdir(project_clone_repo.working_dir)
-      project_clone_repo.git.checkout('-f', project_commit)
+      os.chdir(project_path)
+      if project_clone_repo:
+        project_clone_repo.git.checkout('-f', project_commit)
       if unit['env_configure'] is not None:
-        _exec_command(unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
+        _exec_command(unit['env_configure'], shell=True, cwd=project_path)
 
       logger.log('=== PREPARING BAZEL [Unit #%d]: %s, PROJECT: %s ===' %
                  (i, bazel_identifier, project_commit))
@@ -1069,7 +1137,7 @@ def main(argv):
       if warmup_runs > 0:
         for w in range(1, warmup_runs + 1):
           logger.log('Starting warmup run %d/%d for Unit #%d:' % (w, warmup_runs, i))
-          with patch_util.apply_patch(project_clone_repo.working_dir, unit.get('patch_file', FLAGS.patch_file)):
+          with patch_util.apply_patch(project_path, unit.get('patch_file', FLAGS.patch_file)):
             _single_run(unit['bazel_bin_path'], unit['command'], unit['options'], unit['targets'], unit['startup_options'])
 
       unit_args[i] = (unit['command'], unit['targets'], unit['options'])
@@ -1081,14 +1149,15 @@ def main(argv):
           continue
         bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary']
         project_commit = unit['project_commit']
-        os.chdir(project_clone_repo.working_dir)
-        project_clone_repo.git.checkout('-f', project_commit)
+        os.chdir(project_path)
+        if project_clone_repo:
+          project_clone_repo.git.checkout('-f', project_commit)
         if unit['env_configure'] is not None:
-          _exec_command(unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
+          _exec_command(unit['env_configure'], shell=True, cwd=project_path)
 
         logger.log('Starting benchmark run %d/%d for Unit #%d (%s):' %
                    (run_idx, unit['runs'], i, bazel_identifier))
-        with patch_util.apply_patch(project_clone_repo.working_dir, unit.get('patch_file', FLAGS.patch_file)):
+        with patch_util.apply_patch(project_path, unit.get('patch_file', FLAGS.patch_file)):
           res = _run_single_benchmark_iteration(
               bazel_bin_path=unit['bazel_bin_path'],
               command=unit['command'],
@@ -1135,11 +1204,12 @@ def main(argv):
           reruns_left -= 1
           reruns_performed += 1
           del results[worst_idx]
-          os.chdir(project_clone_repo.working_dir)
-          project_clone_repo.git.checkout('-f', project_commit)
+          os.chdir(project_path)
+          if project_clone_repo:
+            project_clone_repo.git.checkout('-f', project_commit)
           if unit['env_configure'] is not None:
-            _exec_command(unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
-          with patch_util.apply_patch(project_clone_repo.working_dir, unit.get('patch_file', FLAGS.patch_file)):
+            _exec_command(unit['env_configure'], shell=True, cwd=project_path)
+          with patch_util.apply_patch(project_path, unit.get('patch_file', FLAGS.patch_file)):
             rerun_res = _run_single_benchmark_iteration(
                 bazel_bin_path=unit['bazel_bin_path'],
                 command=unit['command'],
@@ -1177,14 +1247,15 @@ def main(argv):
       bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary']
       project_commit = unit['project_commit']
 
-      project_clone_repo.git.checkout('-f', project_commit)
+      if project_clone_repo:
+        project_clone_repo.git.checkout('-f', project_commit)
       if unit['env_configure'] is not None:
         _exec_command(
-            unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
+            unit['env_configure'], shell=True, cwd=project_path)
 
       results, args = _run_benchmark(
           bazel_bin_path=unit['bazel_bin_path'],
-          project_path=project_clone_repo.working_dir,
+          project_path=project_path,
           runs=unit['runs'],
           command=unit['command'],
           options=unit['options'],

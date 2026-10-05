@@ -471,6 +471,117 @@ class BenchmarkFlagsTest(absltest.TestCase):
       # _setup_project_repo should only be called once, for the project repo
       self.assertEqual(1, mock_setup_repo.call_count)
 
+  @mock.patch('benchmark._setup_project_repo')
+  def test_get_benchmark_config_and_clone_repos_skip_project_clone_for_local_dir_without_commits(
+      self, mock_setup_repo):
+    temp_bin = self.create_tempfile()
+    os.chmod(temp_bin.full_path, 0o755)
+    temp_project_dir = self.create_tempdir()
+
+    with flagsaver.flagsaver(
+        bazel_binaries=[temp_bin.full_path],
+        bazel_commits=None,
+        project_source=temp_project_dir.full_path,
+        project_commits=None):
+      config, bazel_repo, project_repo = benchmark._get_benchmark_config_and_clone_repos(
+          ['benchmark.py', 'info'])
+
+      self.assertIsNone(bazel_repo)
+      self.assertIsNone(project_repo)
+      mock_setup_repo.assert_not_called()
+      self.assertEqual(['local'], config.get_project_commits())
+      self.assertEqual(temp_project_dir.full_path, config.get_project_source())
+
+  @mock.patch('benchmark._run_benchmark')
+  @mock.patch('benchmark._get_benchmark_config_and_clone_repos')
+  def test_main_local_project_in_place_no_checkout(self, mock_get_repos, mock_run_benchmark):
+    temp_bin = self.create_tempfile()
+    os.chmod(temp_bin.full_path, 0o755)
+    temp_project_dir = self.create_tempdir()
+    mock_config = mock.MagicMock()
+    mock_config.get_project_source.return_value = temp_project_dir.full_path
+    mock_config.get_units.return_value = [{
+        'bazel_binary': temp_bin.full_path,
+        'project_source': temp_project_dir.full_path,
+        'project_commit': 'local',
+        'runs': 1,
+        'command': 'info',
+        'options': [],
+        'targets': [],
+        'startup_options': [],
+        'env_configure': None,
+        'collect_profile': False,
+    }]
+    mock_get_repos.return_value = (mock_config, None, None)
+    mock_run_benchmark.return_value = (
+        [{'wall': 1.0, 'cpu': 0.5, 'system': 0.1, 'exit_status': 0, 'started_at': '2026-10-05T00:00:00'}],
+        ('info', [], []))
+
+    with flagsaver.flagsaver(
+        bazel_binaries=[temp_bin.full_path],
+        project_source=temp_project_dir.full_path,
+        project_commits=None,
+        runs=1,
+        interleave=False):
+      with mock.patch('builtins.print'):
+        benchmark.main(['benchmark.py'])
+
+      mock_run_benchmark.assert_called_once()
+      _, kwargs = mock_run_benchmark.call_args
+      self.assertEqual(temp_project_dir.full_path, kwargs['project_path'])
+
+  @mock.patch('benchmark._setup_project_repo')
+  def test_patch_file_rejected_for_local_project_in_place(self, mock_setup_repo):
+    temp_bin = self.create_tempfile()
+    os.chmod(temp_bin.full_path, 0o755)
+    temp_project_dir = self.create_tempdir()
+    patch = self.create_tempfile(content='')
+
+    with flagsaver.flagsaver(
+        bazel_binaries=[temp_bin.full_path],
+        bazel_commits=None,
+        project_source=temp_project_dir.full_path,
+        project_commits=None,
+        patch_file=patch.full_path):
+      with self.assertRaisesRegex(ValueError, 'cannot be used .* in place'):
+        benchmark._get_benchmark_config_and_clone_repos(['benchmark.py', 'build', '//:all'])
+    mock_setup_repo.assert_not_called()
+
+  @mock.patch('benchmark._get_commits_topological', return_value=['c1'])
+  @mock.patch('benchmark._setup_project_repo')
+  def test_patch_file_allowed_when_project_is_cloned(self, mock_setup_repo, _):
+    temp_bin = self.create_tempfile()
+    os.chmod(temp_bin.full_path, 0o755)
+    temp_project_dir = self.create_tempdir()
+    patch = self.create_tempfile(content='')
+
+    with flagsaver.flagsaver(
+        bazel_binaries=[temp_bin.full_path],
+        bazel_commits=None,
+        project_source=temp_project_dir.full_path,
+        project_commits=['c1'],
+        patch_file=patch.full_path):
+      _, _, project_repo = benchmark._get_benchmark_config_and_clone_repos(
+          ['benchmark.py', 'build', '//:all'])
+    self.assertIsNotNone(project_repo)
+    mock_setup_repo.assert_called_once()
+
+  @mock.patch('benchmark._setup_project_repo')
+  def test_patch_file_in_config_rejected_for_local_project_in_place(self, mock_setup_repo):
+    temp_project_dir = self.create_tempdir()
+    config_file = self.create_tempfile(content="""
+units:
+ - bazel_binary: /usr/bin/bazel
+   project_source: %s
+   patch_file: /tmp/change.patch
+   command: build //:all
+""" % temp_project_dir.full_path)
+
+    with flagsaver.flagsaver(benchmark_config=config_file.full_path):
+      with self.assertRaisesRegex(ValueError, 'cannot be used .* in place'):
+        benchmark._get_benchmark_config_and_clone_repos(['benchmark.py'])
+    mock_setup_repo.assert_not_called()
+
   @flagsaver.flagsaver(clean=False)
   def test_single_run_skip_clean(self):
     with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
