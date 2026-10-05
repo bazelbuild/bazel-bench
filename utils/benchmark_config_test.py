@@ -60,6 +60,7 @@ units:
         'env_configure': None,
         'clean': True,
         'shutdown': True,
+        'patch_file': None,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
     os.remove(config_file_path)
@@ -101,7 +102,8 @@ units:
         'options': _pad_test_command_options([]),
         'targets': [],
         'clean': True,
-        'shutdown': True
+        'shutdown': True,
+        'patch_file': None,
     }, {
         'bazel_path': '/tmp/bazel',
         'project_commit': 'hash2',
@@ -120,7 +122,8 @@ units:
         'options': _pad_test_command_options(['--nobuild']),
         'targets': ['//abc'],
         'clean': True,
-        'shutdown': True
+        'shutdown': True,
+        'patch_file': None,
     }, {
         'bazel_path': '/tmp/bazel',
         'project_commit': 'hash3',
@@ -139,7 +142,8 @@ units:
         'options': _pad_test_command_options(['--flag_a']),
         'targets': ['--', '//foo', '-//excluded/...'],
         'clean': True,
-        'shutdown': True
+        'shutdown': True,
+        'patch_file': None,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
 
@@ -178,6 +182,7 @@ units:
         'targets': ['//abc'],
         'clean': False,
         'shutdown': False,
+        'patch_file': None,
     }, {
         'bazel_binary': 'path/to/bazel',
         'project_commit': 'hash3',
@@ -198,6 +203,7 @@ units:
         'targets': ['//abc'],
         'clean': False,
         'shutdown': False,
+        'patch_file': None,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
 

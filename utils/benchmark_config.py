@@ -74,6 +74,7 @@ class BenchmarkConfig(object):
       'env_configure': None,
       'clean': True,
       'shutdown': True,
+      'patch_file': None,
   }
 
   def __init__(self, units, benchmark_project_commits=False):
@@ -169,7 +170,8 @@ class BenchmarkConfig(object):
                  bazel_source, project_source, env_configure, runs,
                  collect_profile, command, clean, shutdown,
                  warmup_runs=1, max_outlier_reruns=0, interleave=False,
-                 collect_memory=True, collect_process_memory=False, collect_bep=False):
+                 collect_memory=True, collect_process_memory=False, collect_bep=False,
+                 patch_file=None):
     """Creates the BenchmarkConfig based on specified flags."""
     units = []
     base_unit = {
@@ -183,6 +185,7 @@ class BenchmarkConfig(object):
         'collect_memory': collect_memory,
         'collect_process_memory': collect_process_memory,
         'collect_bep': collect_bep,
+        'patch_file': patch_file,
         'env_configure': env_configure,
         'command': command,
         'clean': clean,

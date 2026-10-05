@@ -143,3 +143,12 @@ py_test(
         ":utils",
     ],
 )
+
+py_test(
+    name = "patch_test",
+    size = "small",
+    srcs = ["patch_test.py"],
+    deps = [
+        ":utils",
+    ],
+)

@@ -28,6 +28,7 @@ import utils.logger as logger
 import utils.json_profiles_merger_lib as json_profiles_merger_lib
 import utils.output_handling as output_handling
 import utils.bep as bep
+import utils.patch as patch_util
 
 from absl import app
 from absl import flags
@@ -383,7 +384,8 @@ def _run_benchmark(bazel_bin_path,
                    max_outlier_reruns=0,
                    collect_memory=True,
                    collect_process_memory=False,
-                   collect_bep=False):
+                   collect_bep=False,
+                   patch_file=None):
   """Runs the benchmarking for a combination of (bazel version, project version).
 
   Args:
@@ -406,6 +408,7 @@ def _run_benchmark(bazel_bin_path,
     collect_memory: whether to collect retained heap size via GC.
     collect_process_memory: whether to sample peak anonymous process RSS.
     collect_bep: whether to collect build metrics from BEP.
+    patch_file: path to a patch file containing changes to apply for incremental rebuilds.
 
   Returns:
     A list of result objects from each _single_run.
@@ -423,7 +426,8 @@ def _run_benchmark(bazel_bin_path,
   if warmup_runs > 0:
     for w in range(1, warmup_runs + 1):
       logger.log('Starting warmup run %d/%d:' % (w, warmup_runs))
-      _single_run(bazel_bin_path, command, options, targets, startup_options)
+      with patch_util.apply_patch(project_path, patch_file):
+        _single_run(bazel_bin_path, command, options, targets, startup_options)
 
   if collect_profile:
     if not os.path.exists(data_directory):
@@ -431,23 +435,24 @@ def _run_benchmark(bazel_bin_path,
 
   for i in range(1, runs + 1):
     logger.log('Starting benchmark run %s/%s:' % (i, runs))
-    run_result = _run_single_benchmark_iteration(
-        bazel_bin_path=bazel_bin_path,
-        command=command,
-        options=options,
-        targets=targets,
-        startup_options=startup_options,
-        run_number=i,
-        total_runs=runs,
-        unit_num=unit_num,
-        bazel_bench_uid=bazel_bench_uid,
-        data_directory=data_directory,
-        collect_profile=collect_profile,
-        bazel_identifier=bazel_identifier,
-        project_commit=project_commit,
-        collect_memory=collect_memory or FLAGS.collect_memory,
-        collect_process_memory=collect_process_memory or FLAGS.collect_process_memory,
-        collect_bep=collect_bep or FLAGS.collect_bep)
+    with patch_util.apply_patch(project_path, patch_file):
+      run_result = _run_single_benchmark_iteration(
+          bazel_bin_path=bazel_bin_path,
+          command=command,
+          options=options,
+          targets=targets,
+          startup_options=startup_options,
+          run_number=i,
+          total_runs=runs,
+          unit_num=unit_num,
+          bazel_bench_uid=bazel_bench_uid,
+          data_directory=data_directory,
+          collect_profile=collect_profile,
+          bazel_identifier=bazel_identifier,
+          project_commit=project_commit,
+          collect_memory=collect_memory or FLAGS.collect_memory,
+          collect_process_memory=collect_process_memory or FLAGS.collect_process_memory,
+          collect_bep=collect_bep or FLAGS.collect_bep)
     collected.append(run_result)
 
   if max_outlier_reruns > 0:
@@ -471,23 +476,24 @@ def _run_benchmark(bazel_bin_path,
       reruns_left -= 1
       reruns_performed += 1
       del collected[worst_idx]
-      rerun_res = _run_single_benchmark_iteration(
-          bazel_bin_path=bazel_bin_path,
-          command=command,
-          options=options,
-          targets=targets,
-          startup_options=startup_options,
-          run_number=runs + reruns_performed,
-          total_runs=runs,
-          unit_num=unit_num,
-          bazel_bench_uid=bazel_bench_uid,
-          data_directory=data_directory,
-          collect_profile=collect_profile,
-          bazel_identifier=bazel_identifier,
-          project_commit=project_commit,
-          collect_memory=collect_memory or FLAGS.collect_memory,
-          collect_process_memory=collect_process_memory or FLAGS.collect_process_memory,
-          collect_bep=collect_bep or FLAGS.collect_bep)
+      with patch_util.apply_patch(project_path, patch_file):
+        rerun_res = _run_single_benchmark_iteration(
+            bazel_bin_path=bazel_bin_path,
+            command=command,
+            options=options,
+            targets=targets,
+            startup_options=startup_options,
+            run_number=runs + reruns_performed,
+            total_runs=runs,
+            unit_num=unit_num,
+            bazel_bench_uid=bazel_bench_uid,
+            data_directory=data_directory,
+            collect_profile=collect_profile,
+            bazel_identifier=bazel_identifier,
+            project_commit=project_commit,
+            collect_memory=collect_memory or FLAGS.collect_memory,
+            collect_process_memory=collect_process_memory or FLAGS.collect_process_memory,
+            collect_bep=collect_bep or FLAGS.collect_bep)
       collected.append(rerun_res)
 
   return collected, (command, targets, options)
@@ -789,6 +795,8 @@ flags.DEFINE_integer('max_outlier_reruns', 0,
                      'Maximum number of automatic reruns when a wall-time outlier is detected.')
 flags.DEFINE_boolean('interleave', False,
                      'Whether to interleave benchmark runs across units in a round-robin order.')
+flags.DEFINE_string('patch_file', None,
+                    'Path to a patch file containing changes to apply for incremental builds.')
 
 # Miscellaneous flags.
 flags.DEFINE_boolean('verbose', False,
@@ -896,6 +904,7 @@ def _get_benchmark_config_and_clone_repos(argv):
       collect_memory=FLAGS.collect_memory,
       collect_process_memory=FLAGS.collect_process_memory,
       collect_bep=FLAGS.collect_bep,
+      patch_file=_resolve_path(FLAGS.patch_file),
       command=' '.join(bazel_args),
       clean=FLAGS.clean,
       shutdown=FLAGS.shutdown)
@@ -960,7 +969,8 @@ def main(argv):
       if warmup_runs > 0:
         for w in range(1, warmup_runs + 1):
           logger.log('Starting warmup run %d/%d for Unit #%d:' % (w, warmup_runs, i))
-          _single_run(unit['bazel_bin_path'], unit['command'], unit['options'], unit['targets'], unit['startup_options'])
+          with patch_util.apply_patch(project_clone_repo.working_dir, unit.get('patch_file', FLAGS.patch_file)):
+            _single_run(unit['bazel_bin_path'], unit['command'], unit['options'], unit['targets'], unit['startup_options'])
 
       unit_args[i] = (unit['command'], unit['targets'], unit['options'])
 
@@ -978,23 +988,24 @@ def main(argv):
 
         logger.log('Starting benchmark run %d/%d for Unit #%d (%s):' %
                    (run_idx, unit['runs'], i, bazel_identifier))
-        res = _run_single_benchmark_iteration(
-            bazel_bin_path=unit['bazel_bin_path'],
-            command=unit['command'],
-            options=unit['options'],
-            targets=unit['targets'],
-            startup_options=unit['startup_options'],
-            run_number=run_idx,
-            total_runs=unit['runs'],
-            unit_num=i,
-            bazel_bench_uid=bazel_bench_uid,
-            data_directory=data_directory,
-            collect_profile=unit['collect_profile'],
-            bazel_identifier=bazel_identifier,
-            project_commit=project_commit,
-            collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
-            collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
-            collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
+        with patch_util.apply_patch(project_clone_repo.working_dir, unit.get('patch_file', FLAGS.patch_file)):
+          res = _run_single_benchmark_iteration(
+              bazel_bin_path=unit['bazel_bin_path'],
+              command=unit['command'],
+              options=unit['options'],
+              targets=unit['targets'],
+              startup_options=unit['startup_options'],
+              run_number=run_idx,
+              total_runs=unit['runs'],
+              unit_num=i,
+              bazel_bench_uid=bazel_bench_uid,
+              data_directory=data_directory,
+              collect_profile=unit['collect_profile'],
+              bazel_identifier=bazel_identifier,
+              project_commit=project_commit,
+              collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
+              collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
+              collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
         unit_results[i].append(res)
 
     for i, unit in enumerate(units):
@@ -1028,23 +1039,24 @@ def main(argv):
           project_clone_repo.git.checkout('-f', project_commit)
           if unit['env_configure'] is not None:
             _exec_command(unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
-          rerun_res = _run_single_benchmark_iteration(
-              bazel_bin_path=unit['bazel_bin_path'],
-              command=unit['command'],
-              options=unit['options'],
-              targets=unit['targets'],
-              startup_options=unit['startup_options'],
-              run_number=unit['runs'] + reruns_performed,
-              total_runs=unit['runs'],
-              unit_num=i,
-              bazel_bench_uid=bazel_bench_uid,
-              data_directory=data_directory,
-              collect_profile=unit['collect_profile'],
-              bazel_identifier=bazel_identifier,
-              project_commit=project_commit,
-              collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
-              collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
-              collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
+          with patch_util.apply_patch(project_clone_repo.working_dir, unit.get('patch_file', FLAGS.patch_file)):
+            rerun_res = _run_single_benchmark_iteration(
+                bazel_bin_path=unit['bazel_bin_path'],
+                command=unit['command'],
+                options=unit['options'],
+                targets=unit['targets'],
+                startup_options=unit['startup_options'],
+                run_number=unit['runs'] + reruns_performed,
+                total_runs=unit['runs'],
+                unit_num=i,
+                bazel_bench_uid=bazel_bench_uid,
+                data_directory=data_directory,
+                collect_profile=unit['collect_profile'],
+                bazel_identifier=bazel_identifier,
+                project_commit=project_commit,
+                collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
+                collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
+                collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
           results.append(rerun_res)
 
       collected = _collect_metrics(results)
@@ -1089,7 +1101,8 @@ def main(argv):
           max_outlier_reruns=unit.get('max_outlier_reruns', FLAGS.max_outlier_reruns),
           collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
           collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
-          collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
+          collect_bep=unit.get('collect_bep', FLAGS.collect_bep),
+          patch_file=unit.get('patch_file', FLAGS.patch_file))
       collected = _collect_metrics(results)
 
       data[(i, bazel_identifier, project_commit)] = collected
