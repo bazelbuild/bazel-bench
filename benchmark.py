@@ -211,7 +211,9 @@ def _single_run(bazel_bin_path,
                 command,
                 options,
                 targets,
-                startup_options):
+                startup_options,
+                collect_memory=True,
+                collect_process_memory=False):
   """Runs the benchmarking for a combination of (bazel version, project version).
 
   Args:
@@ -220,36 +222,36 @@ def _single_run(bazel_bin_path,
     options: the list of options.
     targets: the list of targets.
     startup_options: the list of target options.
+    collect_memory: whether to collect retained heap size via GC.
+    collect_process_memory: whether to sample peak process RSS.
 
   Returns:
-    A result object:
-    {
-      'wall': 1.000,
-      'cpu': 1.000,
-      'system': 1.000,
-      'memory': 1.000,
-      'exit_status': 0,
-      'started_at': datetime.datetime(2019, 1, 1, 0, 0, 0, 000000),
-    }
+    A result object with collected metrics.
   """
   bazel = Bazel(bazel_bin_path, startup_options)
-
-  default_arguments = collections.defaultdict(list)
 
   # Prepend some default options if the command is 'build'.
   # The order in which the options appear matters.
   if command == 'build':
     options = options + ['--nostamp', '--noshow_progress', '--color=no']
-  measurements = bazel.command(command, args=options + targets)
+  measurements = bazel.command(
+      command,
+      args=options + targets,
+      collect_memory=collect_memory,
+      collect_process_memory=collect_process_memory)
 
-  if measurements != None:
-      logger.log('Results of this run: wall: ' +
-              '%.3fs, cpu %.3fs, system %.3fs, memory %.3fMB, exit_status: %d' % (
-                  measurements['wall'],
-                  measurements['cpu'],
-                  measurements['system'],
-                  measurements['memory'],
-                  measurements['exit_status']))
+  if measurements is not None:
+    parts = [
+        'wall: %.3fs' % measurements['wall'],
+        'cpu %.3fs' % measurements['cpu'],
+        'system %.3fs' % measurements['system'],
+    ]
+    if 'memory' in measurements:
+      parts.append('memory %.3fMB' % measurements['memory'])
+    if 'peakProcessRss' in measurements:
+      parts.append('peak_rss %.3fMB' % measurements['peakProcessRss'])
+    parts.append('exit_status: %d' % measurements['exit_status'])
+    logger.log('Results of this run: %s' % ', '.join(parts))
 
   if FLAGS.clean:
     bazel.command('clean', ['--color=no'])
@@ -331,7 +333,9 @@ def _run_benchmark(bazel_bin_path,
           ))
     collected.append(
         _single_run(bazel_bin_path, command, maybe_include_json_profile_flags,
-                    targets, startup_options))
+                    targets, startup_options,
+                    collect_memory=FLAGS.collect_memory,
+                    collect_process_memory=FLAGS.collect_process_memory))
 
   return collected, (command, targets, options)
 
@@ -395,7 +399,8 @@ def create_summary(data, project_source):
     'wall': 's ',
     'cpu': 's ',
     'system': 's ',
-    'memory': 'MB'
+    'memory': 'MB',
+    'peakProcessRss': 'MB',
   }
   summary_builder = []
   summary_builder.append('\nRESULTS:')
@@ -494,6 +499,10 @@ flags.DEFINE_string('platform', None,
                      'script execution.'))
 flags.DEFINE_boolean('clean', True, 'Whether to invoke clean between runs/builds.')
 flags.DEFINE_boolean('shutdown', True, 'Whether to invoke shutdown between runs/builds.')
+flags.DEFINE_boolean('collect_memory', True,
+                     'Whether to collect retained heap size via GC after command execution.')
+flags.DEFINE_boolean('collect_process_memory', False,
+                     'Whether to sample peak anonymous process RSS memory.')
 
 # Miscellaneous flags.
 flags.DEFINE_boolean('verbose', False,

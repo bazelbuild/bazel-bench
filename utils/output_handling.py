@@ -52,7 +52,7 @@ def export_csv(data_directory, filename, data):
       for idx, run in enumerate(data_item['results'], start=1):
         csv_writer.writerow([
             non_measurables['project_source'], project_commit, bazel_commit,
-            idx, run['cpu'], run['wall'], run['system'], run['memory'], command,
+            idx, run['cpu'], run['wall'], run['system'], run.get('memory', ''), command,
             expressions, hostname, username, options, run['exit_status'],
             run['started_at'], non_measurables['platform'],
             non_measurables['project_label']
