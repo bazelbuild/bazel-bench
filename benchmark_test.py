@@ -653,6 +653,88 @@ units:
         mock_bisect.assert_called_once()
         mock_print.assert_called_with('Mock Bisect Summary')
 
+  @mock.patch('benchmark._single_run', return_value={'wall': 1.0, 'exit_status': 0})
+  @mock.patch('benchmark.bep.parse_bep_json_file', return_value={
+      'peakPostGcHeapSize': 120.5,
+      'usedHeapSizePostBuild': 95.0,
+      'edenSpaceGarbage': 500.0,
+      'oldGenGarbage': 50.0,
+  })
+  @mock.patch('benchmark.os.path.exists', return_value=True)
+  def test_run_single_benchmark_iteration_collect_peak_post_gc_memory(
+      self, mock_exists, mock_parse_bep, mock_single_run):
+    result = benchmark._run_single_benchmark_iteration(
+        bazel_bin_path='bazel',
+        command='build',
+        options=['--foo'],
+        targets=['//:bar'],
+        startup_options=[],
+        run_number=1,
+        total_runs=1,
+        unit_num=0,
+        bazel_bench_uid='test_uid',
+        collect_peak_post_gc_memory=True)
+
+    self.assertEqual(120.5, result['peakPostGcHeapSize'])
+    self.assertEqual(95.0, result['usedHeapSizePostBuild'])
+    self.assertEqual(500.0, result['edenSpaceGarbage'])
+    self.assertEqual(50.0, result['oldGenGarbage'])
+    args, _ = mock_single_run.call_args
+    passed_options = args[2]
+    self.assertIn('--memory_profile=/dev/null', passed_options)
+    self.assertTrue(any(opt.startswith('--build_event_json_file=') for opt in passed_options))
+
+  @mock.patch.object(benchmark.os, 'chdir')
+  @mock.patch('benchmark._run_single_benchmark_iteration', return_value={'wall': 1.0, 'exit_status': 0})
+  def test_run_benchmark_forward_collect_peak_post_gc_memory(self, mock_iter, _):
+    benchmark._run_benchmark(
+        bazel_bin_path='bazel',
+        project_path='/tmp/project',
+        runs=1,
+        command='build',
+        options=[],
+        targets=['//:target'],
+        startup_options=[],
+        prefetch_ext_deps=False,
+        bazel_bench_uid='test_uid',
+        unit_num=0,
+        collect_peak_post_gc_memory=True)
+
+    mock_iter.assert_called_once()
+    _, kwargs = mock_iter.call_args
+    self.assertTrue(kwargs['collect_peak_post_gc_memory'])
+    self.assertTrue(kwargs['collect_bep'])
+
+  def test_metric_sort_key_peak_post_gc_memory(self):
+    metrics = [
+        'runner-worker',
+        'postGcProcessRss',
+        'edenSpaceGarbage',
+        'cpu',
+        'oldGenGarbage',
+        'wall',
+        'usedHeapSizePostBuild',
+        'memory',
+        'peakPostGcHeapSize',
+        'system',
+        'peakProcessRss',
+    ]
+    sorted_metrics = sorted(metrics, key=benchmark._metric_sort_key)
+    expected = [
+        'wall',
+        'cpu',
+        'system',
+        'memory',
+        'peakPostGcHeapSize',
+        'usedHeapSizePostBuild',
+        'edenSpaceGarbage',
+        'oldGenGarbage',
+        'peakProcessRss',
+        'postGcProcessRss',
+        'runner-worker',
+    ]
+    self.assertEqual(expected, sorted_metrics)
+
 
 if __name__ == '__main__':
   absltest.main()

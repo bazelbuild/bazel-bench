@@ -51,6 +51,7 @@ units:
         'interleave': False,
         'collect_profile': False,
         'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
         'collect_memory': True,
         'collect_process_memory': False,
         'command': 'info',
@@ -95,6 +96,7 @@ units:
         'interleave': False,
         'collect_profile': False,
         'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
         'collect_memory': True,
         'collect_process_memory': False,
         'command': 'info',
@@ -115,6 +117,7 @@ units:
         'interleave': False,
         'collect_profile': False,
         'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
         'collect_memory': True,
         'collect_process_memory': False,
         'command': 'build',
@@ -135,6 +138,7 @@ units:
         'interleave': False,
         'collect_profile': False,
         'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
         'collect_memory': True,
         'collect_process_memory': False,
         'command': 'build',
@@ -173,6 +177,7 @@ units:
         'interleave': False,
         'collect_profile': False,
         'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
         'collect_memory': True,
         'collect_process_memory': False,
         'env_configure': 'some-command',
@@ -194,6 +199,7 @@ units:
         'interleave': False,
         'collect_profile': False,
         'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
         'collect_memory': True,
         'collect_process_memory': False,
         'env_configure': 'some-command',
@@ -206,6 +212,43 @@ units:
         'patch_file': None,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
+
+
+  def test_parsing_collect_peak_post_gc_memory_flags(self):
+    result = benchmark_config.BenchmarkConfig.from_flags(
+        bazel_commits=['hash1'],
+        bazel_binaries=[],
+        project_commits=['hash3'],
+        bazel_source='foo',
+        project_source='foo',
+        runs=5,
+        env_configure=None,
+        collect_profile=False,
+        collect_bep=False,
+        collect_peak_post_gc_memory=True,
+        command='build --nobuild //abc',
+        clean=False,
+        shutdown=False,
+    )
+    unit = result._units[0]
+    self.assertTrue(unit['collect_peak_post_gc_memory'])
+    self.assertTrue(unit['collect_bep'])
+    self.assertIn('--memory_profile=/dev/null', unit['options'])
+
+
+  def test_parsing_collect_peak_post_gc_memory_string(self):
+    file_content = """
+units:
+ - bazel_commit: hash1
+   project_commit: hash1
+   collect_peak_post_gc_memory: true
+   command: build //abc
+"""
+    result = benchmark_config.BenchmarkConfig.from_string(file_content)
+    unit = result._units[0]
+    self.assertTrue(unit['collect_peak_post_gc_memory'])
+    self.assertTrue(unit['collect_bep'])
+    self.assertIn('--memory_profile=/dev/null', unit['options'])
 
 
   def test_get_units(self):

@@ -357,10 +357,16 @@ def _run_single_benchmark_iteration(bazel_bin_path,
                                     project_commit=None,
                                     collect_memory=True,
                                     collect_process_memory=False,
-                                    collect_bep=False):
+                                    collect_bep=False,
+                                    collect_peak_post_gc_memory=False):
   """Executes a single benchmark iteration, including profiling and BEP ingestion."""
   maybe_include_flags = options[:]
   bep_file_path = None
+  if collect_peak_post_gc_memory:
+    collect_bep = True
+    if not any(opt.startswith('--memory_profile') for opt in maybe_include_flags):
+      maybe_include_flags.append('--memory_profile=/dev/null')
+
   if collect_bep:
     bep_dir = data_directory or tempfile.gettempdir()
     if not os.path.exists(bep_dir):
@@ -424,6 +430,7 @@ def _run_benchmark(bazel_bin_path,
                    collect_memory=True,
                    collect_process_memory=False,
                    collect_bep=False,
+                   collect_peak_post_gc_memory=False,
                    patch_file=None):
   """Runs the benchmarking for a combination of (bazel version, project version).
 
@@ -491,7 +498,8 @@ def _run_benchmark(bazel_bin_path,
           project_commit=project_commit,
           collect_memory=collect_memory or FLAGS.collect_memory,
           collect_process_memory=collect_process_memory or FLAGS.collect_process_memory,
-          collect_bep=collect_bep or FLAGS.collect_bep)
+          collect_bep=collect_bep or collect_peak_post_gc_memory or FLAGS.collect_bep or FLAGS.collect_peak_post_gc_memory,
+          collect_peak_post_gc_memory=collect_peak_post_gc_memory or FLAGS.collect_peak_post_gc_memory)
     collected.append(run_result)
 
   if max_outlier_reruns > 0:
@@ -532,7 +540,8 @@ def _run_benchmark(bazel_bin_path,
             project_commit=project_commit,
             collect_memory=collect_memory or FLAGS.collect_memory,
             collect_process_memory=collect_process_memory or FLAGS.collect_process_memory,
-            collect_bep=collect_bep or FLAGS.collect_bep)
+            collect_bep=collect_bep or collect_peak_post_gc_memory or FLAGS.collect_bep or FLAGS.collect_peak_post_gc_memory,
+            collect_peak_post_gc_memory=collect_peak_post_gc_memory or FLAGS.collect_peak_post_gc_memory)
       collected.append(rerun_res)
 
   return collected, (command, targets, options)
@@ -590,19 +599,20 @@ def handle_json_profiles_aggr(bazel_bench_uid, unit_num, bazel_commits,
 
 def _metric_sort_key(metric_name):
   primary = ('wall', 'cpu', 'system', 'memory')
+  mem_order = (
+      'peakPostGcHeapSize',
+      'usedHeapSizePostBuild',
+      'edenSpaceGarbage',
+      'oldGenGarbage',
+      'peakProcessRss',
+      'postGcProcessRss',
+  )
   if metric_name in primary:
     return (0, primary.index(metric_name))
   elif metric_name.startswith('runner-'):
     return (3, metric_name)
-  elif metric_name in (
-      'edenSpaceGarbage',
-      'oldGenGarbage',
-      'peakPostGcHeapSize',
-      'usedHeapSizePostBuild',
-      'peakProcessRss',
-      'postGcProcessRss',
-  ):
-    return (2, metric_name)
+  elif metric_name in mem_order:
+    return (2, mem_order.index(metric_name))
   else:
     return (1, metric_name)
 
@@ -828,6 +838,9 @@ flags.DEFINE_boolean('collect_process_memory', False,
                      'Whether to sample peak anonymous process RSS memory.')
 flags.DEFINE_boolean('collect_bep', False,
                      'Whether to collect build metrics from the Build Event Protocol (BEP).')
+flags.DEFINE_boolean('collect_peak_post_gc_memory', False,
+                     'Whether to collect peak post-GC heap memory via BEP and memory profiler. '
+                     'Turns on --collect_bep.')
 flags.DEFINE_integer('warmup_runs', 1,
                      'The number of warmup runs to perform before measurements (discarded).')
 flags.DEFINE_integer('max_outlier_reruns', 0,
@@ -996,6 +1009,7 @@ def _get_benchmark_config_and_clone_repos(argv):
       collect_memory=FLAGS.collect_memory,
       collect_process_memory=FLAGS.collect_process_memory,
       collect_bep=FLAGS.collect_bep,
+      collect_peak_post_gc_memory=FLAGS.collect_peak_post_gc_memory,
       patch_file=_resolve_path(FLAGS.patch_file),
       command=' '.join(bazel_args),
       clean=FLAGS.clean,
@@ -1068,6 +1082,7 @@ def main(argv):
           collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
           collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
           collect_bep=unit.get('collect_bep', FLAGS.collect_bep),
+          collect_peak_post_gc_memory=unit.get('collect_peak_post_gc_memory', FLAGS.collect_peak_post_gc_memory),
           patch_file=unit.get('patch_file', FLAGS.patch_file))
 
       # Only successful runs count: a failing build is not a valid measurement
@@ -1174,7 +1189,8 @@ def main(argv):
               project_commit=project_commit,
               collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
               collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
-              collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
+              collect_bep=unit.get('collect_bep', FLAGS.collect_bep),
+              collect_peak_post_gc_memory=unit.get('collect_peak_post_gc_memory', FLAGS.collect_peak_post_gc_memory))
         unit_results[i].append(res)
 
     for i, unit in enumerate(units):
@@ -1226,7 +1242,8 @@ def main(argv):
                 project_commit=project_commit,
                 collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
                 collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
-                collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
+                collect_bep=unit.get('collect_bep', FLAGS.collect_bep),
+                collect_peak_post_gc_memory=unit.get('collect_peak_post_gc_memory', FLAGS.collect_peak_post_gc_memory))
           results.append(rerun_res)
 
       collected = _collect_metrics(results)
@@ -1273,6 +1290,7 @@ def main(argv):
           collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
           collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
           collect_bep=unit.get('collect_bep', FLAGS.collect_bep),
+          collect_peak_post_gc_memory=unit.get('collect_peak_post_gc_memory', FLAGS.collect_peak_post_gc_memory),
           patch_file=unit.get('patch_file', FLAGS.patch_file))
       collected = _collect_metrics(results)
 

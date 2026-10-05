@@ -68,6 +68,7 @@ class BenchmarkConfig(object):
       'interleave': False,
       'collect_profile': False,
       'collect_bep': False,
+      'collect_peak_post_gc_memory': False,
       'collect_memory': True,
       'collect_process_memory': False,
       'bazel_source': 'https://github.com/bazelbuild/bazel.git',
@@ -171,6 +172,7 @@ class BenchmarkConfig(object):
                  collect_profile, command, clean, shutdown,
                  warmup_runs=1, max_outlier_reruns=0, interleave=False,
                  collect_memory=True, collect_process_memory=False, collect_bep=False,
+                 collect_peak_post_gc_memory=False,
                  patch_file=None):
     """Creates the BenchmarkConfig based on specified flags."""
     units = []
@@ -184,7 +186,8 @@ class BenchmarkConfig(object):
         'collect_profile': collect_profile,
         'collect_memory': collect_memory,
         'collect_process_memory': collect_process_memory,
-        'collect_bep': collect_bep,
+        'collect_bep': collect_bep or collect_peak_post_gc_memory,
+        'collect_peak_post_gc_memory': collect_peak_post_gc_memory,
         'patch_file': patch_file,
         'env_configure': env_configure,
         'command': command,
@@ -242,6 +245,11 @@ class BenchmarkConfig(object):
     # This is a workaround for https://github.com/bazelbuild/bazel/issues/3236.
     if sys.platform.startswith('linux'):
       options.append('--sandbox_tmpfs_path=/tmp')
+
+    if parsed_unit.get('collect_peak_post_gc_memory', False):
+      parsed_unit['collect_bep'] = True
+      if not any(opt.startswith('--memory_profile') for opt in options):
+        options.append('--memory_profile=/dev/null')
 
     targets = full_command_tokens
 
