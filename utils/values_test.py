@@ -101,6 +101,15 @@ class ValuesTest(unittest.TestCase):
     self.assertEqual([5.0, 5.0, 5.0, 5.0], inliers.values())
     self.assertEqual([12.0], outliers.values())
 
+  def test_get_outlier_indices(self):
+    raw = [10.0, 10.2, 9.8, 10.1, 9.9, 10.0, 100.0]
+    values = Values(raw)
+    self.assertEqual([6], values.get_outlier_indices(z_score_cutoff=1.5))
+
+  def test_get_outlier_indices_few_values(self):
+    values = Values([10.0, 100.0])
+    self.assertEqual([], values.get_outlier_indices())
+
   def test_pval_identical(self):
     identical_list = [1, 10, 1]
     values = Values(identical_list)

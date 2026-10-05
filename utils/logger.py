@@ -12,33 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Utility module to handle logging for the benchmarking script."""
+import datetime
 import sys
-from absl import logging
 
 _COLOR_TMPL = {
-    'info': '\033[32m%s\033[0m',  # Green
-    'warn': '\033[33m%s\033[0m',  # Yellow
-    'error': '\033[31m%s\033[0m',  # Red
+    'info': '\033[34m%s\033[0m',     # Blue
+    'warn': '\033[33m%s\033[0m',     # Yellow
+    'error': '\033[31;1m%s\033[0m',   # Bold Red
 }
 
 
-def _maybe_colorize_text(text, color):
-  """Colorize the text if running on a terminal."""
-  if not sys.stdout.isatty():
-    return text
-  return _COLOR_TMPL[color] % text
+def _format_message(text, color):
+  timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+  msg = f'{timestamp}: {text}'
+  if sys.stderr.isatty():
+    return _COLOR_TMPL[color] % msg
+  return msg
 
 
-def log(text):
-  """Logs a message using the logger singleton."""
-  logging.info(_maybe_colorize_text(text, 'info'))
+def log(text, *, warning=False, fatal=False):
+  """Logs a message to stderr with timestamp."""
+  if fatal:
+    log_error(text)
+    sys.exit(1)
+  elif warning:
+    log_warn(text)
+  else:
+    print(_format_message(text, 'info'), file=sys.stderr)
+    sys.stderr.flush()
 
 
 def log_warn(text):
-  """Logs a warning message using the logger singleton."""
-  logging.warn(_maybe_colorize_text(text, 'warn'))
+  """Logs a warning message to stderr."""
+  print(_format_message(text, 'warn'), file=sys.stderr)
+  sys.stderr.flush()
 
 
 def log_error(text):
-  """Logs an error message using the logger singleton."""
-  logging.error(_maybe_colorize_text(text, 'error'))
+  """Logs an error message to stderr."""
+  print(_format_message(text, 'error'), file=sys.stderr)
+  sys.stderr.flush()

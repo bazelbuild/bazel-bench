@@ -231,6 +231,54 @@ class BenchmarkFunctionTests(absltest.TestCase):
             'Executing Bazel command: bazel shutdown '
         ]), mock_stderr.getvalue())
 
+  @mock.patch.object(benchmark.os, 'chdir')
+  def test_run_benchmark_warmup_runs(self, _):
+    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr:
+      collected, _ = benchmark._run_benchmark(
+          'bazel_binary_path',
+          'project_path',
+          runs=2,
+          bazel_bench_uid='fake_uid',
+          command='build',
+          options=[],
+          targets=['//:all'],
+          startup_options=[],
+          prefetch_ext_deps=False,
+          warmup_runs=1,
+          unit_num=0)
+
+    self.assertIn('Starting warmup run 1/1:', mock_stderr.getvalue())
+    self.assertIn('Starting benchmark run 1/2:', mock_stderr.getvalue())
+    self.assertIn('Starting benchmark run 2/2:', mock_stderr.getvalue())
+    self.assertEqual(2, len(collected))
+
+  @mock.patch.object(benchmark.os, 'chdir')
+  def test_run_benchmark_outlier_rerun(self, _):
+    run_measurements = [
+        {'wall': 10.0, 'cpu': 5.0, 'system': 1.0, 'exit_status': 0},
+        {'wall': 100.0, 'cpu': 5.0, 'system': 1.0, 'exit_status': 0},
+        {'wall': 10.1, 'cpu': 5.0, 'system': 1.0, 'exit_status': 0},
+        {'wall': 9.9, 'cpu': 5.0, 'system': 1.0, 'exit_status': 0},
+    ]
+    with mock.patch.object(sys, 'stderr', new=mock_stdio_type()) as mock_stderr, \
+         mock.patch('benchmark._run_single_benchmark_iteration', side_effect=run_measurements):
+      collected, _ = benchmark._run_benchmark(
+          'bazel_binary_path',
+          'project_path',
+          runs=3,
+          bazel_bench_uid='fake_uid',
+          command='build',
+          options=[],
+          targets=['//:all'],
+          startup_options=[],
+          prefetch_ext_deps=False,
+          max_outlier_reruns=1,
+          unit_num=0)
+
+    self.assertIn('Detected wall-time outlier (100.000s)', mock_stderr.getvalue())
+    self.assertEqual(3, len(collected))
+    self.assertEqual([10.0, 10.1, 9.9], [r['wall'] for r in collected])
+
 
 class BenchmarkFlagsTest(absltest.TestCase):
 

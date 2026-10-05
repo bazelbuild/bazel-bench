@@ -166,6 +166,33 @@ class Values(object):
     _, outliers = self.get_inliers_and_outliers(z_score_cutoff)
     return outliers
 
+  def get_outlier_indices(self, z_score_cutoff: float = 1.5) -> list[int]:
+    """Returns indices in items() of outlier values based on Modified Z-Score with MAD.
+
+    Requires at least 3 values to detect outliers.
+    """
+    vals = self.values_wo_nan()
+    if len(vals) < 3:
+      return []
+
+    med = self.median()
+    median_differences = [abs(med - item) for item in vals]
+    mad = float(numpy.median(median_differences))
+
+    mod_z_score_factor = 0.6745
+    outlier_indices = []
+    for i, item in enumerate(self._items):
+      if not math.isfinite(item):
+        continue
+      if mad == 0:
+        if item != med:
+          outlier_indices.append(i)
+      else:
+        score = mod_z_score_factor * abs(med - item) / mad
+        if score > z_score_cutoff:
+          outlier_indices.append(i)
+    return outlier_indices
+
   def pval(self, base_values: Sequence[float]) -> float:
     """Computes Kolmogorov-Smirnov statistic against base_values.
 

@@ -22,6 +22,7 @@ import re
 import shutil
 import collections
 import tempfile
+import math
 import git
 import utils.logger as logger
 import utils.json_profiles_merger_lib as json_profiles_merger_lib
@@ -54,6 +55,16 @@ DEFAULT_AGGR_JSON_PROFILE_FILENAME = 'aggr_json_profiles.csv'
 def _get_clone_subdir(project_source):
   """Calculates a hexdigest of project_source to serve as a unique subdir name."""
   return hashlib.md5(project_source.encode('utf-8')).hexdigest()
+
+
+def _resolve_path(path):
+  """Resolves a filesystem path against BUILD_WORKING_DIRECTORY or cwd if not a URL."""
+  if not path:
+    return path
+  if path.startswith(('http://', 'https://', 'git@', 'ssh://', 'file://')):
+    return path
+  base_dir = os.environ.get('BUILD_WORKING_DIRECTORY', os.getcwd())
+  return os.path.abspath(os.path.join(base_dir, os.path.expanduser(path)))
 
 
 def _exec_command(args, shell=False, cwd=None):
@@ -138,11 +149,21 @@ def _setup_project_repo(repo_path, project_source):
     A git.Repo object of the cloned repository.
   """
   if os.path.exists(repo_path):
-    logger.log('Path %s exists. Updating...' % repo_path)
+    try:
+      repo = git.Repo(repo_path)
+      logger.log('Path %s exists. Updating...' % repo_path)
+      repo.git.fetch('origin')
+      return repo
+    except Exception:
+      logger.log('Path %s exists but is not a valid git repository. Re-cloning...' % repo_path)
+      shutil.rmtree(repo_path, ignore_errors=True)
+
+  logger.log('Cloning %s to %s...' % (project_source, repo_path))
+  try:
+    subprocess.run(['git', 'clone', '--ref-format=files', project_source, repo_path],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     repo = git.Repo(repo_path)
-    repo.git.fetch('origin')
-  else:
-    logger.log('Cloning %s to %s...' % (project_source, repo_path))
+  except Exception:
     repo = git.Repo.clone_from(project_source, repo_path)
 
   return repo
@@ -208,6 +229,34 @@ def json_profile_filename(data_directory, bazel_bench_uid, bazel_commit,
           + f'_{project_commit}_{run_number}_of_{total_runs}.profile.gz')
 
 
+def format_float_map(m):
+  """Formats a metrics dict compactly, e.g. {wall: 0.224s, cpu: 20.74s}."""
+  parts = []
+  unit_map = {
+      'wall': 's',
+      'cpu': 's',
+      'system': 's',
+      'memory': 'MB',
+      'peakProcessRss': 'MB',
+      'postGcProcessRss': 'MB',
+      'peakPostGcHeapSize': 'MB',
+      'usedHeapSizePostBuild': 'MB',
+      'edenSpaceGarbage': 'MB',
+      'oldGenGarbage': 'MB',
+  }
+  for k, v in m.items():
+    if k in ['exit_status', 'invocation_id', 'started_at']:
+      parts.append(f'{k}: {v}')
+    elif isinstance(v, int):
+      parts.append(f'{k}: {v:,}')
+    elif isinstance(v, float):
+      u = unit_map.get(k, '')
+      parts.append(f'{k}: {v:.3f}{u}')
+    else:
+      parts.append(f'{k}: {v}')
+  return '{' + ', '.join(parts) + '}'
+
+
 def _single_run(bazel_bin_path,
                 command,
                 options,
@@ -231,6 +280,7 @@ def _single_run(bazel_bin_path,
   """
   bazel = Bazel(bazel_bin_path, startup_options)
 
+
   # Prepend some default options if the command is 'build'.
   # The order in which the options appear matters.
   if command == 'build':
@@ -242,17 +292,8 @@ def _single_run(bazel_bin_path,
       collect_process_memory=collect_process_memory)
 
   if measurements is not None:
-    parts = [
-        'wall: %.3fs' % measurements['wall'],
-        'cpu %.3fs' % measurements['cpu'],
-        'system %.3fs' % measurements['system'],
-    ]
-    if 'memory' in measurements:
-      parts.append('memory %.3fMB' % measurements['memory'])
-    if 'peakProcessRss' in measurements:
-      parts.append('peak_rss %.3fMB' % measurements['peakProcessRss'])
-    parts.append('exit_status: %d' % measurements['exit_status'])
-    logger.log('Results of this run: %s' % ', '.join(parts))
+    command_failed = measurements.get('exit_status', 0) != 0
+    logger.log('Single run done, results: %s' % format_float_map(measurements), warning=command_failed)
 
   if FLAGS.clean:
     bazel.command('clean', ['--color=no'])
@@ -261,6 +302,69 @@ def _single_run(bazel_bin_path,
     bazel.command('shutdown')
 
   return measurements
+
+
+def _run_single_benchmark_iteration(bazel_bin_path,
+                                    command,
+                                    options,
+                                    targets,
+                                    startup_options,
+                                    run_number,
+                                    total_runs,
+                                    unit_num=0,
+                                    bazel_bench_uid=None,
+                                    data_directory=None,
+                                    collect_profile=False,
+                                    bazel_identifier=None,
+                                    project_commit=None,
+                                    collect_memory=True,
+                                    collect_process_memory=False,
+                                    collect_bep=False):
+  """Executes a single benchmark iteration, including profiling and BEP ingestion."""
+  maybe_include_flags = options[:]
+  bep_file_path = None
+  if collect_bep:
+    bep_dir = data_directory or tempfile.gettempdir()
+    if not os.path.exists(bep_dir):
+      os.makedirs(bep_dir)
+    bep_file_path = os.path.join(
+        bep_dir, f'{bazel_bench_uid}_{unit_num}_{run_number}_bep.json')
+    maybe_include_flags += bep.get_bep_flags(bep_file_path)
+
+  if collect_profile:
+    assert bazel_identifier, ('bazel_identifier is required when '
+                              'collect_profile')
+    assert project_commit, ('project_commit is required when '
+                            'collect_profile')
+    maybe_include_flags += _construct_json_profile_flags(
+        json_profile_filename(
+            data_directory=data_directory,
+            bazel_bench_uid=bazel_bench_uid,
+            bazel_commit=bazel_identifier.replace('/', '_'),
+            unit_num=unit_num,
+            project_commit=project_commit,
+            run_number=run_number,
+            total_runs=total_runs,
+        ))
+
+  run_result = _single_run(
+      bazel_bin_path,
+      command,
+      maybe_include_flags,
+      targets,
+      startup_options,
+      collect_memory=collect_memory,
+      collect_process_memory=collect_process_memory)
+
+  if run_result is not None and collect_bep and bep_file_path and os.path.exists(bep_file_path):
+    bep_data = bep.parse_bep_json_file(bep_file_path)
+    for k, v in bep_data.items():
+      if isinstance(v, (int, float)) and not math.isnan(v):
+        run_result[k] = v
+      elif k == 'invocation_id':
+        run_result['invocation_id'] = v
+
+  return run_result
 
 
 def _run_benchmark(bazel_bin_path,
@@ -276,25 +380,34 @@ def _run_benchmark(bazel_bin_path,
                    data_directory=None,
                    collect_profile=False,
                    bazel_identifier=None,
-                   project_commit=None):
+                   project_commit=None,
+                   warmup_runs=0,
+                   max_outlier_reruns=0,
+                   collect_memory=True,
+                   collect_process_memory=False,
+                   collect_bep=False):
   """Runs the benchmarking for a combination of (bazel version, project version).
 
   Args:
     bazel_bin_path: the path to the bazel binary to be run.
     project_path: the path to the project clone to be built.
     runs: the number of runs.
-    bazel_args: the unparsed list of arguments to be passed to Bazel binary.
-    prefetch_ext_deps: whether to do a first non-benchmarked run to fetch the
-      external dependencies.
+    command: the Bazel command (e.g. build).
+    options: options for the Bazel command.
+    targets: targets for the Bazel command.
+    startup_options: startup options for Bazel.
+    prefetch_ext_deps: whether to do a first non-benchmarked run to fetch external deps.
     bazel_bench_uid: a unique string identifier of this entire bazel-bench run.
     unit_num: the numerical order of the current unit being benchmarked.
+    data_directory: the path to the directory to store run data. Required if collect_profile.
     collect_profile: whether to collect JSON profile for each run.
-    data_directory: the path to the directory to store run data. Required if
-      collect_profile.
-    bazel_identifier: the commit hash of the bazel commit. Required if
-      collect_profile.
-    project_commit: the commit hash of the project commit. Required if
-      collect_profile.
+    bazel_identifier: the commit hash or binary path of the bazel version.
+    project_commit: the commit hash of the project commit.
+    warmup_runs: number of initial warmup runs to perform (discarded).
+    max_outlier_reruns: maximum number of automatic reruns when a wall-time outlier is detected.
+    collect_memory: whether to collect retained heap size via GC.
+    collect_process_memory: whether to sample peak anonymous process RSS.
+    collect_bep: whether to collect build metrics from BEP.
 
   Returns:
     A list of result objects from each _single_run.
@@ -309,54 +422,75 @@ def _run_benchmark(bazel_bin_path,
     logger.log('Pre-fetching external dependencies...')
     _single_run(bazel_bin_path, command, options, targets, startup_options)
 
+  if warmup_runs > 0:
+    for w in range(1, warmup_runs + 1):
+      logger.log('Starting warmup run %d/%d:' % (w, warmup_runs))
+      _single_run(bazel_bin_path, command, options, targets, startup_options)
+
   if collect_profile:
     if not os.path.exists(data_directory):
       os.makedirs(data_directory)
 
   for i in range(1, runs + 1):
     logger.log('Starting benchmark run %s/%s:' % (i, runs))
-
-    maybe_include_flags = options[:]
-    bep_file_path = None
-    if FLAGS.collect_bep:
-      bep_dir = data_directory or tempfile.gettempdir()
-      if not os.path.exists(bep_dir):
-        os.makedirs(bep_dir)
-      bep_file_path = os.path.join(
-          bep_dir, f'{bazel_bench_uid}_{unit_num}_{i}_bep.json')
-      maybe_include_flags += bep.get_bep_flags(bep_file_path)
-
-    if collect_profile:
-      assert bazel_identifier, ('bazel_identifier is required when '
-                                'collect_profile')
-      assert project_commit, ('project_commit is required when '
-                              'collect_profile')
-      maybe_include_flags += _construct_json_profile_flags(
-          json_profile_filename(
-              data_directory=data_directory,
-              bazel_bench_uid=bazel_bench_uid,
-              bazel_commit=bazel_identifier.replace('/', '_'),
-              unit_num=unit_num,
-              project_commit=project_commit,
-              run_number=i,
-              total_runs=runs,
-          ))
-
-    run_result = _single_run(
-        bazel_bin_path, command, maybe_include_flags,
-        targets, startup_options,
-        collect_memory=FLAGS.collect_memory,
-        collect_process_memory=FLAGS.collect_process_memory)
-
-    if run_result is not None and FLAGS.collect_bep and bep_file_path and os.path.exists(bep_file_path):
-      bep_data = bep.parse_bep_json_file(bep_file_path)
-      for k, v in bep_data.items():
-        if isinstance(v, (int, float)) and not math.isnan(v):
-          run_result[k] = v
-        elif k == 'invocation_id':
-          run_result['invocation_id'] = v
-
+    run_result = _run_single_benchmark_iteration(
+        bazel_bin_path=bazel_bin_path,
+        command=command,
+        options=options,
+        targets=targets,
+        startup_options=startup_options,
+        run_number=i,
+        total_runs=runs,
+        unit_num=unit_num,
+        bazel_bench_uid=bazel_bench_uid,
+        data_directory=data_directory,
+        collect_profile=collect_profile,
+        bazel_identifier=bazel_identifier,
+        project_commit=project_commit,
+        collect_memory=collect_memory or FLAGS.collect_memory,
+        collect_process_memory=collect_process_memory or FLAGS.collect_process_memory,
+        collect_bep=collect_bep or FLAGS.collect_bep)
     collected.append(run_result)
+
+  if max_outlier_reruns > 0:
+    reruns_left = max_outlier_reruns
+    reruns_performed = 0
+    while reruns_left > 0:
+      valid_indices = [
+          idx for idx, r in enumerate(collected)
+          if r and 'wall' in r and r.get('exit_status', 0) == 0
+      ]
+      wall_vals = Values([collected[idx]['wall'] for idx in valid_indices])
+      outliers = wall_vals.get_outlier_indices()
+      if not outliers:
+        break
+      med = wall_vals.median()
+      worst_subidx = max(outliers, key=lambda idx: abs(wall_vals.values()[idx] - med))
+      worst_idx = valid_indices[worst_subidx]
+      logger.log(
+          'Detected wall-time outlier (%.3fs). Performing outlier rerun (%d remaining)...'
+          % (wall_vals.values()[worst_subidx], reruns_left))
+      reruns_left -= 1
+      reruns_performed += 1
+      del collected[worst_idx]
+      rerun_res = _run_single_benchmark_iteration(
+          bazel_bin_path=bazel_bin_path,
+          command=command,
+          options=options,
+          targets=targets,
+          startup_options=startup_options,
+          run_number=runs + reruns_performed,
+          total_runs=runs,
+          unit_num=unit_num,
+          bazel_bench_uid=bazel_bench_uid,
+          data_directory=data_directory,
+          collect_profile=collect_profile,
+          bazel_identifier=bazel_identifier,
+          project_commit=project_commit,
+          collect_memory=collect_memory or FLAGS.collect_memory,
+          collect_process_memory=collect_process_memory or FLAGS.collect_process_memory,
+          collect_bep=collect_bep or FLAGS.collect_bep)
+      collected.append(rerun_res)
 
   return collected, (command, targets, options)
 
@@ -533,6 +667,12 @@ flags.DEFINE_boolean('collect_process_memory', False,
                      'Whether to sample peak anonymous process RSS memory.')
 flags.DEFINE_boolean('collect_bep', False,
                      'Whether to collect build metrics from the Build Event Protocol (BEP).')
+flags.DEFINE_integer('warmup_runs', 1,
+                     'The number of warmup runs to perform before measurements (discarded).')
+flags.DEFINE_integer('max_outlier_reruns', 0,
+                     'Maximum number of automatic reruns when a wall-time outlier is detected.')
+flags.DEFINE_boolean('interleave', False,
+                     'Whether to interleave benchmark runs across units in a round-robin order.')
 
 # Miscellaneous flags.
 flags.DEFINE_boolean('verbose', False,
@@ -584,12 +724,12 @@ def _get_benchmark_config_and_clone_repos(argv):
     An instance of BenchmarkConfig that contains the benchmark units.
   """
   if FLAGS.benchmark_config:
-    config = BenchmarkConfig.from_file(FLAGS.benchmark_config)
-    project_source = config.get_project_source()
+    config = BenchmarkConfig.from_file(_resolve_path(FLAGS.benchmark_config))
+    project_source = _resolve_path(config.get_project_source())
     project_clone_repo = _setup_project_repo(
         PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
         project_source)
-    bazel_source = config.get_bazel_source()
+    bazel_source = _resolve_path(config.get_bazel_source())
     bazel_clone_repo = _setup_project_repo(
         BAZEL_CLONE_BASE_PATH + '/' + _get_clone_subdir(bazel_source),
         bazel_source)
@@ -602,11 +742,11 @@ def _get_benchmark_config_and_clone_repos(argv):
   bazel_args = argv[1:]
 
   # Building Bazel binaries
-  bazel_binaries = FLAGS.bazel_binaries or []
+  bazel_binaries = [_resolve_path(b) for b in (FLAGS.bazel_binaries or [])]
   logger.log('Preparing bazelbuild/bazel repository.')
-  bazel_source = FLAGS.bazel_source if FLAGS.bazel_source else BAZEL_GITHUB_URL
+  bazel_source = _resolve_path(FLAGS.bazel_source) if FLAGS.bazel_source else BAZEL_GITHUB_URL
   bazel_clone_repo = _setup_project_repo(
-        PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(bazel_source),
+        BAZEL_CLONE_BASE_PATH + '/' + _get_clone_subdir(bazel_source),
         bazel_source)
   bazel_commits = _get_commits_topological(
       FLAGS.bazel_commits,
@@ -615,10 +755,11 @@ def _get_benchmark_config_and_clone_repos(argv):
       fill_default=not FLAGS.bazel_commits and not bazel_binaries)
 
   # Set up project repo
-  logger.log('Preparing %s clone.' % FLAGS.project_source)
+  project_source = _resolve_path(FLAGS.project_source)
+  logger.log('Preparing %s clone.' % project_source)
   project_clone_repo = _setup_project_repo(
-      PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(FLAGS.project_source),
-      FLAGS.project_source)
+      PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
+      project_source)
 
   project_commits = _get_commits_topological(FLAGS.project_commits,
                                              project_clone_repo,
@@ -629,10 +770,16 @@ def _get_benchmark_config_and_clone_repos(argv):
       bazel_binaries=bazel_binaries,
       project_commits=project_commits,
       bazel_source=bazel_source,
-      project_source=FLAGS.project_source,
+      project_source=project_source,
       env_configure=FLAGS.env_configure,
       runs=FLAGS.runs,
+      warmup_runs=FLAGS.warmup_runs,
+      max_outlier_reruns=FLAGS.max_outlier_reruns,
+      interleave=FLAGS.interleave,
       collect_profile=FLAGS.collect_profile,
+      collect_memory=FLAGS.collect_memory,
+      collect_process_memory=FLAGS.collect_process_memory,
+      collect_bep=FLAGS.collect_bep,
       command=' '.join(bazel_args),
       clean=FLAGS.clean,
       shutdown=FLAGS.shutdown)
@@ -650,12 +797,12 @@ def main(argv):
   # to its benchmarking result.
   data = collections.OrderedDict()
   csv_data = collections.OrderedDict()
-  data_directory = FLAGS.data_directory or DEFAULT_OUT_BASE_PATH
+  data_directory = _resolve_path(FLAGS.data_directory) if FLAGS.data_directory else DEFAULT_OUT_BASE_PATH
 
   # We use the start time as a unique identifier of this bazel-bench run.
   bazel_bench_uid = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
 
-  bazel_bin_base_path = FLAGS.bazel_bin_dir or BAZEL_BINARY_BASE_PATH
+  bazel_bin_base_path = _resolve_path(FLAGS.bazel_bin_dir) if FLAGS.bazel_bin_dir else BAZEL_BINARY_BASE_PATH
 
   # Build the bazel binaries, if necessary.
   for unit in config.get_units():
@@ -667,48 +814,181 @@ def main(argv):
                                            bazel_bin_base_path, FLAGS.platform)
       unit['bazel_bin_path'] = bazel_bin_path
 
-  for i, unit in enumerate(config.get_units()):
-    bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary']
-    project_commit = unit['project_commit']
+  units = config.get_units()
+  if FLAGS.interleave and len(units) > 1:
+    unit_results = collections.defaultdict(list)
+    unit_args = {}
+    for i, unit in enumerate(units):
+      bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary']
+      project_commit = unit['project_commit']
+      os.chdir(project_clone_repo.working_dir)
+      project_clone_repo.git.checkout('-f', project_commit)
+      if unit['env_configure'] is not None:
+        _exec_command(unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
 
-    project_clone_repo.git.checkout('-f', project_commit)
-    if unit['env_configure'] is not None:
-      _exec_command(
-          unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
+      logger.log('=== PREPARING BAZEL [Unit #%d]: %s, PROJECT: %s ===' %
+                 (i, bazel_identifier, project_commit))
+      if FLAGS.prefetch_ext_deps:
+        logger.log('Pre-fetching external dependencies...')
+        _single_run(unit['bazel_bin_path'], unit['command'], unit['options'], unit['targets'], unit['startup_options'])
 
-    results, args = _run_benchmark(
-        bazel_bin_path=unit['bazel_bin_path'],
-        project_path=project_clone_repo.working_dir,
-        runs=unit['runs'],
-        command=unit['command'],
-        options=unit['options'],
-        targets=unit['targets'],
-        startup_options=unit['startup_options'],
-        prefetch_ext_deps=FLAGS.prefetch_ext_deps,
-        bazel_bench_uid=bazel_bench_uid,
-        unit_num=i,
-        collect_profile=unit['collect_profile'],
-        data_directory=data_directory,
-        bazel_identifier=bazel_identifier,
-        project_commit=project_commit)
-    collected = {}
-    for benchmarking_result in results:
-      for metric, value in benchmarking_result.items():
-        if metric not in collected:
-          collected[metric] = Values()
-        collected[metric].add(value)
+      warmup_runs = unit.get('warmup_runs', FLAGS.warmup_runs)
+      if warmup_runs > 0:
+        for w in range(1, warmup_runs + 1):
+          logger.log('Starting warmup run %d/%d for Unit #%d:' % (w, warmup_runs, i))
+          _single_run(unit['bazel_bin_path'], unit['command'], unit['options'], unit['targets'], unit['startup_options'])
 
-    data[(i, bazel_identifier, project_commit)] = collected
-    non_measurables = {
-      'project_source': unit['project_source'],
-      'platform': FLAGS.platform,
-      'project_label': FLAGS.project_label
-    }
-    csv_data[(bazel_identifier, project_commit)] = {
-        'results': results,
-        'args': args,
-        'non_measurables': non_measurables
-    }
+      unit_args[i] = (unit['command'], unit['targets'], unit['options'])
+
+    max_runs = max(u['runs'] for u in units)
+    for run_idx in range(1, max_runs + 1):
+      for i, unit in enumerate(units):
+        if run_idx > unit['runs']:
+          continue
+        bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary']
+        project_commit = unit['project_commit']
+        os.chdir(project_clone_repo.working_dir)
+        project_clone_repo.git.checkout('-f', project_commit)
+        if unit['env_configure'] is not None:
+          _exec_command(unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
+
+        logger.log('Starting benchmark run %d/%d for Unit #%d (%s):' %
+                   (run_idx, unit['runs'], i, bazel_identifier))
+        res = _run_single_benchmark_iteration(
+            bazel_bin_path=unit['bazel_bin_path'],
+            command=unit['command'],
+            options=unit['options'],
+            targets=unit['targets'],
+            startup_options=unit['startup_options'],
+            run_number=run_idx,
+            total_runs=unit['runs'],
+            unit_num=i,
+            bazel_bench_uid=bazel_bench_uid,
+            data_directory=data_directory,
+            collect_profile=unit['collect_profile'],
+            bazel_identifier=bazel_identifier,
+            project_commit=project_commit,
+            collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
+            collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
+            collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
+        unit_results[i].append(res)
+
+    for i, unit in enumerate(units):
+      bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary']
+      project_commit = unit['project_commit']
+      results = unit_results[i]
+      args = unit_args[i]
+      max_outlier_reruns = unit.get('max_outlier_reruns', FLAGS.max_outlier_reruns)
+      if max_outlier_reruns > 0:
+        reruns_left = max_outlier_reruns
+        reruns_performed = 0
+        while reruns_left > 0:
+          valid_indices = [
+              idx for idx, r in enumerate(results)
+              if r and 'wall' in r and r.get('exit_status', 0) == 0
+          ]
+          wall_vals = Values([results[idx]['wall'] for idx in valid_indices])
+          outliers = wall_vals.get_outlier_indices()
+          if not outliers:
+            break
+          med = wall_vals.median()
+          worst_subidx = max(outliers, key=lambda idx: abs(wall_vals.values()[idx] - med))
+          worst_idx = valid_indices[worst_subidx]
+          logger.log(
+              'Detected wall-time outlier (%.3fs) in Unit #%d. Performing outlier rerun (%d remaining)...'
+              % (wall_vals.values()[worst_subidx], i, reruns_left))
+          reruns_left -= 1
+          reruns_performed += 1
+          del results[worst_idx]
+          os.chdir(project_clone_repo.working_dir)
+          project_clone_repo.git.checkout('-f', project_commit)
+          if unit['env_configure'] is not None:
+            _exec_command(unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
+          rerun_res = _run_single_benchmark_iteration(
+              bazel_bin_path=unit['bazel_bin_path'],
+              command=unit['command'],
+              options=unit['options'],
+              targets=unit['targets'],
+              startup_options=unit['startup_options'],
+              run_number=unit['runs'] + reruns_performed,
+              total_runs=unit['runs'],
+              unit_num=i,
+              bazel_bench_uid=bazel_bench_uid,
+              data_directory=data_directory,
+              collect_profile=unit['collect_profile'],
+              bazel_identifier=bazel_identifier,
+              project_commit=project_commit,
+              collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
+              collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
+              collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
+          results.append(rerun_res)
+
+      collected = {}
+      for benchmarking_result in results:
+        for metric, value in benchmarking_result.items():
+          if metric not in collected:
+            collected[metric] = Values()
+          collected[metric].add(value)
+
+      data[(i, bazel_identifier, project_commit)] = collected
+      non_measurables = {
+          'project_source': unit['project_source'],
+          'platform': FLAGS.platform,
+          'project_label': FLAGS.project_label
+      }
+      csv_data[(bazel_identifier, project_commit)] = {
+          'results': results,
+          'args': args,
+          'non_measurables': non_measurables
+      }
+  else:
+    for i, unit in enumerate(units):
+      bazel_identifier = unit['bazel_commit'] if 'bazel_commit' in unit else unit['bazel_binary']
+      project_commit = unit['project_commit']
+
+      project_clone_repo.git.checkout('-f', project_commit)
+      if unit['env_configure'] is not None:
+        _exec_command(
+            unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
+
+      results, args = _run_benchmark(
+          bazel_bin_path=unit['bazel_bin_path'],
+          project_path=project_clone_repo.working_dir,
+          runs=unit['runs'],
+          command=unit['command'],
+          options=unit['options'],
+          targets=unit['targets'],
+          startup_options=unit['startup_options'],
+          prefetch_ext_deps=FLAGS.prefetch_ext_deps,
+          bazel_bench_uid=bazel_bench_uid,
+          unit_num=i,
+          collect_profile=unit['collect_profile'],
+          data_directory=data_directory,
+          bazel_identifier=bazel_identifier,
+          project_commit=project_commit,
+          warmup_runs=unit.get('warmup_runs', FLAGS.warmup_runs),
+          max_outlier_reruns=unit.get('max_outlier_reruns', FLAGS.max_outlier_reruns),
+          collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
+          collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
+          collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
+      collected = {}
+      for benchmarking_result in results:
+        for metric, value in benchmarking_result.items():
+          if metric not in collected:
+            collected[metric] = Values()
+          collected[metric].add(value)
+
+      data[(i, bazel_identifier, project_commit)] = collected
+      non_measurables = {
+          'project_source': unit['project_source'],
+          'platform': FLAGS.platform,
+          'project_label': FLAGS.project_label
+      }
+      csv_data[(bazel_identifier, project_commit)] = {
+          'results': results,
+          'args': args,
+          'non_measurables': non_measurables
+      }
 
   summary_text = create_summary(data, config.get_project_source())
   print(summary_text)

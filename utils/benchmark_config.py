@@ -63,7 +63,13 @@ class BenchmarkConfig(object):
   # TODO(leba): Consider replacing dict with collections.namedtuple.
   _DEFAULT_VALS = {
       'runs': 5,
+      'warmup_runs': 1,
+      'max_outlier_reruns': 0,
+      'interleave': False,
       'collect_profile': False,
+      'collect_bep': False,
+      'collect_memory': True,
+      'collect_process_memory': False,
       'bazel_source': 'https://github.com/bazelbuild/bazel.git',
       'env_configure': None,
       'clean': True,
@@ -161,59 +167,39 @@ class BenchmarkConfig(object):
   @classmethod
   def from_flags(cls, bazel_commits, bazel_binaries, project_commits,
                  bazel_source, project_source, env_configure, runs,
-                 collect_profile, command, clean, shutdown):
-    """Creates the BenchmarkConfig based on specified flags.
-
-    Args:
-      bazel_commits: the bazel commits.
-      bazel_binaries: paths to pre-built bazel binaries.
-      project_commits: the project commits.
-      bazel_source: Either a path to the local Bazel repo or a https url to a
-        GitHub repository
-      project_source: Either a path to the local git project to be built or a
-        https url to a GitHub repository
-      env_configure: The command to run on the project repository before building it.
-      runs: The number of benchmark runs to perform for each combination.
-      collect_profile: Whether to collect a JSON profile.
-      command: the full command to benchmark, optionally with startup options
-        prepended, e.g. "--noexobazel build --nobuild ...".
-      clean: Whether to invoke `bazel clean` between runs.
-      shutdown: Whether to invoke `bazel shutdown` between runs.
-
-    Returns:
-      The created config object.
-    """
+                 collect_profile, command, clean, shutdown,
+                 warmup_runs=1, max_outlier_reruns=0, interleave=False,
+                 collect_memory=True, collect_process_memory=False, collect_bep=False):
+    """Creates the BenchmarkConfig based on specified flags."""
     units = []
+    base_unit = {
+        'bazel_source': bazel_source,
+        'project_source': project_source,
+        'runs': runs,
+        'warmup_runs': warmup_runs,
+        'max_outlier_reruns': max_outlier_reruns,
+        'interleave': interleave,
+        'collect_profile': collect_profile,
+        'collect_memory': collect_memory,
+        'collect_process_memory': collect_process_memory,
+        'collect_bep': collect_bep,
+        'env_configure': env_configure,
+        'command': command,
+        'clean': clean,
+        'shutdown': shutdown,
+    }
     for bazel_commit in bazel_commits:
       for project_commit in project_commits:
-        units.append(
-            cls._parse_unit({
-                'bazel_commit': bazel_commit,
-                'project_commit': project_commit,
-                'bazel_source': bazel_source,
-                'project_source': project_source,
-                'runs': runs,
-                'collect_profile': collect_profile,
-                'env_configure': env_configure,
-                'command': command,
-                'clean': clean,
-                'shutdown': shutdown,
-            }))
+        u = copy.copy(base_unit)
+        u['bazel_commit'] = bazel_commit
+        u['project_commit'] = project_commit
+        units.append(cls._parse_unit(u))
     for bazel_binary in bazel_binaries:
       for project_commit in project_commits:
-        units.append(
-            cls._parse_unit({
-                'bazel_binary': bazel_binary,
-                'project_commit': project_commit,
-                'bazel_source': bazel_source,
-                'project_source': project_source,
-                'runs': runs,
-                'collect_profile': collect_profile,
-                'env_configure': env_configure,
-                'command': command,
-                'clean': clean,
-                'shutdown': shutdown,
-            }))
+        u = copy.copy(base_unit)
+        u['bazel_binary'] = bazel_binary
+        u['project_commit'] = project_commit
+        units.append(cls._parse_unit(u))
     return cls(units, benchmark_project_commits=(len(project_commits) > 1))
 
   @classmethod
