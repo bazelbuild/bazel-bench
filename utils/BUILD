@@ -35,6 +35,7 @@ py_library(
         requirement("six"),
         requirement("urllib3"),
         requirement("PyYAML"),
+        requirement("GitPython"),
     ],
 )
 
@@ -150,5 +151,15 @@ py_test(
     srcs = ["patch_test.py"],
     deps = [
         ":utils",
+    ],
+)
+
+py_test(
+    name = "bisection_test",
+    size = "small",
+    srcs = ["bisection_test.py"],
+    deps = [
+        ":utils",
+        requirement("GitPython"),
     ],
 )

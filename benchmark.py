@@ -29,6 +29,7 @@ import utils.json_profiles_merger_lib as json_profiles_merger_lib
 import utils.output_handling as output_handling
 import utils.bep as bep
 import utils.patch as patch_util
+import utils.bisection as bisection
 
 from absl import app
 from absl import flags
@@ -822,10 +823,17 @@ flags.DEFINE_string('data_directory', None,
 # properly filled.
 flags.DEFINE_string('csv_file_name', None,
                     'The name of the output csv, without the .csv extension.')
+flags.DEFINE_string('bisect', None,
+                    'Run automated git bisection for regressions on the specified metric '
+                    '(e.g. wall, cpu, memory). Requires --bazel_commits with exactly two commits [good, bad].')
 
 
 def _flag_checks():
   """Verify flags requirements."""
+  if FLAGS.bisect:
+    if not FLAGS.bazel_commits or len(FLAGS.bazel_commits) != 2:
+      raise ValueError('--bisect requires --bazel_commits with exactly two commits (good bad).')
+
   if (not FLAGS.benchmark_config and FLAGS.bazel_commits and
       FLAGS.project_commits and len(FLAGS.bazel_commits) > 1 and
       len(FLAGS.project_commits) > 1):
@@ -936,6 +944,79 @@ def main(argv):
   bazel_bench_uid = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
 
   bazel_bin_base_path = _resolve_path(FLAGS.bazel_bin_dir) if FLAGS.bazel_bin_dir else BAZEL_BINARY_BASE_PATH
+
+  if FLAGS.bisect:
+    target_metric = FLAGS.bisect
+    bazel_commits = config.get_bazel_commits()
+    good_commit = bazel_commits[0]
+    bad_commit = bazel_commits[1]
+    unit = config.get_units()[0]
+    project_commit = unit['project_commit']
+
+    def eval_fn(commit):
+      logger.log('--- Evaluating commit for bisection: %s ---' % commit)
+      bazel_bin_path = _build_bazel_binary(
+          commit, bazel_clone_repo, bazel_bin_base_path, FLAGS.platform)
+      project_clone_repo.git.checkout('-f', project_commit)
+      if unit['env_configure'] is not None:
+        _exec_command(
+            unit['env_configure'], shell=True, cwd=project_clone_repo.working_dir)
+
+      results, _ = _run_benchmark(
+          bazel_bin_path=bazel_bin_path,
+          project_path=project_clone_repo.working_dir,
+          runs=unit['runs'],
+          command=unit['command'],
+          options=unit['options'],
+          targets=unit['targets'],
+          startup_options=unit['startup_options'],
+          prefetch_ext_deps=FLAGS.prefetch_ext_deps,
+          bazel_bench_uid=bazel_bench_uid,
+          unit_num=0,
+          collect_profile=False,
+          data_directory=data_directory,
+          bazel_identifier=commit,
+          project_commit=project_commit,
+          warmup_runs=unit.get('warmup_runs', FLAGS.warmup_runs),
+          max_outlier_reruns=unit.get('max_outlier_reruns', FLAGS.max_outlier_reruns),
+          collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
+          collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
+          collect_bep=unit.get('collect_bep', FLAGS.collect_bep),
+          patch_file=unit.get('patch_file', FLAGS.patch_file))
+
+      # Only successful runs count: a failing build is not a valid measurement
+      # (and is usually misleadingly fast). If nothing remains, bisection.bisect
+      # raises a BisectError.
+      vals = Values()
+      failed = 0
+      for r in results:
+        if r is None:
+          continue
+        if r.get('exit_status', 0) != 0:
+          failed += 1
+          continue
+        if target_metric in r:
+          vals.add(r[target_metric])
+      if failed:
+        logger.log_warn('%d/%d runs failed for commit %s and were excluded.' %
+                        (failed, len(results), commit))
+      return vals
+
+    bisect_result = bisection.bisect(
+        bazel_clone_repo,
+        good_commit,
+        bad_commit,
+        eval_fn,
+        target_metric=target_metric)
+
+    summary_str = bisect_result.summary()
+    print(summary_str)
+
+    output_handling.export_file(
+        data_directory, '{}_bisect.md'.format(bazel_bench_uid), '```\n' + summary_str + '\n```\n')
+
+    logger.log('Done.')
+    return
 
   # Build the bazel binaries, if necessary.
   for unit in config.get_units():

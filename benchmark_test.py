@@ -461,5 +461,44 @@ class BenchmarkFlagsTest(absltest.TestCase):
         ]), mock_stderr.getvalue())
 
 
+  @flagsaver.flagsaver(bisect='wall', bazel_commits=['a'])
+  def test_bisect_flag_checks_fail_single_commit(self):
+    with self.assertRaises(ValueError) as context:
+      benchmark._flag_checks()
+    self.assertIn('--bisect requires --bazel_commits with exactly two commits', str(context.exception))
+
+  @flagsaver.flagsaver(bisect='wall', bazel_commits=['a', 'b'])
+  def test_bisect_flag_checks_pass(self):
+    benchmark._flag_checks()
+
+  @mock.patch('benchmark.bisection.bisect')
+  @mock.patch('benchmark._get_benchmark_config_and_clone_repos')
+  def test_main_bisect(self, mock_get_repos, mock_bisect):
+    mock_config = mock.MagicMock()
+    mock_config.get_bazel_commits.return_value = ['c1', 'c2']
+    mock_config.get_units.return_value = [{
+        'project_commit': 'p1',
+        'env_configure': None,
+        'runs': 3,
+        'command': 'build',
+        'options': [],
+        'targets': ['//:all'],
+        'startup_options': [],
+    }]
+    mock_bazel_repo = mock.MagicMock()
+    mock_project_repo = mock.MagicMock()
+    mock_get_repos.return_value = (mock_config, mock_bazel_repo, mock_project_repo)
+
+    mock_bisect_result = mock.MagicMock()
+    mock_bisect_result.summary.return_value = 'Mock Bisect Summary'
+    mock_bisect.return_value = mock_bisect_result
+
+    with flagsaver.flagsaver(bisect='wall', bazel_commits=['c1', 'c2'], project_source='/tmp/project'):
+      with mock.patch('builtins.print') as mock_print:
+        benchmark.main(['benchmark.py'])
+        mock_bisect.assert_called_once()
+        mock_print.assert_called_with('Mock Bisect Summary')
+
+
 if __name__ == '__main__':
   absltest.main()
