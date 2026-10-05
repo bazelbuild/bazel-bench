@@ -15,6 +15,7 @@
 import collections
 import math
 import mock
+import os
 import sys
 import benchmark
 import six
@@ -427,6 +428,48 @@ class BenchmarkFlagsTest(absltest.TestCase):
         str(value_err),
         'Either --bazel_commits or --project_commits should be a single element.'
     )
+
+  def test_flag_checks_bazel_binaries_non_existent(self):
+    with flagsaver.flagsaver(bazel_binaries=['/non/existent/bazel/binary']):
+      with self.assertRaises(ValueError) as context:
+        benchmark._flag_checks()
+      self.assertIn('does not exist', str(context.exception))
+
+  def test_flag_checks_bazel_binaries_not_executable(self):
+    temp_file = self.create_tempfile()
+    os.chmod(temp_file.full_path, 0o644)
+    with flagsaver.flagsaver(bazel_binaries=[temp_file.full_path]):
+      with self.assertRaises(ValueError) as context:
+        benchmark._flag_checks()
+      self.assertIn('is not executable', str(context.exception))
+
+  def test_flag_checks_bazel_binaries_valid(self):
+    temp_file = self.create_tempfile()
+    os.chmod(temp_file.full_path, 0o755)
+    with flagsaver.flagsaver(bazel_binaries=[temp_file.full_path]):
+      benchmark._flag_checks()
+
+  @mock.patch('benchmark._setup_project_repo')
+  @mock.patch('benchmark._get_commits_topological')
+  def test_get_benchmark_config_and_clone_repos_skip_bazel_repo_when_binaries_provided(
+      self, mock_get_commits, mock_setup_repo):
+    temp_bin = self.create_tempfile()
+    os.chmod(temp_bin.full_path, 0o755)
+    mock_get_commits.return_value = ['c1']
+    mock_setup_repo.return_value = mock.MagicMock()
+
+    with flagsaver.flagsaver(
+        bazel_binaries=[temp_bin.full_path],
+        bazel_commits=None,
+        project_source='/tmp/project',
+        project_commits=['c1']):
+      config, bazel_repo, project_repo = benchmark._get_benchmark_config_and_clone_repos(
+          ['benchmark.py', 'info'])
+
+      self.assertIsNone(bazel_repo)
+      self.assertIsNotNone(project_repo)
+      # _setup_project_repo should only be called once, for the project repo
+      self.assertEqual(1, mock_setup_repo.call_count)
 
   @flagsaver.flagsaver(clean=False)
   def test_single_run_skip_clean(self):

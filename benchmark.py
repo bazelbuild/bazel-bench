@@ -834,6 +834,16 @@ def _flag_checks():
     if not FLAGS.bazel_commits or len(FLAGS.bazel_commits) != 2:
       raise ValueError('--bisect requires --bazel_commits with exactly two commits (good bad).')
 
+  if FLAGS.bazel_binaries:
+    for b in FLAGS.bazel_binaries:
+      resolved_b = _resolve_path(b)
+      if not os.path.exists(resolved_b):
+        raise ValueError("Bazel binary '%s' does not exist." % b)
+      if not os.path.isfile(resolved_b):
+        raise ValueError("Bazel binary '%s' is not a regular file." % b)
+      if not os.access(resolved_b, os.X_OK):
+        raise ValueError("Bazel binary '%s' is not executable (permission denied)." % b)
+
   if (not FLAGS.benchmark_config and FLAGS.bazel_commits and
       FLAGS.project_commits and len(FLAGS.bazel_commits) > 1 and
       len(FLAGS.project_commits) > 1):
@@ -861,10 +871,14 @@ def _get_benchmark_config_and_clone_repos(argv):
     project_clone_repo = _setup_project_repo(
         PROJECT_CLONE_BASE_PATH + '/' + _get_clone_subdir(project_source),
         project_source)
-    bazel_source = _resolve_path(config.get_bazel_source())
-    bazel_clone_repo = _setup_project_repo(
-        BAZEL_CLONE_BASE_PATH + '/' + _get_clone_subdir(bazel_source),
-        bazel_source)
+    need_bazel_repo = any('bazel_commit' in u for u in config.get_units()) or bool(FLAGS.bisect)
+    bazel_clone_repo = None
+    if need_bazel_repo:
+      logger.log('Preparing bazelbuild/bazel repository.')
+      bazel_source = _resolve_path(config.get_bazel_source())
+      bazel_clone_repo = _setup_project_repo(
+          BAZEL_CLONE_BASE_PATH + '/' + _get_clone_subdir(bazel_source),
+          bazel_source)
 
     return config, bazel_clone_repo, project_clone_repo
 
@@ -875,16 +889,21 @@ def _get_benchmark_config_and_clone_repos(argv):
 
   # Building Bazel binaries
   bazel_binaries = [_resolve_path(b) for b in (FLAGS.bazel_binaries or [])]
-  logger.log('Preparing bazelbuild/bazel repository.')
+  need_bazel_repo = bool(FLAGS.bazel_commits) or not bazel_binaries or bool(FLAGS.bisect)
   bazel_source = _resolve_path(FLAGS.bazel_source) if FLAGS.bazel_source else BAZEL_GITHUB_URL
-  bazel_clone_repo = _setup_project_repo(
+  bazel_clone_repo = None
+  bazel_commits = []
+
+  if need_bazel_repo:
+    logger.log('Preparing bazelbuild/bazel repository.')
+    bazel_clone_repo = _setup_project_repo(
         BAZEL_CLONE_BASE_PATH + '/' + _get_clone_subdir(bazel_source),
         bazel_source)
-  bazel_commits = _get_commits_topological(
-      FLAGS.bazel_commits,
-      bazel_clone_repo,
-      'bazel_commits',
-      fill_default=not FLAGS.bazel_commits and not bazel_binaries)
+    bazel_commits = _get_commits_topological(
+        FLAGS.bazel_commits,
+        bazel_clone_repo,
+        'bazel_commits',
+        fill_default=not FLAGS.bazel_commits and not bazel_binaries)
 
   # Set up project repo
   project_source = _resolve_path(FLAGS.project_source)
