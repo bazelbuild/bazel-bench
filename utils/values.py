@@ -265,3 +265,18 @@ class Values(object):
     """Returns a copy of Values excluding items at specified indices."""
     filtered = [val for i, val in enumerate(self._items) if i not in indexes]
     return Values(filtered)
+
+  def is_unchanged(self, base_values: 'Values') -> bool:
+    """Returns True if this metric did not change compared to baseline."""
+    if self.empty() or base_values.empty():
+      return False
+    v1 = self.values_wo_nan()
+    v2 = base_values.values_wo_nan()
+    if not v1 or not v2:
+      return False
+    if len(v1) == len(v2) and all(math.isclose(a, b, rel_tol=1e-5, abs_tol=1e-5) for a, b in zip(v1, v2)):
+      return True
+    if all(math.isclose(x, v1[0], rel_tol=1e-5, abs_tol=1e-5) for x in v1) and all(math.isclose(x, v1[0], rel_tol=1e-5, abs_tol=1e-5) for x in v2):
+      return True
+    return False
+

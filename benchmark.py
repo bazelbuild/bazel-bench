@@ -46,8 +46,6 @@ PROJECT_CLONE_BASE_PATH = os.path.join(BB_ROOT, 'project-clones')
 BAZEL_GITHUB_URL = 'https://github.com/bazelbuild/bazel.git'
 # The path to the directory that stores the bazel binaries.
 BAZEL_BINARY_BASE_PATH = os.path.join(BB_ROOT, 'bazel-bin')
-# The path to the directory that stores the output csv (If required).
-DEFAULT_OUT_BASE_PATH = os.path.join(BB_ROOT, 'out')
 # The default name of the aggr json profile.
 DEFAULT_AGGR_JSON_PROFILE_FILENAME = 'aggr_json_profiles.csv'
 
@@ -545,75 +543,193 @@ def handle_json_profiles_aggr(bazel_bench_uid, unit_num, bazel_commits,
   logger.log('Finished writing aggregate_json_profiles to %s' % output_path)
 
 
-def create_summary(data, project_source):
-  """Creates the runs summary onto stdout.
+def _metric_sort_key(metric_name):
+  primary = ('wall', 'cpu', 'system', 'memory')
+  if metric_name in primary:
+    return (0, primary.index(metric_name))
+  elif metric_name.startswith('runner-'):
+    return (3, metric_name)
+  elif metric_name in (
+      'edenSpaceGarbage',
+      'oldGenGarbage',
+      'peakPostGcHeapSize',
+      'usedHeapSizePostBuild',
+      'peakProcessRss',
+      'postGcProcessRss',
+  ):
+    return (2, metric_name)
+  else:
+    return (1, metric_name)
 
-  Excludes runs with non-zero exit codes from the final summary table.
+
+_NON_NUMERIC_METRICS = ('exit_status', 'started_at', 'invocation_id')
+
+
+def _non_zero_runs(collected):
+  """Returns a map from run index to exit code for runs that failed."""
+  non_zero_runs = {}
+  if 'exit_status' in collected:
+    for run_idx, exit_code in enumerate(collected['exit_status'].items()):
+      if exit_code != 0:
+        non_zero_runs[run_idx] = exit_code
+  return non_zero_runs
+
+
+def _collect_metrics(results):
+  """Aggregates a list of per-run result dicts into a map metric -> Values.
+
+  Every metric gets exactly one entry per run, in run order: runs that did not
+  report a metric get NaN (or None for non-numeric fields). This keeps run
+  indexes aligned across metrics, which is required to correctly exclude
+  failed runs by index.
   """
-  unit = {
-      'wall': 's ',
-      'cpu': 's ',
-      'system': 's ',
+  results = [r for r in results if r is not None]
+  metrics = []
+  for r in results:
+    for metric in r:
+      if metric not in metrics:
+        metrics.append(metric)
+  collected = {}
+  for metric in metrics:
+    missing = None if metric in _NON_NUMERIC_METRICS else math.nan
+    collected[metric] = Values([r.get(metric, missing) for r in results])
+  return collected
+
+
+def create_summary(data, project_source, color=False):
+  """Creates the runs summary.
+
+  Excludes runs with non-zero exit codes from the final summary table. Every
+  unit is compared against the first unit (the baseline).
+
+  Args:
+    data: OrderedDict mapping (unit_num, bazel_identifier, project_commit) to a
+      map metric -> Values.
+    project_source: the project source, for display.
+    color: whether to emit ANSI styling (only for terminal output).
+  """
+  unit_map = {
+      'wall': 's',
+      'cpu': 's',
+      'system': 's',
       'memory': 'MB',
       'peakProcessRss': 'MB',
+      'postGcProcessRss': 'MB',
       'peakPostGcHeapSize': 'MB',
       'usedHeapSizePostBuild': 'MB',
       'edenSpaceGarbage': 'MB',
       'oldGenGarbage': 'MB',
-      'analysisPhaseTime': 's ',
-      'executionPhaseTime': 's ',
+      'analysisPhaseTime': 's',
+      'executionPhaseTime': 's',
   }
-  summary_builder = []
-  summary_builder.append('\nRESULTS:')
-  last_collected = None
+
+  def _fmt_val(metric, val):
+    if not math.isfinite(val):
+      return str(val)
+    u = unit_map.get(metric, '')
+    if metric in ['wall', 'cpu', 'system', 'analysisPhaseTime', 'executionPhaseTime']:
+      return f'{val:.3f}{u}'
+    elif metric in ['memory', 'peakProcessRss', 'postGcProcessRss', 'peakPostGcHeapSize', 'usedHeapSizePostBuild', 'edenSpaceGarbage', 'oldGenGarbage']:
+      return f'{val:.1f}{u}'
+    elif isinstance(val, (int, float)) and val == int(val):
+      return f'{int(val):,}{u}'
+    return f'{val:.2f}{u}'
+
+  def _fmt_std(metric, std):
+    if math.isnan(std):
+      return ''
+    u = unit_map.get(metric, '')
+    if metric in ['wall', 'cpu', 'system', 'analysisPhaseTime', 'executionPhaseTime']:
+      return f'±{std:.3f}{u}'
+    elif metric in ['memory', 'peakProcessRss', 'postGcProcessRss', 'peakPostGcHeapSize', 'usedHeapSizePostBuild', 'edenSpaceGarbage', 'oldGenGarbage']:
+      return f'±{std:.1f}{u}'
+    return f'±{std:.1f}{u}'
+
+  # All comparisons are against the first unit (the baseline) and are based on
+  # the mean, consistent with the Markdown and JSON reports.
+  headers = ['metric', 'mean', '±stddev', 'Δ mean', 'speedup [significance]']
+  all_rows = [headers]
+  unit_blocks = []
+  baseline_collected = None
+
   for (i, bazel_commit, project_commit), collected in data.items():
     header = ('[Unit #%d] Bazel version: %s, Project commit: %s, Project source: %s' %
               (i, bazel_commit, project_commit, project_source))
-    summary_builder.append(header)
+    if baseline_collected is None:
+      header += ' (baseline)'
+    num_runs = len(collected['wall'].items()) if 'wall' in collected else 0
+    non_zero_runs = _non_zero_runs(collected)
 
-    summary_builder.append(
-        '%s  %s %s %s %s' %
-        ('metric'.rjust(20), 'mean'.center(20), 'median'.center(20),
-         'stddev'.center(10), 'pval'.center(10)))
-
-    num_runs = len(collected['wall'].items())
-    # A map from run number to exit code, for runs with non-zero exit codes.
-    non_zero_runs = {}
-    for i, exit_code in enumerate(collected['exit_status'].items()):
-      if exit_code != 0:
-        non_zero_runs[i] = exit_code
+    rows = []
+    filtered_collected = {}
     for metric, values in collected.items():
-      if metric in ['exit_status', 'started_at', 'invocation_id']:
+      if metric in _NON_NUMERIC_METRICS:
         continue
-
-      values_exclude_failures = values.exclude_from_indexes(
-          non_zero_runs.keys())
-      # Skip if there's no value available after excluding failed runs.
-      if not values_exclude_failures.items():
+      values_exclude_failures = values.exclude_from_indexes(non_zero_runs.keys())
+      if not values_exclude_failures.values_wo_nan():
         continue
+      if metric.startswith('runner-') and all(
+          v == 0 for v in values_exclude_failures.values_wo_nan()):
+        continue
+      filtered_collected[metric] = values_exclude_failures
 
-      if last_collected and metric in last_collected:
-        base = last_collected[metric]
-        pval = '% 7.5f' % values_exclude_failures.pval(base.values())
-        mean_diff = '(% +6.2f%%)' % (
-            100. * (values_exclude_failures.mean() - base.mean()) / base.mean())
-        median_diff = '(% +6.2f%%)' % (
-            100. *
-            (values_exclude_failures.median() - base.median()) / base.median())
+    sorted_metrics = sorted(filtered_collected.keys(), key=_metric_sort_key)
+
+    for metric in sorted_metrics:
+      vals = filtered_collected[metric]
+      mean_str = _fmt_val(metric, vals.mean())
+      std_str = _fmt_std(metric, vals.stddev())
+
+      if baseline_collected is not None and metric in baseline_collected:
+        base = baseline_collected[metric]
+        if not vals.is_unchanged(base):
+          diff = vals.mean() - base.mean()
+          diff_str = _fmt_val(metric, diff) if diff <= 0 else f'+{_fmt_val(metric, diff)}'
+          ratio, ratio_err, pct = vals.speedup_ratio(base)
+          if math.isnan(pct):
+            delta_str = diff_str
+          else:
+            delta_str = f'{diff_str}, {pct:+.1f}%'
+
+          sig = vals.significance_label(base.values())
+          if not math.isnan(ratio):
+            if ratio_err > 0.0:
+              speedup_str = f'{ratio:.2f} ± {ratio_err:.2f}x [{sig}]'
+            else:
+              speedup_str = f'{ratio:.2f}x [{sig}]'
+          else:
+            speedup_str = f'[{sig}]'
+        else:
+          delta_str = ''
+          speedup_str = ''
       else:
-        pval = ''
-        mean_diff = median_diff = '         '
-      m_unit = unit.get(metric, '')
-      summary_builder.append(
-          '%s: %s %s %s %s' %
-          (metric.rjust(20),
-           ('% 8.3f%s %s' %
-            (values_exclude_failures.mean(), m_unit, mean_diff)).center(20),
-           ('% 8.3f%s %s' %
-            (values_exclude_failures.median(), m_unit, median_diff)).center(20),
-           ('% 7.3f%s' % (values_exclude_failures.stddev(), m_unit)).center(10),
-           pval.center(10)))
-    last_collected = collected
+        delta_str = ''
+        speedup_str = ''
+
+      row = [f'{metric}:', mean_str, std_str, delta_str, speedup_str]
+      rows.append(row)
+      all_rows.append(row)
+
+    if baseline_collected is None:
+      baseline_collected = filtered_collected
+    unit_blocks.append((header, rows, non_zero_runs, num_runs))
+
+  max_widths = [max(len(cell) for cell in col) for col in zip(*all_rows)]
+
+  summary_builder = ['\nRESULTS:']
+  for header, rows, non_zero_runs, num_runs in unit_blocks:
+    if color:
+      summary_builder.append(f'\033[1m{header}\033[0m')
+    else:
+      summary_builder.append(header)
+
+    h_line = f"{headers[0].ljust(max_widths[0])}  {headers[1].rjust(max_widths[1])}  {headers[2].rjust(max_widths[2])}  {headers[3].center(max_widths[3])}  {headers[4].ljust(max_widths[4])}".rstrip()
+    summary_builder.append(h_line)
+
+    for row in rows:
+      line = f"{row[0].ljust(max_widths[0])}  {row[1].rjust(max_widths[1])}  {row[2].rjust(max_widths[2])}  {row[3].center(max_widths[3])}  {row[4].ljust(max_widths[4])}".rstrip()
+      summary_builder.append(line)
+
     if non_zero_runs:
       summary_builder.append(
           ('The following runs contain non-zero exit code(s):\n %s\n'
@@ -797,7 +913,15 @@ def main(argv):
   # to its benchmarking result.
   data = collections.OrderedDict()
   csv_data = collections.OrderedDict()
-  data_directory = _resolve_path(FLAGS.data_directory) if FLAGS.data_directory else DEFAULT_OUT_BASE_PATH
+  if FLAGS.data_directory:
+    data_directory = _resolve_path(FLAGS.data_directory)
+    if not os.path.exists(data_directory):
+      os.makedirs(data_directory)
+  else:
+    data_directory = tempfile.mkdtemp(prefix='benchmark.')
+    logger.log('Using %s as data directory.' % data_directory)
+
+  output_handling.create_latest_symlink(data_directory)
 
   # We use the start time as a unique identifier of this bazel-bench run.
   bazel_bench_uid = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
@@ -923,12 +1047,7 @@ def main(argv):
               collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
           results.append(rerun_res)
 
-      collected = {}
-      for benchmarking_result in results:
-        for metric, value in benchmarking_result.items():
-          if metric not in collected:
-            collected[metric] = Values()
-          collected[metric].add(value)
+      collected = _collect_metrics(results)
 
       data[(i, bazel_identifier, project_commit)] = collected
       non_measurables = {
@@ -971,12 +1090,7 @@ def main(argv):
           collect_memory=unit.get('collect_memory', FLAGS.collect_memory),
           collect_process_memory=unit.get('collect_process_memory', FLAGS.collect_process_memory),
           collect_bep=unit.get('collect_bep', FLAGS.collect_bep))
-      collected = {}
-      for benchmarking_result in results:
-        for metric, value in benchmarking_result.items():
-          if metric not in collected:
-            collected[metric] = Values()
-          collected[metric].add(value)
+      collected = _collect_metrics(results)
 
       data[(i, bazel_identifier, project_commit)] = collected
       non_measurables = {
@@ -991,29 +1105,33 @@ def main(argv):
       }
 
   summary_text = create_summary(data, config.get_project_source())
-  print(summary_text)
+  if sys.stdout.isatty():
+    print(create_summary(data, config.get_project_source(), color=True))
+  else:
+    print(summary_text)
 
-  if FLAGS.data_directory:
-    csv_file_name = FLAGS.csv_file_name or '{}.csv'.format(bazel_bench_uid)
-    txt_file_name = csv_file_name.replace('.csv', '.txt')
+  csv_file_name = FLAGS.csv_file_name or '{}.csv'.format(bazel_bench_uid)
+  txt_file_name = csv_file_name.replace('.csv', '.txt')
 
-    output_handling.export_csv(data_directory, csv_file_name, csv_data)
-    output_handling.export_file(data_directory, txt_file_name, summary_text)
+  output_handling.export_csv(data_directory, csv_file_name, csv_data)
+  output_handling.export_file(data_directory, txt_file_name, summary_text)
+  output_handling.export_markdown(data_directory, '{}.md'.format(bazel_bench_uid), data, config.get_project_source())
+  output_handling.export_json(data_directory, '{}.json'.format(bazel_bench_uid), data, csv_data)
 
-    # This is mostly for the nightly benchmark.
-    if FLAGS.aggregate_json_profiles:
-      aggr_json_profiles_csv_path = (
-          '%s/%s' % (FLAGS.data_directory, DEFAULT_AGGR_JSON_PROFILE_FILENAME))
-      handle_json_profiles_aggr(
-          bazel_bench_uid=bazel_bench_uid,
-          unit_num=i,
-          bazel_commits=config.get_bazel_commits(),
-          project_source=config.get_project_source(),
-          project_commits=config.get_project_commits(),
-          runs=FLAGS.runs,
-          output_path=aggr_json_profiles_csv_path,
-          data_directory=FLAGS.data_directory,
-      )
+  # This is mostly for the nightly benchmark.
+  if FLAGS.aggregate_json_profiles:
+    aggr_json_profiles_csv_path = (
+        '%s/%s' % (data_directory, DEFAULT_AGGR_JSON_PROFILE_FILENAME))
+    handle_json_profiles_aggr(
+        bazel_bench_uid=bazel_bench_uid,
+        unit_num=i,
+        bazel_commits=config.get_bazel_commits(),
+        project_source=config.get_project_source(),
+        project_commits=config.get_project_commits(),
+        runs=FLAGS.runs,
+        output_path=aggr_json_profiles_csv_path,
+        data_directory=data_directory,
+    )
 
   logger.log('Done.')
 

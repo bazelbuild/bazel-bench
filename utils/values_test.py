@@ -141,6 +141,19 @@ class ValuesTest(unittest.TestCase):
     self.assertTrue(slower.is_regression(base, pval_threshold=0.90))
     self.assertFalse(faster.is_regression(base, pval_threshold=0.90))
 
+  def test_is_unchanged(self):
+    base = Values([83.0, 83.0])
+    curr = Values([83.0, 83.0])
+    self.assertTrue(curr.is_unchanged(base))
+
+    base_zeros = Values([0.0, 0.0, 0.0])
+    curr_zeros = Values([0.0, 0.0])
+    self.assertTrue(curr_zeros.is_unchanged(base_zeros))
+
+    changed = Values([84.0, 83.0])
+    self.assertFalse(changed.is_unchanged(base))
+
 
 if __name__ == '__main__':
   unittest.main()
+

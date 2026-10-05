@@ -15,7 +15,7 @@
 import sys
 
 
-def fake_log(text):
+def fake_log(text, *args, **kwargs):
   """Fakes the log function. Prints to stderr."""
   sys.stderr.write(text)
 

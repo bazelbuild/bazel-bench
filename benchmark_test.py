@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for the main benchmarking script."""
+import collections
+import math
 import mock
 import sys
 import benchmark
@@ -278,6 +280,125 @@ class BenchmarkFunctionTests(absltest.TestCase):
     self.assertIn('Detected wall-time outlier (100.000s)', mock_stderr.getvalue())
     self.assertEqual(3, len(collected))
     self.assertEqual([10.0, 10.1, 9.9], [r['wall'] for r in collected])
+
+  def test_create_summary(self):
+    data = collections.OrderedDict()
+    unit0 = {
+        'wall': benchmark.Values([1.0, 1.1, 0.9]),
+        'cpu': benchmark.Values([2.0, 2.1, 1.9]),
+        'exit_status': benchmark.Values([0, 0, 0]),
+    }
+    unit1 = {
+        'wall': benchmark.Values([0.5, 0.55, 0.45]),
+        'cpu': benchmark.Values([1.0, 1.05, 0.95]),
+        'exit_status': benchmark.Values([0, 0, 0]),
+    }
+    data[(0, 'bazel_1', 'commit_a')] = unit0
+    data[(1, 'bazel_2', 'commit_a')] = unit1
+
+    summary = benchmark.create_summary(data, 'project_source')
+    self.assertIn('RESULTS:', summary)
+    self.assertIn('[Unit #0]', summary)
+    self.assertIn('[Unit #1]', summary)
+    self.assertIn('wall:', summary)
+    self.assertIn('cpu:', summary)
+    self.assertIn('2.00', summary)
+    self.assertIn('-0.500s, -50.0%', summary)
+
+  def test_create_summary_unchanged_metrics(self):
+    data = collections.OrderedDict()
+    unit0 = {
+        'wall': benchmark.Values([10.0, 10.0]),
+        'memory': benchmark.Values([83.0, 83.0]),
+        'actionsExecuted': benchmark.Values([1.0, 1.0]),
+        'exit_status': benchmark.Values([0, 0]),
+    }
+    unit1 = {
+        'wall': benchmark.Values([5.0, 5.0]),
+        'memory': benchmark.Values([83.0, 83.0]),
+        'actionsExecuted': benchmark.Values([1.0, 1.0]),
+        'exit_status': benchmark.Values([0, 0]),
+    }
+    data[(0, 'bazel_1', 'commit_a')] = unit0
+    data[(1, 'bazel_2', 'commit_a')] = unit1
+
+    summary = benchmark.create_summary(data, '/tmp/project')
+    lines = summary.splitlines()
+
+    unit1_idx = -1
+    for idx, l in enumerate(lines):
+      if '[Unit #1]' in l:
+        unit1_idx = idx
+        break
+    self.assertNotEqual(unit1_idx, -1)
+
+    unit1_lines = lines[unit1_idx:]
+    for line in unit1_lines:
+      if 'memory:' in line:
+        self.assertNotIn('1.00x', line)
+        self.assertNotIn('+0.0%', line)
+        self.assertNotIn('not significant', line)
+      elif 'actionsExecuted:' in line:
+        self.assertNotIn('1.00x', line)
+        self.assertNotIn('+0.0%', line)
+        self.assertNotIn('not significant', line)
+      elif 'wall:' in line:
+        self.assertIn('2.00x', line)
+
+  def test_collect_metrics_pads_missing_metrics(self):
+    results = [
+        {'wall': 1.0, 'exit_status': 0, 'runner-worker': 3},
+        {'wall': 2.0, 'exit_status': 1},
+        {'wall': 3.0, 'exit_status': 0, 'runner-worker': 5, 'invocation_id': 'x'},
+    ]
+    collected = benchmark._collect_metrics(results)
+    self.assertEqual([1.0, 2.0, 3.0], collected['wall'].values())
+    worker = collected['runner-worker'].values()
+    self.assertEqual(3, len(worker))
+    self.assertEqual(3, worker[0])
+    self.assertTrue(math.isnan(worker[1]))
+    self.assertEqual(5, worker[2])
+    self.assertEqual([None, None, 'x'], collected['invocation_id'].values())
+
+  def test_create_summary_excludes_the_failed_run_for_sparse_metrics(self):
+    # The failed run (index 1) did not report 'actionsExecuted'. Without
+    # padding, excluding index 1 would drop the third run's value instead.
+    results = [
+        {'wall': 1.0, 'exit_status': 0, 'actionsExecuted': 10.0},
+        {'wall': 1.0, 'exit_status': 1},
+        {'wall': 1.0, 'exit_status': 0, 'actionsExecuted': 30.0},
+    ]
+    data = collections.OrderedDict()
+    data[(0, 'bazel_1', 'commit_a')] = benchmark._collect_metrics(results)
+    summary = benchmark.create_summary(data, 'src')
+    line = [l for l in summary.splitlines() if l.startswith('actionsExecuted:')][0]
+    self.assertIn('20', line)  # mean of 10 and 30
+
+  def test_create_summary_compares_against_first_unit(self):
+    data = collections.OrderedDict()
+    for i, wall in enumerate([10.0, 5.0, 20.0]):
+      data[(i, 'bazel_%d' % i, 'commit_a')] = {
+          'wall': benchmark.Values([wall, wall * 1.01, wall * 0.99]),
+          'exit_status': benchmark.Values([0, 0, 0]),
+      }
+    summary = benchmark.create_summary(data, 'src')
+    self.assertIn('[Unit #0]', summary)
+    unit0_header = [l for l in summary.splitlines() if l.startswith('[Unit #0]')][0]
+    self.assertIn('(baseline)', unit0_header)
+    unit2 = summary[summary.index('[Unit #2]'):]
+    wall_line = [l for l in unit2.splitlines() if l.startswith('wall:')][0]
+    # 20s vs. the 10s baseline (not vs. the previous unit's 5s).
+    self.assertIn('+100.0%', wall_line)
+    self.assertIn('0.50', wall_line)
+
+  def test_create_summary_has_no_ansi_codes_by_default(self):
+    data = collections.OrderedDict()
+    data[(0, 'bazel_1', 'commit_a')] = {
+        'wall': benchmark.Values([1.0, 1.1]),
+        'exit_status': benchmark.Values([0, 0]),
+    }
+    self.assertNotIn('\033[', benchmark.create_summary(data, 'src'))
+    self.assertIn('\033[1m', benchmark.create_summary(data, 'src', color=True))
 
 
 class BenchmarkFlagsTest(absltest.TestCase):

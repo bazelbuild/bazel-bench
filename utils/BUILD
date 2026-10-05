@@ -134,3 +134,12 @@ py_test(
         ":utils",
     ],
 )
+
+py_test(
+    name = "output_handling_test",
+    size = "small",
+    srcs = ["output_handling_test.py"],
+    deps = [
+        ":utils",
+    ],
+)
