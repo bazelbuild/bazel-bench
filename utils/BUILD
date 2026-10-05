@@ -125,3 +125,12 @@ py_test(
         ":utils",
     ],
 )
+
+py_test(
+    name = "bep_test",
+    size = "small",
+    srcs = ["bep_test.py"],
+    deps = [
+        ":utils",
+    ],
+)

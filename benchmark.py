@@ -26,6 +26,7 @@ import git
 import utils.logger as logger
 import utils.json_profiles_merger_lib as json_profiles_merger_lib
 import utils.output_handling as output_handling
+import utils.bep as bep
 
 from absl import app
 from absl import flags
@@ -315,13 +316,22 @@ def _run_benchmark(bazel_bin_path,
   for i in range(1, runs + 1):
     logger.log('Starting benchmark run %s/%s:' % (i, runs))
 
-    maybe_include_json_profile_flags = options[:]
+    maybe_include_flags = options[:]
+    bep_file_path = None
+    if FLAGS.collect_bep:
+      bep_dir = data_directory or tempfile.gettempdir()
+      if not os.path.exists(bep_dir):
+        os.makedirs(bep_dir)
+      bep_file_path = os.path.join(
+          bep_dir, f'{bazel_bench_uid}_{unit_num}_{i}_bep.json')
+      maybe_include_flags += bep.get_bep_flags(bep_file_path)
+
     if collect_profile:
       assert bazel_identifier, ('bazel_identifier is required when '
                                 'collect_profile')
       assert project_commit, ('project_commit is required when '
                               'collect_profile')
-      maybe_include_json_profile_flags += _construct_json_profile_flags(
+      maybe_include_flags += _construct_json_profile_flags(
           json_profile_filename(
               data_directory=data_directory,
               bazel_bench_uid=bazel_bench_uid,
@@ -331,11 +341,22 @@ def _run_benchmark(bazel_bin_path,
               run_number=i,
               total_runs=runs,
           ))
-    collected.append(
-        _single_run(bazel_bin_path, command, maybe_include_json_profile_flags,
-                    targets, startup_options,
-                    collect_memory=FLAGS.collect_memory,
-                    collect_process_memory=FLAGS.collect_process_memory))
+
+    run_result = _single_run(
+        bazel_bin_path, command, maybe_include_flags,
+        targets, startup_options,
+        collect_memory=FLAGS.collect_memory,
+        collect_process_memory=FLAGS.collect_process_memory)
+
+    if run_result is not None and FLAGS.collect_bep and bep_file_path and os.path.exists(bep_file_path):
+      bep_data = bep.parse_bep_json_file(bep_file_path)
+      for k, v in bep_data.items():
+        if isinstance(v, (int, float)) and not math.isnan(v):
+          run_result[k] = v
+        elif k == 'invocation_id':
+          run_result['invocation_id'] = v
+
+    collected.append(run_result)
 
   return collected, (command, targets, options)
 
@@ -396,11 +417,17 @@ def create_summary(data, project_source):
   Excludes runs with non-zero exit codes from the final summary table.
   """
   unit = {
-    'wall': 's ',
-    'cpu': 's ',
-    'system': 's ',
-    'memory': 'MB',
-    'peakProcessRss': 'MB',
+      'wall': 's ',
+      'cpu': 's ',
+      'system': 's ',
+      'memory': 'MB',
+      'peakProcessRss': 'MB',
+      'peakPostGcHeapSize': 'MB',
+      'usedHeapSizePostBuild': 'MB',
+      'edenSpaceGarbage': 'MB',
+      'oldGenGarbage': 'MB',
+      'analysisPhaseTime': 's ',
+      'executionPhaseTime': 's ',
   }
   summary_builder = []
   summary_builder.append('\nRESULTS:')
@@ -412,7 +439,7 @@ def create_summary(data, project_source):
 
     summary_builder.append(
         '%s  %s %s %s %s' %
-        ('metric'.rjust(8), 'mean'.center(20), 'median'.center(20),
+        ('metric'.rjust(20), 'mean'.center(20), 'median'.center(20),
          'stddev'.center(10), 'pval'.center(10)))
 
     num_runs = len(collected['wall'].items())
@@ -422,7 +449,7 @@ def create_summary(data, project_source):
       if exit_code != 0:
         non_zero_runs[i] = exit_code
     for metric, values in collected.items():
-      if metric in ['exit_status', 'started_at']:
+      if metric in ['exit_status', 'started_at', 'invocation_id']:
         continue
 
       values_exclude_failures = values.exclude_from_indexes(
@@ -431,7 +458,7 @@ def create_summary(data, project_source):
       if not values_exclude_failures.items():
         continue
 
-      if last_collected:
+      if last_collected and metric in last_collected:
         base = last_collected[metric]
         pval = '% 7.5f' % values_exclude_failures.pval(base.values())
         mean_diff = '(% +6.2f%%)' % (
@@ -442,14 +469,15 @@ def create_summary(data, project_source):
       else:
         pval = ''
         mean_diff = median_diff = '         '
+      m_unit = unit.get(metric, '')
       summary_builder.append(
           '%s: %s %s %s %s' %
-          (metric.rjust(8),
+          (metric.rjust(20),
            ('% 8.3f%s %s' %
-            (values_exclude_failures.mean(), unit[metric], mean_diff)).center(20),
+            (values_exclude_failures.mean(), m_unit, mean_diff)).center(20),
            ('% 8.3f%s %s' %
-            (values_exclude_failures.median(), unit[metric], median_diff)).center(20),
-           ('% 7.3f%s' % (values_exclude_failures.stddev(), unit[metric])).center(10),
+            (values_exclude_failures.median(), m_unit, median_diff)).center(20),
+           ('% 7.3f%s' % (values_exclude_failures.stddev(), m_unit)).center(10),
            pval.center(10)))
     last_collected = collected
     if non_zero_runs:
@@ -503,6 +531,8 @@ flags.DEFINE_boolean('collect_memory', True,
                      'Whether to collect retained heap size via GC after command execution.')
 flags.DEFINE_boolean('collect_process_memory', False,
                      'Whether to sample peak anonymous process RSS memory.')
+flags.DEFINE_boolean('collect_bep', False,
+                     'Whether to collect build metrics from the Build Event Protocol (BEP).')
 
 # Miscellaneous flags.
 flags.DEFINE_boolean('verbose', False,
