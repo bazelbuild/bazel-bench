@@ -15,7 +15,7 @@
 import sys
 
 
-def fake_log(text):
+def fake_log(text, *args, **kwargs):
   """Fakes the log function. Prints to stderr."""
   sys.stderr.write(text)
 
@@ -32,7 +32,7 @@ class FakeBazel(object):
     # Do nothing
     return
 
-  def command(self, command_name, args=None, collect_memory=False):
+  def command(self, command_name, args=None, **kwargs):
     """Fake method to verify that the command is executed."""
     args = args or []
     fake_log('Executing Bazel command: bazel %s %s' %

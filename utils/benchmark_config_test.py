@@ -46,7 +46,14 @@ units:
         'project_commit': 'hash1',
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
         'runs': 5,
+        'warmup_runs': 1,
+        'max_outlier_reruns': 0,
+        'interleave': False,
         'collect_profile': False,
+        'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
+        'collect_memory': True,
+        'collect_process_memory': False,
         'command': 'info',
         'startup_options': [],
         'options': _pad_test_command_options([]),
@@ -54,6 +61,7 @@ units:
         'env_configure': None,
         'clean': True,
         'shutdown': True,
+        'patch_file': None,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
     os.remove(config_file_path)
@@ -83,39 +91,63 @@ units:
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
         'env_configure': None,
         'runs': 5,
+        'warmup_runs': 1,
+        'max_outlier_reruns': 0,
+        'interleave': False,
         'collect_profile': False,
+        'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
+        'collect_memory': True,
+        'collect_process_memory': False,
         'command': 'info',
         'startup_options': [],
         'options': _pad_test_command_options([]),
         'targets': [],
         'clean': True,
-        'shutdown': True
+        'shutdown': True,
+        'patch_file': None,
     }, {
         'bazel_path': '/tmp/bazel',
         'project_commit': 'hash2',
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
         'env_configure': 'some-command',
         'runs': 5,
+        'warmup_runs': 1,
+        'max_outlier_reruns': 0,
+        'interleave': False,
         'collect_profile': False,
+        'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
+        'collect_memory': True,
+        'collect_process_memory': False,
         'command': 'build',
         'startup_options': [],
         'options': _pad_test_command_options(['--nobuild']),
         'targets': ['//abc'],
         'clean': True,
-        'shutdown': True
+        'shutdown': True,
+        'patch_file': None,
     }, {
         'bazel_path': '/tmp/bazel',
         'project_commit': 'hash3',
         'bazel_source': 'https://github.com/bazelbuild/bazel.git',
         'env_configure': None,
         'runs': 5,
+        'warmup_runs': 1,
+        'max_outlier_reruns': 0,
+        'interleave': False,
         'collect_profile': False,
+        'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
+        'collect_memory': True,
+        'collect_process_memory': False,
         'command': 'build',
         'startup_options': [],
         'options': _pad_test_command_options(['--flag_a']),
         'targets': ['--', '//foo', '-//excluded/...'],
         'clean': True,
-        'shutdown': True
+        'shutdown': True,
+        'patch_file': None,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
 
@@ -140,30 +172,83 @@ units:
         'bazel_source': 'foo',
         'project_source': 'foo',
         'runs': 5,
-        'env_configure': 'some-command',
+        'warmup_runs': 1,
+        'max_outlier_reruns': 0,
+        'interleave': False,
         'collect_profile': False,
+        'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
+        'collect_memory': True,
+        'collect_process_memory': False,
+        'env_configure': 'some-command',
         'command': 'build',
         'startup_options': [],
         'options': _pad_test_command_options(['--nobuild']),
         'targets': ['//abc'],
         'clean': False,
         'shutdown': False,
+        'patch_file': None,
     }, {
         'bazel_binary': 'path/to/bazel',
         'project_commit': 'hash3',
         'bazel_source': 'foo',
         'project_source': 'foo',
         'runs': 5,
-        'env_configure': 'some-command',
+        'warmup_runs': 1,
+        'max_outlier_reruns': 0,
+        'interleave': False,
         'collect_profile': False,
+        'collect_bep': False,
+        'collect_peak_post_gc_memory': False,
+        'collect_memory': True,
+        'collect_process_memory': False,
+        'env_configure': 'some-command',
         'command': 'build',
         'startup_options': [],
         'options': _pad_test_command_options(['--nobuild']),
         'targets': ['//abc'],
         'clean': False,
         'shutdown': False,
+        'patch_file': None,
     }])
     self.assertEqual(result._benchmark_project_commits, False)
+
+
+  def test_parsing_collect_peak_post_gc_memory_flags(self):
+    result = benchmark_config.BenchmarkConfig.from_flags(
+        bazel_commits=['hash1'],
+        bazel_binaries=[],
+        project_commits=['hash3'],
+        bazel_source='foo',
+        project_source='foo',
+        runs=5,
+        env_configure=None,
+        collect_profile=False,
+        collect_bep=False,
+        collect_peak_post_gc_memory=True,
+        command='build --nobuild //abc',
+        clean=False,
+        shutdown=False,
+    )
+    unit = result._units[0]
+    self.assertTrue(unit['collect_peak_post_gc_memory'])
+    self.assertTrue(unit['collect_bep'])
+    self.assertIn('--memory_profile=/dev/null', unit['options'])
+
+
+  def test_parsing_collect_peak_post_gc_memory_string(self):
+    file_content = """
+units:
+ - bazel_commit: hash1
+   project_commit: hash1
+   collect_peak_post_gc_memory: true
+   command: build //abc
+"""
+    result = benchmark_config.BenchmarkConfig.from_string(file_content)
+    unit = result._units[0]
+    self.assertTrue(unit['collect_peak_post_gc_memory'])
+    self.assertTrue(unit['collect_bep'])
+    self.assertIn('--memory_profile=/dev/null', unit['options'])
 
 
   def test_get_units(self):

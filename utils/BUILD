@@ -35,6 +35,7 @@ py_library(
         requirement("six"),
         requirement("urllib3"),
         requirement("PyYAML"),
+        requirement("GitPython"),
     ],
 )
 
@@ -123,5 +124,42 @@ py_test(
     srcs = ["benchmark_config_test.py"],
     deps = [
         ":utils",
+    ],
+)
+
+py_test(
+    name = "bep_test",
+    size = "small",
+    srcs = ["bep_test.py"],
+    deps = [
+        ":utils",
+    ],
+)
+
+py_test(
+    name = "output_handling_test",
+    size = "small",
+    srcs = ["output_handling_test.py"],
+    deps = [
+        ":utils",
+    ],
+)
+
+py_test(
+    name = "patch_test",
+    size = "small",
+    srcs = ["patch_test.py"],
+    deps = [
+        ":utils",
+    ],
+)
+
+py_test(
+    name = "bisection_test",
+    size = "small",
+    srcs = ["bisection_test.py"],
+    deps = [
+        ":utils",
+        requirement("GitPython"),
     ],
 )
